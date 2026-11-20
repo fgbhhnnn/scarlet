@@ -6,7 +6,7 @@
  */
 import { dialogueCommand, AGENT_LABEL, beginRevision, buildThreads, restoredReviewState, threadRevision, threadTimeline, countReviewDecisions, fullRenderContext, taskNeedsTranscripts, taskRecoveryAction, splitAgentTarget, ScarletApiError, SkillSlug, isAsideTask, isProjectEditTask, isSkillEdit, ReviseLearningRequest, queueAdmission, sameRun } from "@scarlet/shared";
 import { appliedCutReview, appliedReviewChange, applyReviewRemovals, makeStagedCutMapper, contentHash, planCutReview, reviewedTimeline } from "@scarlet/timeline";
-import type { ApproveLearningRequest, EditSkillRequest, Learning, MakeShortsRequest, RunChoice, UsageGroupBy, UsageResponse, UsageTotals } from "@scarlet/shared";
+import type { ApproveLearningRequest, EditSkillRequest, Learning, MakeShortsRequest, ProposeChangeRequest, RunChoice, UsageGroupBy, UsageResponse, UsageTotals } from "@scarlet/shared";
 import type {
   AgentHost,
   AgentId,
@@ -552,7 +552,9 @@ export class MockClient implements ScarletApi {
     this.requireAuth();
     const project = this.projectById(projectId);
     const head = project.head;
-    if (!head || head !== expectedHead || branch !== (project.branch ?? "main")) throw new Error("The video changed. Try again.");
+    if (!head || head !== expectedHead || branch !== (project.branch ?? "main")) {
+      throw new ScarletApiError(409, "cut_changed", "The video changed. Try again.");
+    }
     const versions = this.db.versions[projectId] ?? [];
     const selected = versions.find(v => v.version === target);
     if (!selected) throw notFound("Version");
@@ -656,6 +658,39 @@ export class MockClient implements ScarletApi {
     const b = this.db.timelines[viewed.toVersion];
     const diff = a && b ? diffTimelines(a, b, this.projectById(change.projectId).settings.fps) : { clips: [], tracks: [], markersChanged: false, timelineFieldsChanged: [], ranges: [], beforeRanges: [], spots: [], durationBefore: 0, durationAfter: 0 };
     return this.latency({ change, diff }, 200);
+  }
+  async proposeChange(projectId: string, body: ProposeChangeRequest) {
+    this.requireAuth();
+    const project = this.projectById(projectId);
+    const fromVersion = body.fromVersion ?? project.head;
+    if (!fromVersion || fromVersion !== project.head) {
+      throw new ScarletApiError(409, "cut_changed", "The video changed. Try again.");
+    }
+    const base = this.db.timelines[fromVersion];
+    if (!base) throw notFound("Timeline");
+    let edited: Timeline;
+    try {
+      edited = body.ops?.length ? applyOps(base, body.ops) : { ...base, ...body.timeline };
+    } catch (error) {
+      throw new ScarletApiError(400, "invalid_ops", String(error));
+    }
+    if (!body.ops?.length && !body.timeline) throw new ScarletApiError(400, "missing_change", "Provide a timeline or editing operations.");
+
+    const version = newId("ver");
+    const createdAt = now();
+    const timeline = { ...edited, projectId, version, parent: fromVersion, createdAt };
+    const diff = diffTimelines(base, timeline, project.settings.fps);
+    const author = this.human();
+    const change: Change = {
+      id: newId("chg"), projectId, fromVersion, toVersion: version, description: body.description, author,
+      state: "ready", noteIds: body.noteIds ?? [], ranges: diff.ranges, renders: [], ops: body.ops, createdAt,
+    };
+    this.db.timelines[version] = timeline;
+    this.db.changes.unshift(change);
+    this.log(projectId, "change.proposed", `${author.name} proposed “${body.description}”`, { changeId: change.id, version });
+    if (body.autoApprove) await this.applyChange(change.id);
+    else this.emit({ type: "change.updated", projectId, change });
+    return this.latency({ change, timeline, diffDescription: describeDiff(diff) });
   }
   async saveCutChoices(changeId: string, body: { choices: Array<{ index: number; choice: "cut" | "keep" }>; applyWhenDone?: boolean }) {
     this.requireAuth();

@@ -37,6 +37,7 @@ import { RequestMetrics, RunBundle, runEnded, Said } from "../components/review/
 import { OtherTakes } from "../components/review/OtherTakes";
 import { ExportSheet } from "../components/review/ExportVideo";
 import { MakeShortsSheet } from "../components/review/MakeShorts";
+import { ManualTimeline } from "../components/review/ManualTimeline";
 import { ExportButton, ExportMenuItem, useExportWarning } from "../components/review/ExportMenuItem";
 import { useThreadTimeline } from "../components/review/useThreadTimeline";
 import { Drawer, Icon, Loading } from "../components/ui/primitives";
@@ -1345,6 +1346,7 @@ export function SimpleWorkspace() {
   const [search, setSearch] = useSearchParams();
   // The rule a line in the chat opened Learnings at.
   const [learnFocus, setLearnFocus] = useState<string>();
+  const [manualOpen, setManualOpen] = useState(false);
   const [panel, setPanel] = useState<Panel>(() => { const asked = search.get("panel"); return asked === "media" || asked === "history" ? asked : null; });
   // The cut, edit or call that was open when Scarlet last closed arrives the same way, as ?open=, and is read once too.
   const [reopen, setReopen] = useState(() => search.get("open") ?? undefined);
@@ -3902,6 +3904,9 @@ export function SimpleWorkspace() {
                   <MenuItem onClick={() => { close(); setLearnFocus(undefined); setPanel("learnings"); }} title={toLearn ? `${plural(toLearn, "rule")} to review` : undefined}>
                     <Icon name="bulb" />Learnings{toLearn > 0 && <span className="menu-dot" role="img" aria-label={`${plural(toLearn, "rule")} to review`} />}</MenuItem>
                   <CachingMenuItem close={close} />
+                  <MenuItem onClick={() => { close(); setManualOpen(open => !open); }}>
+                    <Icon name="scissors" />{manualOpen ? "隐藏手动剪辑" : "手动剪辑"}
+                  </MenuItem>
                   <MenuItem onClick={() => { close(); setTranscript(v => !v); }}><Icon name="diff" />{transcript ? "Hide transcript" : "Transcript"}</MenuItem>
                   <ExportMenuItem onOpen={() => setPanel("export")} close={close} />
                   {/* A short is made from the long video, not from another short. */}
@@ -3972,6 +3977,8 @@ export function SimpleWorkspace() {
             onRetryDraft={openingJoin ? single.retry : pinnedCallVersion ? savedBefore.retry : () => setDraftAttempt(n => n + 1)} source={source} autoPlaySource={sourceChoice.play && source === chosenSource} hasCut={hasCut}
             change={draftVersion && !appliedCut ? viewed : undefined} spot={shownPlace} approval={!!draftVersion && !appliedCut} playChange={reviewPlays}
             active={workspaceActive} onMedia={() => setPanel("media")} joined={joinedPlayer} />
+          <ManualTimeline key={current.id} open={manualOpen} projectId={current.id} timeline={timeline ?? undefined} media={media} fps={fps}
+            canEdit={onWorkingClock && !previewVersion} onClose={() => setManualOpen(false)} onMedia={() => setPanel("media")} />
           {chosenSource && hasCut && source === chosenSource && <div className="simple-decide" role="region" aria-label="Source preview">
             <span className="simple-decide-text"><small>Source clip</small>{chosenSource.name}</span>
             <button type="button" className="btn-ghost" onClick={backToVideo}>Back to the video</button>

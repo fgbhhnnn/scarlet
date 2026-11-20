@@ -44,6 +44,7 @@ export type ScarletApi = Pick<
   | "handoff"
   | "changes"
   | "change"
+  | "proposeChange"
   | "approveChange"
   | "rejectChange"
   | "reopenChange"

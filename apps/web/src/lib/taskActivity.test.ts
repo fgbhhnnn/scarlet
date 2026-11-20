@@ -9,52 +9,52 @@ const latest = (events: readonly TaskEvent[]) => events.map(event => taskActivit
 
 describe("working row activity", () => {
   it.each(["mcp__scarlet__waveform_get", "scarlet__waveform_get", "mcp_scarlet_waveform_get", "scarlet.waveform_get", "waveform_get", "waveform.get"])("recognizes tool names from each host: %s", (tool) => {
-    expect(latest([reading, { type: "tool", text: tool + " range=0–12" }])).toBe("Checking the sound");
+    expect(latest([reading, { type: "tool", text: tool + " range=0–12" }])).toBe("检查声音");
   });
 
   it("switches to the new step and ignores raw diagnostic output", () => {
-    expect(latest([reading])).toBe("Reading transcript");
-    expect(latest([reading, { type: "log", text: "Found 3 candidate fillers: two repeats and a pause." }])).toBe("Found candidate fillers");
-    expect(latest([{ type: "log", text: "Checking the waveform for the remaining clips" }])).toBe("Checking waveform");
-    expect(latest([reading, trimming, { type: "log", text: "warning: transient connection error" }])).toBe("Trimming dead air");
-    expect(latest([trimming, { type: "tool", text: "", data: { tool: "captions_generate" } }])).toBe("Generating captions");
+    expect(latest([reading])).toBe("读取转写稿");
+    expect(latest([reading, { type: "log", text: "Found 3 candidate fillers: two repeats and a pause." }])).toBe("发现候选填充词");
+    expect(latest([{ type: "log", text: "Checking the waveform for the remaining clips" }])).toBe("检查音频波形");
+    expect(latest([reading, trimming, { type: "log", text: "warning: transient connection error" }])).toBe("正在剪除静音");
+    expect(latest([trimming, { type: "tool", text: "", data: { tool: "captions_generate" } }])).toBe("生成字幕");
   });
 
   it("says how much a read covers, and that a repeated read is waiting for the transcript", () => {
     const read: TaskEvent = { type: "tool", text: "", data: { tool: "scarlet.transcript_get", input: { mediaId: "cam", from: 0, to: 3467.6 } } };
-    expect(taskActivityLabel(read)).toBe("Reading transcript 0:00–57:47");
-    const waiting: TaskEvent = { type: "log", text: "Waiting for the transcript", data: { kind: "media_wait", wait: "transcript", mediaId: "cam" } };
-    expect(latest([read, waiting])).toBe("Waiting for the transcript");
-    expect(taskActivityLabel(read, pendingMediaWaits([waiting]))).toBe("Waiting for the transcript");
+    expect(taskActivityLabel(read)).toBe("读取转写稿 0:00–57:47");
+    const waiting: TaskEvent = { type: "log", text: "等待转写稿", data: { kind: "media_wait", wait: "transcript", mediaId: "cam" } };
+    expect(latest([read, waiting])).toBe("等待转写稿");
+    expect(taskActivityLabel(read, pendingMediaWaits([waiting]))).toBe("等待转写稿");
     const ready: TaskEvent = { ...waiting, data: { ...waiting.data, done: true } };
-    expect(taskActivityLabel(read, pendingMediaWaits([waiting, ready]))).toBe("Reading transcript 0:00–57:47");
+    expect(taskActivityLabel(read, pendingMediaWaits([waiting, ready]))).toBe("读取转写稿 0:00–57:47");
     // Another recording's transcript isn't the one being waited for.
-    expect(taskActivityLabel({ ...read, data: { ...read.data, input: { mediaId: "screen", from: 0 } } }, pendingMediaWaits([waiting]))).toBe("Reading transcript at 0:00");
+    expect(taskActivityLabel({ ...read, data: { ...read.data, input: { mediaId: "screen", from: 0 } } }, pendingMediaWaits([waiting]))).toBe("读取转写稿 0:00");
     // A read of several recordings waits while any of them is being prepared.
-    expect(taskActivityLabel({ ...read, data: { ...read.data, input: { mediaIds: ["screen", "cam"], from: 0 } } }, pendingMediaWaits([waiting]))).toBe("Waiting for the transcript");
+    expect(taskActivityLabel({ ...read, data: { ...read.data, input: { mediaIds: ["screen", "cam"], from: 0 } } }, pendingMediaWaits([waiting]))).toBe("等待转写稿");
   });
 
   it("names the cuts a multi-cut inspection checks", () => {
     const inspect = (input: object): TaskEvent => ({ type: "tool", text: "", data: { tool: "scarlet.dialogue_review_inspect", input } });
-    expect(latest([inspect({ index: 4 })])).toBe("Checking a suggested cut · Cut 5");
-    expect(latest([inspect({ index: 4, count: 4 })])).toBe("Checking suggested cuts · Cuts 5–8");
-    expect(latest([inspect({ index: 4, count: 4, wholePicture: true })])).toBe("Checking a suggested cut · Cut 5");
+    expect(latest([inspect({ index: 4 })])).toBe("检查剪辑建议 · 剪点 5");
+    expect(latest([inspect({ index: 4, count: 4 })])).toBe("检查剪辑建议 · 剪点 5–8");
+    expect(latest([inspect({ index: 4, count: 4, wholePicture: true })])).toBe("检查剪辑建议 · 剪点 5");
   });
 
   it("shows a dropped model stream as a reconnect", () => {
     expect(latest([reading, { type: "log", text: "Reconnecting... 2/5 (stream disconnected)", data: { kind: "connection" } }]))
-      .toBe("Reconnecting to the model");
+      .toBe("正在重新连接模型");
   });
 
   it("keeps the current activity through a recoverable scan error", () => {
     expect(latest([reading, { type: "tool", text: "scarlet.dialogue_scan" },
-      { type: "error", text: "scarlet.dialogue_scan failed" }])).toBe("Scanning dialogue");
+      { type: "error", text: "scarlet.dialogue_scan failed" }])).toBe("扫描对白");
   });
 
   it("uses a progress tool's activity immediately, without leaking its arguments or reasoning", () => {
-    expect(latest([{ type: "tool", text: "", data: { tool: "scarlet.task_log", input: { text: trimming.text } } }])).toBe("Trimming dead air");
-    expect(latest([{ type: "log", text: "internal details", data: { kind: "reasoning" } }])).toBe("Planning next step");
-    expect(latest([reading, { type: "tool", text: "custom_tool private_arguments" }])).toBe("Reading transcript");
+    expect(latest([{ type: "tool", text: "", data: { tool: "scarlet.task_log", input: { text: trimming.text } } }])).toBe("正在剪除静音");
+    expect(latest([{ type: "log", text: "internal details", data: { kind: "reasoning" } }])).toBe("正在规划下一步");
+    expect(latest([reading, { type: "tool", text: "custom_tool private_arguments" }])).toBe("读取转写稿");
   });
 
   it("keeps up to three complete result sentences and skips commands, tool output and repeated instructions", () => {
@@ -74,7 +74,7 @@ describe("working row activity", () => {
   it("keeps the newest live step when a slower history request finishes", () => {
     const merged = mergeTaskEvents([reading], [reading, trimming]);
     expect(merged.map((e) => e.id)).toEqual(["r", "t"]);
-    expect(latest(merged)).toBe("Trimming dead air");
-    expect(latest(mergeTaskEvents([trimming], [reading]))).toBe("Trimming dead air");
+    expect(latest(merged)).toBe("正在剪除静音");
+    expect(latest(mergeTaskEvents([trimming], [reading]))).toBe("正在剪除静音");
   });
 });

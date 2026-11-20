@@ -11,6 +11,7 @@ import { runNow, STARTING } from "../../lib/runNow";
 import { runningTranscription, transcriptionProgressLabel, transcriptsProgress } from "../../lib/transcriptionProgress";
 import { runAim, runIsActive, runItems, runLines, runSummary, workTime, workTimeLabel, type RunItem, type RunLine } from "../../lib/taskRun";
 import { zh } from "../../lib/zh";
+import { zhReview } from "../../lib/zhReview";
 import { pendingMediaWaits, TRANSCRIPT_WAIT } from "../../lib/taskActivity";
 
 /**
@@ -22,11 +23,11 @@ type RunUsage = Omit<UsageTotals, "firstAt" | "lastAt" | "models" | "reasoningTo
 const usd = new Intl.NumberFormat(undefined, { style: "currency", currency: "USD" });
 
 function listOf(items: string[]) {
-  return items.length < 3 ? items.join(" or ") : `${items.slice(0, -1).join(", ")} or ${items.at(-1)}`;
+  return items.length < 3 ? items.join(" 或 ") : `${items.slice(0, -1).join("、")} 或 ${items.at(-1)}`;
 }
 
 function formatEstimatedCost(estimate: RunUsage["estimatedApiCostUsd"]) {
-  if (estimate == null) return "Unavailable";
+  if (estimate == null) return zhReview.run.unavailable;
   return estimate > 0 && estimate < 0.01 ? `<${usd.format(0.01)}` : usd.format(estimate);
 }
 
@@ -78,19 +79,19 @@ function Tokens({ usage, className, time, details = [] }: {
     <span className="sr-only">{zh.ui.review.activeTime} </span><span className="run-work-time">{time}</span>
   </span> : null;
   const parts: [string, number][] = [
-    ["Input", usage.inputTokens], ["Output", usage.outputTokens], ["Cache read", usage.cacheReadTokens],
-    ["Cache write", usage.cacheWriteTokens],
+    [zhReview.run.input, usage.inputTokens], [zhReview.run.output, usage.outputTokens], [zhReview.run.cacheRead, usage.cacheReadTokens],
+    [zhReview.run.cacheWrite, usage.cacheWriteTokens],
   ];
   const label = tokenLabel(usage.totalTokens);
   const [count, ...unit] = label.split(" ");
   const breakdown = tokenBreakdown({ ...usage, runs: undefined });
   const cost = formatEstimatedCost(usage.estimatedApiCostUsd);
   const costDescription = usage.estimatedApiCostUsd == null
-    ? usage.unpricedModels?.length ? `No price for ${listOf(usage.unpricedModels)} yet.` : "API pricing is unavailable for some or all of the reported usage."
-    : "Reported tokens at standard API rates for short context and default cache duration.";
-  const accessibleDetails = [...details.map(([name, value]) => `${name}: ${value}`), `Estimated API cost: ${cost}`].join(", ");
+    ? usage.unpricedModels?.length ? zhReview.run.noPrice(listOf(usage.unpricedModels)) : zhReview.run.pricingUnavailable
+    : zhReview.run.standardRates;
+  const accessibleDetails = [...details.map(([name, value]) => `${name}：${value}`), `${zhReview.run.estimatedCost}：${cost}`].join("，");
   return <><button ref={ref} type="button" className={`run-dim run-tokens${className ? ` ${className}` : ""}`} title=""
-    aria-label={`${time ? `${time} active time, ` : ""}${label}: ${breakdown}. ${accessibleDetails}`} data-breakdown={breakdown}
+    aria-label={`${time ? `${time}${zhReview.run.activeTime}，` : ""}${label}：${breakdown}。${accessibleDetails}`} data-breakdown={breakdown}
     aria-description={costDescription} aria-expanded={open} aria-controls={open ? id : undefined}
     onPointerEnter={e => { if (e.pointerType !== "touch") setMode(value => value ?? "preview"); }}
     onPointerLeave={() => { if (!ref.current?.matches(":focus-visible")) setMode(value => value === "preview" ? null : value); }}
@@ -101,7 +102,7 @@ function Tokens({ usage, className, time, details = [] }: {
   </button>{open && createPortal(<span ref={panel} id={id} className="tokens-tip" aria-hidden data-escape-owner>
       {time && <span><span>{zh.ui.review.activeTime}</span><b>{time}</b></span>}
       {details.map(([name, value]) => <span key={name}><span>{name}</span><b>{value}</b></span>)}
-      {parts.filter(([label, n]) => n || label === "Input" || label === "Output").map(([label, n]) =>
+      {parts.filter(([label, n]) => n || label === zhReview.run.input || label === zhReview.run.output).map(([label, n]) =>
         <span key={label}><span>{label}</span><b>{n.toLocaleString()}</b></span>)}
       <span className="tokens-tip-total"><span>{zh.ui.review.total}</span><b>{usage.totalTokens.toLocaleString()}</b></span>
       <span title={costDescription} style={mode === "pinned" ? { pointerEvents: "auto" } : undefined}><span>{zh.ui.review.estimatedCost}</span><b>{cost}</b></span>
@@ -109,8 +110,8 @@ function Tokens({ usage, className, time, details = [] }: {
 }
 
 const voicePhase: Record<SpeakerProgress["phase"], string> = {
-  audio: "Preparing audio", models: "Finding voices", segmenting: "Finding voices", identifying: "Finding voices",
-  grouping: "Finding voices", matching: "Matching voices",
+  audio: zhReview.run.preparingAudio, models: zhReview.run.findingVoices, segmenting: zhReview.run.findingVoices, identifying: zhReview.run.findingVoices,
+  grouping: zhReview.run.findingVoices, matching: zhReview.run.matchingVoices,
 };
 
 /**
@@ -134,7 +135,7 @@ export function Said({ text, lead, className, children }: { text: string; lead?:
   }, [text, open]);
   const opens = clipped || open;
   return <p ref={ref} className={`${className ? `${className} ` : ""}said${open ? " is-open" : clipped ? " is-clipped" : ""}`}
-    title={clipped && !open ? "Show all of it" : undefined} aria-expanded={opens ? open : undefined} onClick={opens ? () => setOpen(!open) : undefined}>{lead}{children ?? text}</p>;
+    title={clipped && !open ? zhReview.run.showAll : undefined} aria-expanded={opens ? open : undefined} onClick={opens ? () => setOpen(!open) : undefined}>{lead}{children ?? text}</p>;
 }
 
 /**
@@ -251,11 +252,11 @@ export function RequestMetrics({ attempts, events }: { attempts: readonly Task[]
     const report = reports[i];
     if (!report) continue;
     for (const model of report.models?.length ? report.models : [task.model ?? "Unknown"]) models.add(runModelName(model));
-    efforts.add(task.effort ? task.effort.charAt(0).toUpperCase() + task.effort.slice(1) : "Provider default");
+    efforts.add(task.effort ? task.effort.charAt(0).toUpperCase() + task.effort.slice(1) : zhReview.run.providerDefault);
   }
   return <Tokens usage={usage} time={time} className="unit-tokens" details={[
-    [models.size > 1 ? "Models" : "Model", [...models].join(", ")],
-    ["Thinking effort", [...efforts].join(", ")],
+    [models.size > 1 ? zhReview.run.models : zhReview.run.model, [...models].join(", ")],
+    [zhReview.run.thinking, [...efforts].join(", ")],
   ]} />;
 }
 
@@ -291,13 +292,13 @@ function WorkingRun({ task, events: all, changes, callNumber, say, result, onSto
   const words = transcripts ? `Transcribing the recordings · ${transcripts}`
     : pickingUp ? PICKING_UP
     : doing ?? (voice ? voicePhase[voice.phase] : task.state === "claimed" ? STARTING : WORKING);
-  return <div className="req" data-state="working" aria-label="Scarlet’s work" aria-busy>
+  return <div className="req" data-state="working" aria-label={zhReview.run.scarletWork} aria-busy>
     {aim && <div className="req-said req-lead"><Said className="req-say" text={aim.text} /></div>}
     <div className="req-row req-now">
       <StepMark state="working" />
       {/* The words shimmer while Scarlet works. A narrow chat shortens them to two lines; hovering says them whole. */}
       <span role="status" title={words} className="req-now-text working-text">{words}</span>
-      {(actions || onStop) && <div className="req-right">{actions || <button type="button" className="simple-link run-stop" onClick={onStop}>Stop</button>}</div>}
+      {(actions || onStop) && <div className="req-right">{actions || <button type="button" className="simple-link run-stop" onClick={onStop}>{zhReview.run.stop}</button>}</div>}
     </div>
     {say}
     {result?.(undefined)}
@@ -316,22 +317,22 @@ function WaitingRun({ task, events, changes, say, result, banded, paused, onStop
   }, [asking, banded, task, events, changes]);
   const lines = useMemo(() => open ? tidy(runLines(task, events, shown, Date.now())) : [], [open, task, events, shown]);
   // A request in line again says Queued, the word its cut's card and the tray use, or Paused while it waits for Continue.
-  const label = waiting ? paused ? "Paused" : "Queued" : "Needs your answer";
+  const label = waiting ? paused ? zhReview.run.paused : zhReview.run.queued : zhReview.run.needsAnswer;
   // A question's steps open from its line. A question under a heading has no such line: the heading's dot, the question
   // and Answer say it. Nor has a paused request: its heading says Paused.
   const line = !(banded && (asking || (waiting && paused)));
   const opens = asking && shown.length > 0;
-  return <div className="req" data-state={asking ? "asking" : "working"} aria-label="Scarlet’s work" aria-busy={!asking}>
+  return <div className="req" data-state={asking ? "asking" : "working"} aria-label={zhReview.run.scarletWork} aria-busy={!asking}>
     {line && <div className="req-row req-status">
       <button type="button" className="req-toggle" aria-expanded={opens ? open : undefined} disabled={!opens}
-        title={opens ? open ? "Hide the details" : "Show the details" : undefined} onClick={() => setOpen(!open)}>
+        title={opens ? open ? zhReview.run.hideDetails : zhReview.run.showDetails : undefined} onClick={() => setOpen(!open)}>
         {asking && <span className="req-dot" aria-hidden />}
-        <span role="status" title={waiting && paused ? "Editing is paused. Continue, above the message box, picks this up where it left off." : label}
+        <span role="status" title={waiting && paused ? zhReview.run.editingPaused : label}
           className={asking ? "req-ask" : undefined}>{label}</span>
       </button>
       <div className="req-right">
         {asking && <Tokens usage={usage} />}
-        {actions || (onStop && <button type="button" className="simple-link run-stop" onClick={onStop}>Stop</button>)}
+        {actions || (onStop && <button type="button" className="simple-link run-stop" onClick={onStop}>{zhReview.run.stop}</button>)}
       </div>
     </div>}
     {line && lines.length > 0 && <RunList lines={lines} />}
@@ -386,18 +387,18 @@ function FinishedRun({ task, finalChange, say, told, result, recovery, summary, 
 }
 
 /** What the line says when nothing names the work of the moment. */
-const WORKING = "Working on your edit";
-const PICKING_UP = "Picking up where it left off";
+const WORKING = zhReview.run.working;
+const PICKING_UP = zhReview.run.pickingUp;
 
 /** How a run that didn't finish ended, in the words its block says: paused for its transcripts, stopped, or failed. */
 export function runEnded(task: Task) {
   return taskNeedsTranscripts(task) ? `Paused · needs ${task.needsTranscripts!.length > 1 ? "transcripts" : "transcript"}`
-    : task.state === "cancelled" ? "Stopped" : task.state === "failed" ? "Couldn’t finish" : undefined;
+    : task.state === "cancelled" ? zhReview.run.stopped : task.state === "failed" ? zhReview.run.couldNotFinish : undefined;
 }
 
 /** What a run that stopped early still made, if anything. */
 function stoppedSummary(task: Task, change?: Change) {
-  return change ? runSummary({ ...task, state: "done" }, change) : "Nothing saved";
+  return change ? runSummary({ ...task, state: "done" }, change) : zhReview.run.nothingSaved;
 }
 
 /** The steps worth a row: a look at the project and a scan say nothing the stages don't. */
@@ -430,27 +431,27 @@ function TranscriptWait({ task, onResume, onWait, aside }: { task: Task; onResum
   const media = useProjectStore(s => s.current?.media);
   const pending = (task.needsTranscripts ?? []).filter(id => !media?.find(m => m.id === id)?.transcriptId);
   // Named for what the run waits on, so two that are both ready don't read "Transcript ready".
-  const noun = (pending.length || (task.needsTranscripts?.length ?? 0)) > 1 ? "Transcripts" : "Transcript";
+  const noun = (pending.length || (task.needsTranscripts?.length ?? 0)) > 1 ? "转写稿" : "转写稿";
   const making = pending.some(id => runningTranscription(tasks ?? [], id));
   // The figure is of every recording the run waited for. Counted over the ones still pending, it started again each
   // time a transcript was saved.
   const progress = transcriptionProgressLabel(transcriptsProgress(tasks ?? [], media ?? [], task.needsTranscripts ?? []));
   let status: string, action: { label: string; run(): void } | undefined;
   if (!pending.length) {
-    status = `${noun} ready`;
-    action = onResume && { label: "Finish edit", run: onResume };
+    status = `${noun}已就绪`;
+    action = onResume && { label: zhReview.run.finishEdit, run: onResume };
   } else if (task.continueWhenReady) {
-    status = `Finishes when ready${progress ? ` · ${progress}` : ""}`;
-    action = onWait && { label: "Don’t wait", run: () => onWait(false) };
+    status = `${zhReview.run.finishesWhenReady}${progress ? ` · ${progress}` : ""}`;
+    action = onWait && { label: zhReview.run.dontWait, run: () => onWait(false) };
   } else if (making) {
-    status = `${noun} ${progress ?? "in progress"}`;
-    action = onWait && { label: "Finish when ready", run: () => onWait(true) };
+    status = `${noun}${progress ?? zhReview.run.inProgress}`;
+    action = onWait && { label: zhReview.run.finishWhenReady, run: () => onWait(true) };
   } else {
     // A transcription that was started and isn't running ended without its transcript. Asked to finish once the
     // transcript is ready, the engine starts one that isn't being made.
     const stopped = pending.some(id => (tasks ?? []).some(t => t.kind === "transcribe" && t.context.mediaId === id));
-    status = stopped ? `${noun} stopped` : `No ${noun.toLowerCase()}`;
-    action = onWait && { label: stopped ? "Retry" : "Transcribe", run: () => onWait(true) };
+    status = stopped ? `${noun}${zhReview.run.stoppedTranscripts}` : zhReview.run.noTranscripts(noun);
+    action = onWait && { label: stopped ? zhReview.run.retry : zhReview.run.transcribe, run: () => onWait(true) };
   }
   return <div className="req-row run-wait">
     <span className="run-dim">{status}</span>

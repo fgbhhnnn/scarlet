@@ -25,13 +25,14 @@ afterEach(async () => {
   vi.restoreAllMocks();
 });
 
-it("shows an explicit V1 entry point when the imported project has no timeline", async () => {
+it("keeps the V1 entry point enabled even when the empty workspace is read-only", async () => {
   const onAddFirstVideo = vi.fn().mockResolvedValue(undefined);
   await act(async () => root.render(<ManualTimeline open projectId="prj_first" timeline={undefined} media={[video]} fps={30}
-    canEdit onClose={vi.fn()} onMedia={vi.fn()} onAddFirstVideo={onAddFirstVideo} />));
+    canEdit={false} onClose={vi.fn()} onMedia={vi.fn()} onAddFirstVideo={onAddFirstVideo} />));
 
   const button = [...container.querySelectorAll<HTMLButtonElement>("button")].find(button => button.textContent?.includes("将首个视频添加到 V1"));
   expect(button).toBeDefined();
+  expect(button!.disabled).toBe(false);
   await act(async () => button!.click());
   expect(onAddFirstVideo).toHaveBeenCalledOnce();
 });

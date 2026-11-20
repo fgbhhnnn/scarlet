@@ -161,7 +161,7 @@ export function ManualTimeline({ open, projectId, timeline, media, fps, canEdit,
     {!canEdit && timeline && <p role="status">回到当前成片的预览后即可编辑。</p>}
     {!timeline && <>
       <p role="status">导入素材后即可编辑时间线。</p>
-      <button type="button" className={toolClass} disabled={!canEdit || !onAddFirstVideo || addingFirstVideo}
+      <button type="button" className={toolClass} disabled={!onAddFirstVideo || addingFirstVideo}
         onClick={() => void addFirstVideo()}>
         {addingFirstVideo ? "正在添加…" : "将首个视频添加到 V1"}
       </button>

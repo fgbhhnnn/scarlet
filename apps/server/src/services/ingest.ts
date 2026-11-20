@@ -13,7 +13,7 @@ import type { MediaWithStatus } from "../repo/projects.js";
 import { decodeImportFilename, importLinkFilename, type Task, type User } from "@scarlet/shared";
 import { cancelTask, createTask, hasTranscript, saveTask } from "./tasks.js";
 import { recordTaskFinished } from "../telemetry/events.js";
-import { availableTranscriptionProvider, getTranscriptionProvider, effectiveProviderName, type importTranscriptionPolicy, type TranscriptionProvider } from "../transcribe/index.js";
+import { availableTranscriptionProvider, getTranscriptionProvider, effectiveProviderName, transcriptionProviderIssue, type importTranscriptionPolicy, type TranscriptionProvider } from "../transcribe/index.js";
 import { claimTranscriptionWork, openTranscriptionWork, transcriptionIdentity, type TranscriptionResume } from "./transcriptionWork.js";
 import { alignmentVersion, alignsLanguage, alignTranscript, measureInTurn, readsEnglishSpeech, type AlignmentCheckpoint } from "../transcribe/wordAlign.js";
 import { EmissionFile } from "../transcribe/emissions.js";
@@ -443,21 +443,21 @@ async function ingestInBackground(ctx: Ctx, projectId: string, asset: MediaAsset
 }
 
 /** The policy, the project and the recording must still qualify when the job is claimed. */
-async function startImportTranscription(ctx: Ctx, projectId: string, asset: MediaAsset) {
+export async function startImportTranscription(ctx: Ctx, projectId: string, asset: MediaAsset) {
   if (!asset.transcriptionOnImport || asset.hasAudio === false || asset.kind === "image") return;
   const policy = ctx.repos.settings.transcriptionPolicy();
   if (asset.transcriptionOnImport !== policy.settings.provider || asset.transcriptionRevisionOnImport !== policy.revision) return;
   const provider = await availableTranscriptionProvider(ctx, policy);
-  if (!provider) return;
+  const unavailableReason = provider ? undefined : await transcriptionProviderIssue(ctx, policy.settings.provider, policy.settings);
   const checked = ctx.db.transaction(() => {
     ctx.settings();
     if (ctx.shutdown.aborted || policy.signal.aborted) return;
     const project = ctx.repos.projects.header(projectId);
     const current = ctx.repos.projects.getMedia(asset.id);
     if (!project || project.mediaPaused || project.archived || current?.status !== "ready" || current.projectId !== projectId ||
-        current.transcriptionOnImport !== provider.name || current.transcriptionRevisionOnImport !== policy.revision ||
+        current.transcriptionOnImport !== policy.settings.provider || current.transcriptionRevisionOnImport !== policy.revision ||
         current.transcriptId || hasTranscript(ctx, asset.id) || latestTranscription(ctx, projectId, asset.id)) return;
-    return { current, claim: claimTranscription(ctx, projectId, current, provider, provider.name) };
+    return { current, claim: claimTranscription(ctx, projectId, current, provider, provider?.name ?? policy.settings.provider, undefined, "interrupt", undefined, unavailableReason) };
   }, "immediate")();
   if (checked) return runClaimedTranscription(ctx, projectId, checked.current, checked.claim);
 }
@@ -576,7 +576,7 @@ function startWithProvider(ctx: Ctx, projectId: string, asset: MediaAsset, provi
 
 /** Called with the write lock held. Keep an explicitly selected provider for an interrupted job. */
 function claimTranscription(ctx: Ctx, projectId: string, asset: MediaAsset, provider: TranscriptionProvider | null, name: string, chosen?: string,
-  whilePaused: "interrupt" | "refuse" = "interrupt", resume?: TranscriptionResume | "missing") {
+  whilePaused: "interrupt" | "refuse" = "interrupt", resume?: TranscriptionResume | "missing", unavailableReason?: string) {
   const project = ctx.repos.projects.header(projectId);
   if (!project) throw notFound(`project ${projectId}`);
   if (whilePaused === "refuse" && project.mediaPaused) throw conflict("media_paused", "Resume caching to transcribe this recording.");
@@ -610,16 +610,16 @@ function claimTranscription(ctx: Ctx, projectId: string, asset: MediaAsset, prov
   });
   ctx.db.prepare("UPDATE tasks SET worker_pid = ?, worker_seen_at = ? WHERE id = ?").run(process.pid, now(), task.id);
   claimTranscriptionWork(ctx, asset.id, task, inherit);
-  return { task, started: true, provider, name };
+  return { task, started: true, provider, name, unavailableReason };
 }
 
-function runClaimedTranscription(ctx: Ctx, projectId: string, asset: MediaAsset, { task, started, provider, name }: ReturnType<typeof claimTranscription>) {
+function runClaimedTranscription(ctx: Ctx, projectId: string, asset: MediaAsset, { task, started, provider, name, unavailableReason }: ReturnType<typeof claimTranscription>) {
   if (!started) return { task, done: ctx.transcriptions.get(task.id)?.done ?? Promise.resolve(null) };
   if (!provider) {
     const failed = saveTask(ctx, {
       ...task,
       state: "failed",
-      error: `transcription provider "${name}" is not configured`,
+      error: unavailableReason ?? `transcription provider "${name}" is not configured`,
       finishedAt: now(),
     });
     recordTaskFinished(ctx, failed);

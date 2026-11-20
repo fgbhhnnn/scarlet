@@ -290,7 +290,13 @@ it.each(["missing", "removed"] as const)("imports audio without a transcription 
   await api("PATCH", projectsPath(), { mediaPaused: false });
   await Promise.all([...ctx.pending]);
   expect(ctx.repos.projects.getMedia(media.id)?.status).toBe("ready");
-  expect(ctx.repos.tasks.count()).toBe(0);
+  const transcription = ctx.repos.tasks.select("kind = 'transcribe'");
+  if (state === "removed") {
+    expect(transcription).toHaveLength(1);
+    expect(transcription[0]).toMatchObject({ state: "failed", error: "The selected model file is missing, empty or unreadable." });
+  } else {
+    expect(transcription).toHaveLength(0);
+  }
 });
 
 function transcriptionRows(mediaId: string) {

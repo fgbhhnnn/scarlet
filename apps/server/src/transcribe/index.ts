@@ -136,6 +136,17 @@ export async function availableTranscriptionProvider(ctx: Ctx, policy = ctx.repo
   return getTranscriptionProvider(ctx, undefined, policy, local);
 }
 
+/** A durable, editor-facing reason when an import's selected transcription runtime cannot start. */
+export async function transcriptionProviderIssue(ctx: Ctx, provider = ctx.settings().transcription.provider,
+  settings = ctx.settings().transcription): Promise<string> {
+  if (provider === "none") return "Transcription is disabled in Settings.";
+  if (provider === "openai") return ctx.env.openaiKey
+    ? "OpenAI transcription is unavailable."
+    : "OpenAI transcription needs an API key.";
+  return await localRuntimeIssue(resolveLocalRuntime(ctx, { ...settings, provider: "whispercpp" }))
+    ?? "Local transcription is unavailable.";
+}
+
 /**
  * Snapshot before reading the import request, which may stream footage for several minutes.
  * Every configured provider, bundled Whisper included, transcribes at import: a dialogue pass reads

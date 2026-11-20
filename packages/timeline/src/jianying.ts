@@ -15,6 +15,8 @@ export interface JianyingDraftOptions {
   sources: ReadonlyMap<string, HandoffSource>;
   /** The copied materials' absolute local paths, keyed by Scarlet media ID. */
   mediaPaths: ReadonlyMap<string, string>;
+  /** Audio extracted from video sources when a timeline uses them on an audio track. */
+  detachedAudio?: ReadonlyMap<string, { source: HandoffSource; path: string }>;
   colorStills?: ReadonlyMap<string, HandoffSource>;
   colorPaths?: ReadonlyMap<string, string>;
 }
@@ -183,8 +185,9 @@ export function buildJianyingDraft(project: Project, timeline: Timeline, options
           if (type === "text" || (type === "audio" && clip.kind === "color")) continue;
           const isColor = clip.kind === "color";
           const key = isColor ? clip.color : clip.mediaId;
-          const source = isColor ? options.colorStills?.get(key) : options.sources.get(key);
-          const path = isColor ? options.colorPaths?.get(key) : options.mediaPaths.get(key);
+          const detached = type === "audio" ? options.detachedAudio?.get(key) : undefined;
+          const source = isColor ? options.colorStills?.get(key) : detached?.source ?? options.sources.get(key);
+          const path = isColor ? options.colorPaths?.get(key) : detached?.path ?? options.mediaPaths.get(key);
           if (!source || !path) throw new Error("Missing copied material for Jianying draft: " + key);
           if (type === "audio" ? !source.hasAudio : !source.hasVideo) continue;
 

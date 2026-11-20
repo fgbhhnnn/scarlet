@@ -5,6 +5,7 @@ import { useProjectStore } from "../../stores/project";
 import { MenuItem } from "../shell/WorkspaceNavigation";
 import { Icon } from "../ui/primitives";
 import { ProgressLine } from "../ui/ProgressLine";
+import { zh } from "../../lib/zh";
 
 /**
  * A reason to open Export, or nothing: the project's export stopped and the Export sheet hasn't shown why yet. The menu
@@ -13,7 +14,7 @@ import { ProgressLine } from "../ui/ProgressLine";
 export function useExportWarning(): string | undefined {
   const projectId = useProjectStore(s => s.current?.id);
   const stopped = useExports(s => { const job = projectId ? s.jobs[projectId] : undefined; return job?.phase === "failed" && !job.seen; });
-  return stopped ? "The export didn’t finish" : undefined;
+  return stopped ? "导出未完成" : undefined;
 }
 
 /** The header button and menu row follow the same job when the editor closes the export sheet. */
@@ -24,16 +25,16 @@ function useExportStatus(): { status?: string; file?: string; running?: boolean;
   // A percent only while it moves, as in the sheet.
   if (job && "cancel" in job) {
     const progress = exportCounting(job) ? job.progress : undefined;
-    return { status: progress === undefined ? "Exporting" : `Exporting ${pct(progress)}`, running: job.phase !== "choosing", progress };
+    return { status: progress === undefined ? zh.export.exporting : `正在${zh.export.exporting} ${pct(progress)}`, running: job.phase !== "choosing", progress };
   }
-  return job?.phase === "done" && job.context === context ? { status: "Exported", file: job.path.split(/[\\/]/).pop() } : {};
+  return job?.phase === "done" && job.context === context ? { status: zh.export.exported, file: job.path.split(/[\\/]/).pop() } : {};
 }
 
 export function ExportButton({ onOpen }: { onOpen(): void }) {
   const { status, running, progress } = useExportStatus();
   const description = running ? status : undefined;
   return <button type="button" className="btn-quiet simple-export" aria-haspopup="dialog" title={description} aria-description={description} onClick={onOpen}>
-    Export{running && <ProgressLine progress={progress} />}
+    {zh.terms.export}{running && <ProgressLine progress={progress} />}
   </button>;
 }
 
@@ -45,7 +46,7 @@ export function ExportMenuItem({ onOpen, close }: { onOpen(): void; close(): voi
   const { status, file } = useExportStatus();
   const warning = useExportWarning();
   return <MenuItem onClick={() => { close(); onOpen(); }} title={warning ?? file}>
-    <Icon name="export" />Export
+    <Icon name="export" />{zh.terms.export}
     {status && <span className="menu-value">{status}</span>}
     {warning && <span className="menu-dot" role="img" aria-label={warning} />}
   </MenuItem>;

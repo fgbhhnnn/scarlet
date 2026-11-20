@@ -1078,18 +1078,18 @@ it("shows an export again after a reload or restart, saves it to the destination
   await act(() => resumeExports());
   await act(() => resumeExports());
   await show(<ExportSheet hasCut onClose={() => {}} />);
-  expect(container.textContent).toContain("Exporting · 42%");
+  expect(container.textContent).toContain("正在导出 · 42%");
   expect(container.querySelector("progress")!.getAttribute("aria-label")).toBe("Export progress for Interview final.mp4");
   expect(container.querySelector("#export-resolution")!.textContent).toMatch(/ × 480$/);
-  expect(button("Cancel export")).toBeDefined();
+  expect(button("取消导出")).toBeDefined();
   // The engine restarting mid-export is not a failure.
   state = { ...kept, state: "queued" };
   await act(() => new Promise(resolve => setTimeout(resolve, 900)));
-  expect(container.textContent).toContain("Exporting · 42%");
+  expect(container.textContent).toContain("正在导出 · 42%");
   state = { ...kept, state: "done", progress: 1, path: "kept-export.mp4" };
   await act(async () => { await vi.waitFor(() => expect(save).toHaveBeenCalledExactlyOnceWith(31, api.renderFileUrl(kept.id)), { timeout: 2500 }); });
   await act(async () => { await vi.waitFor(() => expect(release).toHaveBeenCalledExactlyOnceWith(kept.id, owner)); });
-  expect(button("Show in folder")).toBeDefined();
+  expect(button("在文件夹中显示")).toBeDefined();
   expect(request).not.toHaveBeenCalled();
   expect(choose).not.toHaveBeenCalled();
   expect(desktop.keepVideoExport).not.toHaveBeenCalled();
@@ -1110,7 +1110,7 @@ it("chooses the MP4 destination before requesting a current-format render, then 
   await click(exportButton()!);
   expect(choose).toHaveBeenCalledWith(expect.stringMatching(/\.mp4$/));
   expect(start).not.toHaveBeenCalled();
-  expect(button("Star on GitHub")).toBeUndefined();
+  expect(button("在 GitHub 上 Star")).toBeUndefined();
   choose.mockResolvedValue({ ticket: 17, path: "/chosen/cut.mp4" });
   await click(exportButton()!);
   expect(start).toHaveBeenCalledWith(PRJ, { version: data.project.head, kind: "full", quality: "delivery", owner: expect.any(String),
@@ -1122,17 +1122,17 @@ it("chooses the MP4 destination before requesting a current-format render, then 
   expect(exportButton()).not.toBeNull();
   await act(async () => { await vi.waitFor(() => expect(save).toHaveBeenCalledWith(17, api.renderFileUrl(render.id)), { timeout: 1500 }); });
   expect(poll).toHaveBeenCalledWith(render.id);
-  expect(button("Star on GitHub")).toBeUndefined();
+  expect(button("在 GitHub 上 Star")).toBeUndefined();
   await act(async () => finishSave("/chosen/cut.mp4"));
-  expect(button("Star on GitHub")).toBeDefined();
+  expect(button("在 GitHub 上 Star")).toBeDefined();
   expect(openUrl).not.toHaveBeenCalled();
-  await click(button("Star on GitHub")!);
+  await click(button("在 GitHub 上 Star")!);
   expect(openUrl).toHaveBeenCalledExactlyOnceWith("https://github.com/Forward-Future/scarlet");
-  expect(button("Star on GitHub")).toBeUndefined();
-  expect(button("Show in folder")).toBeUndefined();
+  expect(button("在 GitHub 上 Star")).toBeUndefined();
+  expect(button("在文件夹中显示")).toBeUndefined();
   await act(() => useProjectStore.setState({ current: data }));
   const reveal = vi.spyOn(desktop, "revealPath").mockResolvedValue();
-  await click(button("Show in folder")!);
+  await click(button("在文件夹中显示")!);
   expect(reveal).toHaveBeenCalledWith("/chosen/cut.mp4");
 });
 
@@ -1145,14 +1145,14 @@ it("offers a star after a successful save and remembers the invitation across ex
   await show(<><ExportSheet hasCut onClose={() => {}} /><ExportStarNotice /></>);
   await click(exportButton()!);
   expect(container.textContent).toContain("Save failed");
-  expect(button("Star on GitHub")).toBeUndefined();
-  await click(button("Retry")!);
-  await click(labeled("Dismiss GitHub invitation"));
+  expect(button("在 GitHub 上 Star")).toBeUndefined();
+  await click(button("重试")!);
+  await click(labeled("关闭提示"));
   await click(exportButton()!);
-  expect(button("Star on GitHub")).toBeUndefined();
+  expect(button("在 GitHub 上 Star")).toBeUndefined();
   await act(() => useUiStore.setState({ exportStarNotice: "unseen" }));
   await click(exportButton()!);
-  expect(button("Star on GitHub")).toBeUndefined();
+  expect(button("在 GitHub 上 Star")).toBeUndefined();
 });
 
 it("discards the chosen destination on failure or cancellation, and retries from the current edit", async () => {
@@ -1166,14 +1166,14 @@ it("discards the chosen destination on failure or cancellation, and retries from
   await click(exportButton()!);
   expect(container.textContent).toContain("Disk full");
   expect(discard).toHaveBeenCalledWith(8);
-  await click(button("Retry")!);
-  await click(button("Cancel export")!);
+  await click(button("重试")!);
+  await click(button("取消导出")!);
   expect(release).toHaveBeenCalledWith(render.id, request.mock.calls[1]![1].owner);
   await act(async () => { await vi.waitFor(() => expect(discard).toHaveBeenCalledWith(9), { timeout: 1500 }); });
   expect(request).toHaveBeenCalledTimes(2);
   expect(choose).toHaveBeenCalledTimes(2);
   expect(save).not.toHaveBeenCalled();
-  expect(button("Star on GitHub")).toBeUndefined();
+  expect(button("在 GitHub 上 Star")).toBeUndefined();
 });
 
 it("keeps the destination untouched if the cut changes while choosing where to export", async () => {
@@ -1194,13 +1194,13 @@ it("labels a saved file from an earlier edit and still exports the current video
   vi.spyOn(desktop, "discardVideoExport").mockResolvedValue();
   vi.spyOn(desktop, "finishVideoExport").mockResolvedValue("/chosen/cut.mp4");
   const reveal = vi.spyOn(desktop, "revealPath").mockResolvedValue();
-  const earlierEdit = () => container.querySelector('[role="status"]')?.textContent?.includes("Earlier edit");
+  const earlierEdit = () => container.querySelector('[role="status"]')?.textContent?.includes("较早版本");
   const request = vi.spyOn(api, "requestRender").mockImplementation(async (_id, body) => ({ render: {
     ...data.renders[0]!, id: "final", version: body.version!, kind: "full", quality: "delivery", range: null, state: "done" } }));
   await show(<ExportSheet hasCut onClose={() => {}} />);
   await click(exportButton()!);
-  await act(async () => { await vi.waitFor(() => expect(button("Show in folder")).toBeDefined()); });
-  expect(button("Close")).toBeDefined();
+  await act(async () => { await vi.waitFor(() => expect(button("在文件夹中显示")).toBeDefined()); });
+  expect(button("关闭")).toBeDefined();
   expect(earlierEdit()).toBe(false);
   // The saved file is still available if the edit changes while the sheet is open.
   const earlier = buildDb().timelines.ver_2!;
@@ -1208,11 +1208,11 @@ it("labels a saved file from an earlier edit and still exports the current video
   const edited = { ...data, project: { ...data.project, head: "ver_4" }, timeline: { ...earlier, version: "ver_4" } };
   await act(async () => useProjectStore.setState({ current: edited }));
   expect(earlierEdit()).toBe(true);
-  await click(button("Show in folder")!);
+  await click(button("在文件夹中显示")!);
   expect(reveal).toHaveBeenCalledWith("/chosen/cut.mp4");
-  expect(button("Close")).toBeUndefined();
-  expect(button("Cancel")).toBeDefined();
-  expect(button("Advanced export")).toBeDefined();
+  expect(button("关闭")).toBeUndefined();
+  expect(button("取消")).toBeDefined();
+  expect(button("高级导出")).toBeDefined();
   expect(container.querySelector('[role="alert"]')?.textContent ?? "").toBe("");
   // Cancelling the chooser leaves the last successful file available.
   choose.mockResolvedValueOnce(null);
@@ -1223,14 +1223,14 @@ it("labels a saved file from an earlier edit and still exports the current video
   await show(<ExportSheet hasCut onClose={() => {}} />);
   expect(earlierEdit()).toBe(true);
   // A range picked from here starts as the whole of the video as it is now.
-  await selectOption(container.querySelector<HTMLButtonElement>("#export-range")!, "Custom range");
+  await selectOption(container.querySelector<HTMLButtonElement>("#export-range")!, "自定义范围");
   expect(Number(container.querySelector<HTMLInputElement>("#export-end")!.value.split(":")[1])).toBeCloseTo(timelineDuration(earlier), 1);
-  await selectOption(container.querySelector<HTMLButtonElement>("#export-range")!, /^Whole/);
+  await selectOption(container.querySelector<HTMLButtonElement>("#export-range")!, /^整段视频/);
   // Export is live and takes the newest version.
   expect(exportButton()!.disabled).toBe(false);
   await click(exportButton()!);
   expect(request).toHaveBeenLastCalledWith(PRJ, expect.objectContaining({ version: "ver_4" }));
-  await act(async () => { await vi.waitFor(() => expect(button("Show in folder")).toBeDefined()); });
+  await act(async () => { await vi.waitFor(() => expect(button("在文件夹中显示")).toBeDefined()); });
   expect(earlierEdit()).toBe(false);
   // Changes to the project settings distinguish exports even when the timeline version is the same.
   await act(async () => useProjectStore.setState({ current: { ...edited, project: { ...edited.project, settings: { ...edited.project.settings, width: 1280 } } } }));
@@ -1249,11 +1249,11 @@ it("asks for the file's name once, in the system's Save dialog, which opens on t
   vi.spyOn(desktop, "finishVideoExport").mockRejectedValue(new Error("Disk full"));
   await show(<ExportSheet hasCut onClose={() => {}} />);
   // The sheet has no box for the name and no row for the folder: what to export, the video's options, and one button.
-  expect([...container.querySelectorAll("form label")].filter(label => !label.closest("details")).map(label => label.textContent)).toEqual(["Format", "Range"]);
+  expect([...container.querySelectorAll("form label")].filter(label => !label.closest("details")).map(label => label.textContent)).toEqual(["格式", "范围"]);
   // The range starts on the whole video, by that name.
-  expect(container.querySelector("#export-range")!.textContent).toBe("Whole video");
+  expect(container.querySelector("#export-range")!.textContent).toBe("整段视频");
   expect(container.querySelector("form input, #export-folder")).toBeNull();
-  expect(exportButton()!.textContent).toBe("Export");
+  expect(exportButton()!.textContent).toBe("导出");
   await click(exportButton()!);
   // The dialog opens on the project's name, with nothing of the version in it.
   expect(choose).toHaveBeenCalledExactlyOnceWith(`${data.project.name}.mp4`);
@@ -1261,10 +1261,10 @@ it("asks for the file's name once, in the system's Save dialog, which opens on t
   expect(request).toHaveBeenCalledWith(PRJ, expect.objectContaining({ export: { name: "What's next? <final> | v2.mp4", ...picked } }));
   // The export failed. The button retries, and the dialog asks where to save again.
   expect(container.textContent).toContain("Disk full");
-  expect(exportButton()!.textContent).toBe("Retry");
+  expect(exportButton()!.textContent).toBe("重试");
   expect(exportButton()!.disabled).toBe(false);
   // Advanced export saves a folder, named for the project, for finishing the edit in another app.
-  await click(buttonByText("Advanced export")!);
+  await click(buttonByText("高级导出")!);
   await click(exportButton()!);
   expect(choose).toHaveBeenLastCalledWith(data.project.name);
 });
@@ -1275,27 +1275,27 @@ it("offers a folder for another app under Advanced export, saying what it holds 
   const save = vi.spyOn(desktop, "finishFolderExport").mockResolvedValue("/Users/me/Exports/Interview");
   vi.spyOn(desktop, "discardVideoExport").mockResolvedValue();
   await show(<ExportSheet hasCut onClose={() => {}} />);
-  await click(buttonByText("Advanced export")!);
+  await click(buttonByText("高级导出")!);
   // The video's own settings go; the folder's contents come instead.
   expect(container.querySelector("#export-range")).toBeNull();
   expect(container.querySelector("details")).toBeNull();
-  expect(container.textContent).toContain("A folder for finishing the edit in DaVinci Resolve, Final Cut Pro or Premiere Pro.");
-  expect(container.textContent).toContain("A copy of the footage");
-  expect(buttonByText("Back")).toBeTruthy();
+  expect(container.textContent).toContain("用于在其他剪辑软件中继续编辑的文件夹。");
+  expect(container.textContent).toContain("素材副本");
+  expect(buttonByText("返回")).toBeTruthy();
   await click(exportButton()!);
   expect(choose).toHaveBeenCalledExactlyOnceWith(data.project.name);
   expect(handoff).toHaveBeenCalledExactlyOnceWith(PRJ, data.project.head, "/Users/me/Exports/Interview");
   expect(save).toHaveBeenCalledExactlyOnceWith(7, [{ path: "Interview.fcpxml", text: "<fcpxml/>" }]);
   expect(container.textContent).toContain("Interview");
-  expect(buttonByText("Show in folder")).toBeTruthy();
+  expect(buttonByText("在文件夹中显示")).toBeTruthy();
 });
 
 it("goes back from Advanced export to the video's settings", async () => {
   await show(<ExportSheet hasCut onClose={() => {}} />);
-  await click(buttonByText("Advanced export")!);
-  await click(buttonByText("Back")!);
+  await click(buttonByText("高级导出")!);
+  await click(buttonByText("返回")!);
   expect(container.querySelector("#export-range")).not.toBeNull();
-  expect(buttonByText("Advanced export")).toBeTruthy();
+  expect(buttonByText("高级导出")).toBeTruthy();
 });
 
 it("saves a Jianying draft and its copied footage through the desktop folder export", async () => {
@@ -1311,16 +1311,16 @@ it("saves a Jianying draft and its copied footage through the desktop folder exp
   const render = vi.spyOn(api, "requestRender");
   vi.spyOn(desktop, "discardVideoExport").mockResolvedValue();
   await show(<ExportSheet hasCut onClose={() => {}} />);
-  await click(buttonByText("Advanced export")!);
-  await selectOption(container.querySelector<HTMLButtonElement>("#export-handoff-format")!, "Jianying draft (剪映)");
-  expect(container.textContent).toContain("Save in your Jianying draft library.");
+  await click(buttonByText("高级导出")!);
+  await selectOption(container.querySelector<HTMLButtonElement>("#export-handoff-format")!, "剪映草稿");
+  expect(container.textContent).toContain("保存到剪映草稿库。");
   expect(container.querySelector("#export-range")).toBeNull();
   await click(exportButton()!);
   expect(choose).toHaveBeenCalledExactlyOnceWith(data.project.name);
   expect(handoff).toHaveBeenCalledExactlyOnceWith(PRJ, data.project.head, path, "jianying");
   expect(save).toHaveBeenCalledExactlyOnceWith(17, files);
   expect(render).not.toHaveBeenCalled();
-  expect(buttonByText("Show in folder")).toBeTruthy();
+  expect(buttonByText("在文件夹中显示")).toBeTruthy();
 });
 
 it("exports captions as a sidecar, keeps the range, and does not start a video render", async () => {
@@ -1330,12 +1330,12 @@ it("exports captions as a sidecar, keeps the range, and does not start a video r
   vi.spyOn(desktop, "discardVideoExport").mockResolvedValue();
   await show(<ExportSheet hasCut onClose={() => {}} />);
   const formats = await openOptions(container.querySelector<HTMLButtonElement>("#export-format")!);
-  expect(formats.map(o => o.textContent)).toEqual(expect.arrayContaining(["Captions (.srt)", "Captions (.vtt)"]));
-  await act(() => formats.find(o => o.textContent?.includes("Captions (.srt)"))!.click());
+  expect(formats.map(o => o.textContent)).toEqual(expect.arrayContaining(["字幕 (.srt)", "字幕 (.vtt)"]));
+  await act(() => formats.find(o => o.textContent?.includes("字幕 (.srt)"))!.click());
   expect(container.querySelector("#export-range")!.hasAttribute("disabled") || container.querySelector("#export-range")!.getAttribute("aria-disabled")).toBeFalsy();
   expect(container.querySelector("#export-resolution")).toBeNull();
   expect(container.textContent).not.toContain("The timeline links to the original media");
-  await selectOption(container.querySelector<HTMLButtonElement>("#export-range")!, "Custom range");
+  await selectOption(container.querySelector<HTMLButtonElement>("#export-range")!, "自定义范围");
   await click(exportButton()!);
   expect(choose).toHaveBeenCalledWith(`${data.project.name}.srt`);
   expect(request).not.toHaveBeenCalled();
@@ -1347,7 +1347,7 @@ it("disables caption export when the video has no caption track", async () => {
   const timeline = { ...data.timeline!, tracks: data.timeline!.tracks.filter(t => t.kind !== "caption") };
   await act(async () => useProjectStore.setState({ current: { ...data, timeline } }));
   await show(<ExportSheet hasCut onClose={() => {}} />);
-  await selectOption(container.querySelector<HTMLButtonElement>("#export-format")!, /Captions \(\.srt\)/);
+  await selectOption(container.querySelector<HTMLButtonElement>("#export-format")!, /字幕 \(\.srt\)/);
   expect(exportButton()!.disabled).toBe(true);
   expect(container.textContent).toContain(NO_CAPTION_TRACK);
 });
@@ -1357,7 +1357,7 @@ it("tells a new project with no cut to add captions when captions are chosen", a
   await act(async () => useProjectStore.setState({ current: { ...data, timeline } }));
   await show(<ExportSheet hasCut={false} onClose={() => {}} />);
   expect(container.textContent).toContain("There’s no video to export yet.");
-  await selectOption(container.querySelector<HTMLButtonElement>("#export-format")!, /Captions \(\.srt\)/);
+  await selectOption(container.querySelector<HTMLButtonElement>("#export-format")!, /字幕 \(\.srt\)/);
   expect(exportButton()!.disabled).toBe(true);
   expect(container.textContent).toContain(NO_CAPTION_TRACK);
   expect(container.textContent).not.toContain("There’s no video to export yet.");
@@ -1365,8 +1365,8 @@ it("tells a new project with no cut to add captions when captions are chosen", a
 
 it("disables caption export when the range has no cues", async () => {
   await show(<ExportSheet hasCut onClose={() => {}} />);
-  await selectOption(container.querySelector<HTMLButtonElement>("#export-format")!, /Captions \(\.srt\)/);
-  await selectOption(container.querySelector<HTMLButtonElement>("#export-range")!, "Custom range");
+  await selectOption(container.querySelector<HTMLButtonElement>("#export-format")!, /字幕 \(\.srt\)/);
+  await selectOption(container.querySelector<HTMLButtonElement>("#export-range")!, "自定义范围");
   await act(() => {
     const set = (id: string, value: string) => {
       const field = container.querySelector<HTMLInputElement>(id)!;
@@ -1387,7 +1387,7 @@ it("does not throw when the chosen caption track is removed while Export is open
   const timeline = { ...data.timeline!, tracks: [...data.timeline!.tracks, extra] };
   await act(async () => useProjectStore.setState({ current: { ...data, timeline } }));
   await show(<ExportSheet hasCut onClose={() => {}} />);
-  await selectOption(container.querySelector<HTMLButtonElement>("#export-format")!, /Captions \(\.srt\)/);
+  await selectOption(container.querySelector<HTMLButtonElement>("#export-format")!, /字幕 \(\.srt\)/);
   await selectOption(container.querySelector<HTMLButtonElement>("#export-track")!, "Titles");
   const withoutTitles = { ...data.timeline!, tracks: data.timeline!.tracks };
   await act(async () => useProjectStore.setState({ current: { ...data, timeline: withoutTitles } }));
@@ -1397,7 +1397,7 @@ it("does not throw when the chosen caption track is removed while Export is open
 
 it("waits for the timeline of a new head before it exports captions", async () => {
   await show(<ExportSheet hasCut onClose={() => {}} />);
-  await selectOption(container.querySelector<HTMLButtonElement>("#export-format")!, /Captions \(\.srt\)/);
+  await selectOption(container.querySelector<HTMLButtonElement>("#export-format")!, /字幕 \(\.srt\)/);
   expect(exportButton()!.disabled).toBe(false);
   // An edit lands while the sheet is open: the head moves before its timeline is loaded.
   expect(container.textContent).not.toContain(LOADING_LATEST_EDIT);
@@ -1419,7 +1419,7 @@ it("offers a caption track picker only when more than one caption track is visib
   vi.spyOn(desktop, "discardVideoExport").mockResolvedValue();
   await act(async () => useProjectStore.setState({ current: { ...data, timeline } }));
   await show(<ExportSheet hasCut onClose={() => {}} />);
-  await selectOption(container.querySelector<HTMLButtonElement>("#export-format")!, /Captions \(\.vtt\)/);
+  await selectOption(container.querySelector<HTMLButtonElement>("#export-format")!, /字幕 \(\.vtt\)/);
   expect(container.querySelector("#export-track")!.textContent).toBe("Captions");
   await selectOption(container.querySelector<HTMLButtonElement>("#export-track")!, "Titles");
   expect(exportButton()!.disabled).toBe(true);
@@ -1442,16 +1442,16 @@ it("says an export is waiting to start or finishing, with no percent that would 
   const line = () => container.querySelector(".activity-progress + [role='status']")?.textContent;
   const reads = (text: string) => act(async () => { await vi.waitFor(() => expect(line()).toBe(text), { timeout: 2500 }); });
   // Behind other renders there is nothing to count: no "0%", and a bar with no value.
-  expect(line()).toBe("Waiting to start");
+  expect(line()).toBe("等待开始");
   expect(bar().hasAttribute("value")).toBe(false);
   state = { ...state, state: "running", progress: 0.42 };
-  await reads("Exporting · 42%");
+  await reads("正在导出 · 42%");
   expect(bar().position).toBe(0.42);
   // The engine counts the picture, which ends at 97%. The audio mix and the final join report nothing.
   state = { ...state, progress: 0.97 };
-  await reads("Finishing…");
+  await reads("正在完成…");
   expect(bar().hasAttribute("value")).toBe(false);
-  await click(button("Cancel export")!);
+  await click(button("取消导出")!);
 });
 
 it("maps a visible cut minute onto only the needed trimmed source chunks", () => {

@@ -6,6 +6,7 @@ import { useProjectStore } from "../../stores/project";
 import { desktop } from "../../lib/desktop";
 import { freedSpace, invalidateStorageScan } from "../../lib/storage";
 import { ConfirmDialog, Icon, Modal, Spinner, InlineError } from "../ui/primitives";
+import { zh } from "../../lib/zh";
 
 /** Deleted projects stay here for 30 days and can be restored with everything in them. */
 export function TrashButton() {
@@ -49,17 +50,17 @@ export function TrashButton() {
   return (
     <>
       <button className="btn-quiet" onClick={() => { setError(""); setOpen(true); }}>
-        <Icon name="trash" size={12} /> Trash ({items.length})
+        <Icon name="trash" size={12} /> 废纸篓 ({items.length})
       </button>
       <Modal
         open={open && !emptying}
         onClose={() => setOpen(false)}
-        title="Trash"
+        title="废纸篓"
         // The keyboard starts on the dialog: on the first Restore, Enter would put back a project nobody picked.
         focusSelf
         footer={
           <button className="btn-ghost" disabled={busy !== null} onClick={() => { setError(""); setEmptying(true); }}>
-            Empty Trash
+            清空废纸篓
           </button>
         }
       >
@@ -88,7 +89,7 @@ export function TrashButton() {
                   }
                 }}
               >
-                {busy === p.id && <Spinner className="size-3" />} Restore
+                {busy === p.id && <Spinner className="size-3" />} 恢复
               </button>
             </li>
           ))}
@@ -100,9 +101,9 @@ export function TrashButton() {
         open={open && emptying}
         danger
         onClose={() => setEmptying(false)}
-        title="Empty Trash?"
-        body={`Permanently delete ${items.map((p) => p.name).join(", ")}, with ${items.length === 1 ? "its" : "their"} edits and imported media? This ${freed ? `frees ${freed} and ` : ""}cannot be undone.`}
-        confirmLabel="Delete permanently"
+        title="清空废纸篓？"
+        body={`永久删除${items.map((p) => p.name).join("、")}及其剪辑和导入素材？${freed ? `将释放 ${freed}，` : ""}且无法撤销。`}
+        confirmLabel="永久删除"
         onConfirm={async () => {
           try {
             await api.cleanStorage({ kind: "trash", projects: items.map(({ id, deletedAt }) => ({ id, deletedAt })) });

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useUiStore } from "../../stores/ui";
+import { zh } from "../../lib/zh";
 
 type Tone = "warn" | "bad";
 
@@ -41,7 +42,7 @@ export function ConnectionStatus() {
       title="Live updates from the Scarlet engine (previews, progress, notes). Your work is saved either way."
     >
       <Dot tone={reconnecting ? "warn" : "bad"} pulse={reconnecting} />
-      {reconnecting ? "Reconnecting to Scarlet…" : "Offline: live updates paused"}
+      {reconnecting ? zh.shell.reconnecting : zh.shell.offline}
     </span>
   );
 }

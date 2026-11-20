@@ -95,3 +95,17 @@ it("initializes a new project's timeline before queuing the pass", async () => {
   expect(refreshHead).toHaveBeenCalledWith(PRJ);
   expect(createTask).toHaveBeenCalledWith(PRJ, expect.objectContaining({ context: { version: "ver_initialized", skillIds: undefined } }));
 });
+
+it("still creates the pass when the optional skills read fails", async () => {
+  const createTask = vi.spyOn(api, "createTask").mockImplementation(async (_projectId, body) => ({
+    task: { ...db.tasks[0]!, kind: "edit", instruction: body.instruction, state: "queued" },
+  }));
+  vi.spyOn(api, "skills").mockRejectedValue(new Error("skills unavailable"));
+  useSkillsStore.setState({ skills: [], status: "idle", error: null });
+  await act(async () => root.render(<AutoRoughCut importing={0} onQueued={vi.fn()} />));
+  await open();
+  await act(async () => start().click());
+
+  expect(createTask).toHaveBeenCalledOnce();
+  expect(document.querySelector("dialog")).toBeNull();
+});

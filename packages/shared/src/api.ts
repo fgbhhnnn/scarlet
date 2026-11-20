@@ -228,6 +228,7 @@ export const UpdateProjectRequest = z.object({
   expectedFormat: z.object({ settings: ProjectSettings, head: Id.nullable() }).optional(),
   archived: z.boolean().optional(),
   name: z.string().min(1).optional(),
+  providerId: z.string().trim().max(80).nullable().optional(),
   settings: ProjectSettings.partial().optional(),
   /** False once the editor dismisses the line in a short's chat that says which project it was made from. */
   sourceNotice: z.literal(false).optional(),
@@ -758,6 +759,7 @@ export const Task = z.object({
   /** Which agent runtime should run it. */
   agent: AgentId,
   model: z.string().optional(),
+  providerId: z.string().trim().max(80).optional(),
   effort: AgentEffort.optional(),
   /** Fast mode: quicker output, uses more of the plan (Claude fast mode, Codex fast tier). */
   fast: z.boolean().optional(),
@@ -776,6 +778,8 @@ export const Task = z.object({
       transcriptionProvider: z.string().max(40).optional(),
       /** The service a transcription ran with, so a run cut off by a quit starts again by itself only with that service. */
       transcribedWith: z.string().max(40).optional(),
+      /** The stage that failed, so retry can continue from its saved checkpoint. */
+      failedStage: z.string().trim().max(80).optional(),
       /** The local engine that ran, when this was a configured local transcription. */
       localModel: LocalTranscriptionModel.optional(),
       noteIds: z.array(Id).optional(),
@@ -999,6 +1003,7 @@ export const CreateTaskRequest = z.object({
   kind: TaskKind.default("edit"),
   agent: AgentId,
   model: z.string().optional(),
+  providerId: z.string().trim().max(80).optional(),
   effort: AgentEffort.optional(),
   fast: z.boolean().optional(),
   serviceTier: AgentOptionId.optional(),
@@ -1049,6 +1054,9 @@ export const RunChoice = z.object({
   effort: AgentEffort.optional(),
   fast: z.boolean().optional(),
   serviceTier: AgentOptionId.optional(),
+  providerId: z.string().trim().max(80).optional(),
+  /** Retry only the named failed stage when the task recorded one. */
+  stage: z.string().trim().max(80).optional(),
 });
 export type RunChoice = z.infer<typeof RunChoice>;
 
@@ -1183,6 +1191,7 @@ export const CompleteTaskRequest = z.object({
   engineLost: z.boolean().optional(),
   summary: z.string().optional(),
   error: z.string().optional(),
+  failedStage: z.string().trim().max(80).optional(),
   changeIds: z.array(Id).optional(),
 });
 
@@ -1419,6 +1428,15 @@ export { LocalTranscriptionModel };
 
 export type TelemetryUnavailable = "environment" | "unconfigured";
 
+export const ModelProviderConfig = z.object({
+  id: z.string().trim().min(1).max(80).regex(/^[A-Za-z0-9._-]+$/),
+  name: z.string().trim().min(1).max(120),
+  baseUrl: z.string().url().max(2048).transform(value => value.replace(/\/+$/, "")),
+  model: z.string().trim().min(1).max(200),
+  apiKey: z.string().min(1).max(4096).optional(),
+});
+export type ModelProviderConfig = z.infer<typeof ModelProviderConfig>;
+
 export const ServerSettings = z.object({
   telemetryEnabled: z.boolean().default(true),
   /** Transcription provider: "openai" (API key), "whispercpp" (local binary), "none" (no engine in this build: not a choice the editor can make). */
@@ -1437,6 +1455,14 @@ export const ServerSettings = z.object({
     provider: z.enum(["anthropic", "openai", "gemini", "none"]).default("none"),
     model: z.string().optional(),
   }),
+  /** OpenAI-compatible model providers. API keys are never returned by the settings API. */
+  modelProviders: z.array(ModelProviderConfig).max(32).superRefine((items, ctx) => {
+    const seen = new Set<string>();
+    for (const item of items) {
+      if (seen.has(item.id)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "provider ids must be unique" });
+      seen.add(item.id);
+    }
+  }).default([]),
   render: z.object({
     /** Seconds of context on each side of a change clip. */
     handleSeconds: z.number().min(0).default(1.5),
@@ -1450,6 +1476,10 @@ export const ServerSettings = z.object({
   checkIn: CheckIn.default("balanced"),
 });
 export type ServerSettings = z.infer<typeof ServerSettings>;
+export const ModelProviderTestRequest = ModelProviderConfig.partial().extend({ providerId: z.string().trim().min(1).max(80).optional() });
+export type ModelProviderTestRequest = z.infer<typeof ModelProviderTestRequest>;
+export const ModelProviderTestResponse = z.object({ ok: z.boolean(), providerId: z.string().optional(), model: z.string().optional(), error: z.string().optional() });
+export type ModelProviderTestResponse = z.infer<typeof ModelProviderTestResponse>;
 
 export function selectedLocalModel(settings: Pick<ServerSettings["transcription"], "localModel" | "whisperCppPath" | "whisperModelPath">): LocalTranscriptionModel {
   return settings.localModel ?? (settings.whisperCppPath || settings.whisperModelPath ? "custom" : "crisperwhisper");

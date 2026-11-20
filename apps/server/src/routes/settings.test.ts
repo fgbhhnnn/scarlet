@@ -1,7 +1,7 @@
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { afterEach, beforeEach, expect, it } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { ServerSettings } from "@scarlet/shared";
 import { createApp, type ScarletApp } from "../app.js";
 import { accessToken } from "../auth.js";
@@ -44,6 +44,46 @@ it("clears a field sent as null, and keeps one the patch leaves out", async () =
   const stored = JSON.parse((app.ctx.db.prepare("SELECT json FROM settings WHERE id = 1").get() as { json: string }).json);
   expect(stored.transcription).not.toHaveProperty("language");
   expect(stored.noteCleanup).not.toHaveProperty("model");
+});
+
+it("validates OpenAI-compatible providers, preserves keys across redacted updates, and never returns the key", async () => {
+  const saveResponse = await app.app.request("/api/settings", {
+    method: "PATCH", headers: { Authorization: `Bearer ${accessToken(app.ctx)}`, "content-type": "application/json" },
+    body: JSON.stringify({ modelProviders: [{ id: "local", name: "Local", baseUrl: "http://127.0.0.1:9000/v1/", model: "qwen", apiKey: "secret-provider-key" }] }),
+  });
+  expect(saveResponse.status).toBe(200);
+  const saved = await saveResponse.json() as { settings: Record<string, unknown> };
+  expect(saved.settings.modelProviders).toEqual([{ id: "local", name: "Local", baseUrl: "http://127.0.0.1:9000/v1", model: "qwen" }]);
+  const read = await (await app.app.request("/api/settings", { headers: { Authorization: `Bearer ${accessToken(app.ctx)}` } })).json() as { settings: Record<string, unknown> };
+  expect(JSON.stringify(read)).not.toContain("secret-provider-key");
+  await app.ctx.repos.settings.update({ modelProviders: [{ id: "local", name: "Renamed", baseUrl: "http://127.0.0.1:9000/v1", model: "qwen" }] });
+  expect(app.ctx.repos.settings.provider("local")?.apiKey).toBe("secret-provider-key");
+  const duplicate = await app.app.request("/api/settings", {
+    method: "PATCH", headers: { Authorization: `Bearer ${accessToken(app.ctx)}`, "content-type": "application/json" },
+    body: JSON.stringify({ modelProviders: [{ id: "local", name: "A", baseUrl: "http://a.test", model: "a" }, { id: "local", name: "B", baseUrl: "http://b.test", model: "b" }] }),
+  });
+  expect(duplicate.status).toBe(400);
+});
+
+it("tests a configured provider without logging authentication details", async () => {
+  await app.ctx.repos.settings.update({ modelProviders: [{ id: "local", name: "Local", baseUrl: "http://127.0.0.1:9000/v1", model: "qwen", apiKey: "secret-provider-key" }] });
+  const fetch = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({ choices: [{ message: { content: "pong" } }] }), { status: 200 }));
+  const response = await app.app.request("/api/settings/model-providers/test", {
+    method: "POST", headers: { Authorization: `Bearer ${accessToken(app.ctx)}`, "content-type": "application/json" }, body: JSON.stringify({ providerId: "local" }),
+  });
+  expect(response.status).toBe(200);
+  expect(await response.json()).toEqual({ ok: true, providerId: "local", model: "qwen" });
+  expect(fetch.mock.calls[0]?.[1]).toMatchObject({ headers: { authorization: "Bearer secret-provider-key" } });
+  fetch.mockRestore();
+  const logs: string[] = [];
+  const failure = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("bad", { status: 401 }));
+  const failed = await app.app.request("/api/settings/model-providers/test", {
+    method: "POST", headers: { Authorization: `Bearer ${accessToken(app.ctx)}`, "content-type": "application/json" }, body: JSON.stringify({ providerId: "local" }),
+  });
+  logs.push(JSON.stringify(await failed.json()));
+  expect(failed.status).toBe(502);
+  expect(logs.join(" ")).not.toContain("secret-provider-key");
+  failure.mockRestore();
 });
 
 it("says whether the speech model the editor pointed to is there, and otherwise where Scarlet's own stands", async () => {

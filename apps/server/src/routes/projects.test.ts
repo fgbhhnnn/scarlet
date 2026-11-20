@@ -58,6 +58,16 @@ it("reads live project metadata without loading timelines or counting project ac
   for (const view of ["project", "header"]) expect((await api("GET", path + "?view=" + view)).status).toBe(404);
 });
 
+it("applies and validates a project model provider override", async () => {
+  workspace.ctx.repos.settings.update({ modelProviders: [{ id: "local", name: "Local", baseUrl: "http://127.0.0.1:9000/v1", model: "qwen", apiKey: "secret" }] });
+  const updated = await api("PATCH", `/projects/${project.id}`, { providerId: "local" });
+  expect(updated.status).toBe(200);
+  expect((await updated.json()).project.providerId).toBe("local");
+  const unknown = await api("PATCH", `/projects/${project.id}`, { providerId: "missing" });
+  expect(unknown.status).toBe(400);
+  expect((await unknown.json()).error.code).toBe("unknown_provider");
+});
+
 it("projects simultaneous edit lists from one history read and returns just the requested threads", async () => {
   const { ctx } = workspace;
   const { version } = storeVersion(ctx, project.id, timelineFromKeepRanges(project.id, "camera", [{ start: 0, end: 120 }]), { parent: null });

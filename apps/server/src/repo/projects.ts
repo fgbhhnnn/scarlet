@@ -16,6 +16,7 @@ interface ProjectRow {
   editing_paused: number;
   archived: number;
   branch: string;
+  provider_id?: string | null;
   id: string;
   name: string;
   settings: string;
@@ -142,11 +143,11 @@ export class ProjectsRepo {
     const ts = now();
     this.db
       .prepare(
-        `INSERT INTO projects (id, name, settings, head, archived, created_at, updated_at, format_set, source, source_notice)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO projects (id, name, settings, head, archived, created_at, updated_at, format_set, source, source_notice, provider_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(p.id, p.name, JSON.stringify(p.settings), p.head, Number(p.archived ?? false), p.createdAt ?? ts, p.updatedAt ?? ts, Number(formatSet),
-        p.source ? JSON.stringify({ projectId: p.source.projectId, name: p.source.name }) : null, Number(!!p.source?.notice));
+      p.source ? JSON.stringify({ projectId: p.source.projectId, name: p.source.name }) : null, Number(!!p.source?.notice), p.providerId ?? null);
     return this.get(p.id)!;
   }
 
@@ -165,7 +166,7 @@ export class ProjectsRepo {
    * Update name/settings/head (media is managed through the media methods). "Last edited" moves only when the video
    * does: a new head, or a setting that changes it. A new name, archiving and pausing its media leave it where it was.
    */
-  update(id: string, patch: { mediaPaused?: boolean; name?: string; archived?: boolean; settings?: Partial<ProjectSettings>; head?: string | null; sourceNotice?: false }): Project {
+  update(id: string, patch: { mediaPaused?: boolean; name?: string; archived?: boolean; settings?: Partial<ProjectSettings>; head?: string | null; sourceNotice?: false; providerId?: string | null }): Project {
     const row = this.db.prepare("SELECT * FROM projects WHERE id = ?").get(id) as ProjectRow | undefined;
     if (!row) throw new Error(`project ${id} not found`);
     const before = ProjectSettings.parse(JSON.parse(row.settings));
@@ -174,7 +175,7 @@ export class ProjectsRepo {
     this.db
       .prepare(
         `UPDATE projects SET name = coalesce(?, name), settings = coalesce(?, settings),
-           head = CASE WHEN ? THEN ? ELSE head END, archived = coalesce(?, archived), media_paused = coalesce(?, media_paused),
+           head = CASE WHEN ? THEN ? ELSE head END, archived = coalesce(?, archived), media_paused = coalesce(?, media_paused), provider_id = CASE WHEN ? THEN ? ELSE provider_id END,
            format_set = CASE WHEN ? THEN 1 ELSE format_set END, updated_at = CASE WHEN ? THEN ? ELSE updated_at END WHERE id = ?`,
       )
       .run(
@@ -182,7 +183,7 @@ export class ProjectsRepo {
         patch.settings ? JSON.stringify(settings) : null,
         Number(patch.head !== undefined), patch.head ?? null,
         patch.archived === undefined ? null : Number(patch.archived),
-        patch.mediaPaused === undefined ? null : Number(patch.mediaPaused),
+        patch.mediaPaused === undefined ? null : Number(patch.mediaPaused), Number(patch.providerId !== undefined), patch.providerId ?? null,
         Number(patch.settings !== undefined || !!patch.head), Number(edited), now(),
         id,
       );
@@ -310,6 +311,6 @@ function projectHeader(row: ProjectRow, styleGuide = true): Omit<Project, "media
   const made = row.source ? JSON.parse(row.source) as { projectId: string; name: string } : undefined;
   const source = made && { projectId: made.projectId, name: row.source_name ?? made.name,
     ...(row.source_notice ? { notice: true } : {}), ...(!row.source_name || row.source_deleted ? { gone: true } : {}) };
-  return Header.parse({ ...(styleGuide && row.style_guide && { styleGuide: JSON.parse(row.style_guide) }), ...(source && { source }), id: row.id, completedThreads: JSON.parse(row.completed_threads), name: row.name, mediaPaused: !!row.media_paused, editingPaused: !!row.editing_paused, archived: Boolean(row.archived), branch: row.branch, settings: JSON.parse(row.settings), head: row.head,
+  return Header.parse({ ...(styleGuide && row.style_guide && { styleGuide: JSON.parse(row.style_guide) }), ...(source && { source }), id: row.id, completedThreads: JSON.parse(row.completed_threads), name: row.name, mediaPaused: !!row.media_paused, editingPaused: !!row.editing_paused, archived: Boolean(row.archived), branch: row.branch, ...(row.provider_id && { providerId: row.provider_id }), settings: JSON.parse(row.settings), head: row.head,
     createdAt: row.created_at, updatedAt: row.updated_at, rowRevision: row.row_revision });
 }

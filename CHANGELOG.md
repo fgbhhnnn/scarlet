@@ -7,6 +7,7 @@ Add one line under today's date for each change an editor would notice. Leave ou
 ## November 20, 2026
 
 - Start a Chinese dialogue rough cut from the project toolbar and review the suggested cuts in the workspace.
+- Advanced export can save a Jianying (剪映) draft with the current edit and a copy of the footage.
 
 ## November 19, 2026
 

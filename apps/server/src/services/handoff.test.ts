@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -38,6 +38,73 @@ it("gives each source, generated solid and subtitle file a distinct name in the 
     expect(subtitleFiles).toMatchObject([{ text: expect.stringContaining("First caption") }, { text: expect.stringContaining("Second\ncaption") }]);
     const readme = files.find(file => file.path === "Read me.txt");
     for (const file of subtitleFiles) expect(readme).toMatchObject({ text: expect.stringContaining(file.path) });
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+it("exports the chosen Jianying draft and points its clip at the bundled copy", async () => {
+  const root = await mkdtemp(join(tmpdir(), "scarlet-jianying-"));
+  try {
+    const ctx = { paths: { media: () => root, tmp: root } } as unknown as Ctx;
+    const project = createProject("Interview", { width: 1080, height: 1920, fps: 30 });
+    const sourceFile = join(root, "source.mp4");
+    await writeFile(sourceFile, "media");
+    project.media = [{ id: "camera", kind: "video", name: "口播.mp4", path: "source.mp4", width: 1080, height: 1920, duration: 10 }];
+    const timeline = emptyTimeline(project.id);
+    timeline.tracks = [{ ...makeTrack("video", "Video", "video"), clips: [makeMediaClip("camera", 1, 3, 2)] }];
+    const folder = join(root, "剪映草稿");
+
+    const { files, mediaBytes } = await buildHandoff(ctx, project, timeline, folder, undefined, "jianying");
+    expect(mediaBytes).toBe(5);
+    expect(files.map(file => file.path)).toEqual(["draft_content.json", "draft_meta_info.json", "Media/口播.mp4"]);
+    expect(files[2]).toEqual({ path: "Media/口播.mp4", source: sourceFile, size: 5 });
+    const [draftFile, metadataFile] = files;
+    if (!draftFile || !("text" in draftFile) || !metadataFile || !("text" in metadataFile)) throw new Error("Expected two draft JSON files");
+    const draft = JSON.parse(draftFile.text);
+    const [video] = draft.materials.videos;
+    expect(draft.canvas_config).toMatchObject({ width: 1080, height: 1920 });
+    expect(video.path).toBe(join(folder, "Media", "口播.mp4"));
+    expect(draft.tracks[0].segments[0]).toMatchObject({
+      material_id: video.id,
+      source_timerange: { start: 1_000_000, duration: 2_000_000 },
+      target_timerange: { start: 2_000_000, duration: 2_000_000 },
+    });
+    expect(JSON.parse(metadataFile.text)).toMatchObject({ draft_name: "剪映草稿" });
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+it("copies detached sound as audio when an audio track references video footage", async () => {
+  const root = await mkdtemp(join(tmpdir(), "scarlet-jianying-detached-"));
+  try {
+    await runCapture("ffmpeg", ["-v", "error", "-f", "lavfi", "-i", "color=blue:s=64x64:r=24",
+      "-f", "lavfi", "-i", "sine=frequency=440", "-t", "0.5", "-c:v", "mpeg4", "-c:a", "aac", join(root, "source.mp4")]);
+    const ctx = { paths: { media: () => root, tmp: root } } as unknown as Ctx;
+    const project = createProject("Detached", { width: 64, height: 64 });
+    project.media = [{
+      id: "video", kind: "video", name: "source.mp4", path: "source.mp4", duration: 0.5, hasAudio: true, width: 64, height: 64,
+    }];
+    const timeline = emptyTimeline(project.id);
+    timeline.tracks = [
+      { ...makeTrack("video", "Picture"), clips: [{ ...makeMediaClip("video", 0, 0.5, 0), volume: 0 }] },
+      { ...makeTrack("audio", "Detached"), clips: [{ ...makeMediaClip("video", 0, 0.5, 0), audioFadeIn: 0.04 }] },
+    ];
+
+    const folder = join(root, "Draft");
+    const { files } = await buildHandoff(ctx, project, timeline, folder, undefined, "jianying");
+    const draftFile = files.find(file => file.path === "draft_content.json");
+    if (!draftFile || !("text" in draftFile)) throw new Error("Draft content missing");
+    const draft = JSON.parse(draftFile.text);
+    const wav = files.find(file => file.path.endsWith(".wav"));
+    if (!wav || !("source" in wav)) throw new Error("Detached audio missing");
+
+    expect(draft.materials.audios[0].path).toBe(join(folder, wav.path));
+    const fade = draft.materials.audio_fades[0];
+    expect(fade.fade_in_duration).toBe(40_000);
+    expect(draft.tracks[1].segments[0].extra_material_refs).toContain(fade.id);
+    expect(await readFile(wav.source).then(bytes => bytes.toString("ascii", 0, 4))).toBe("RIFF");
   } finally {
     await rm(root, { recursive: true, force: true });
   }

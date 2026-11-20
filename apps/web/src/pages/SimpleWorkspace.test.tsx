@@ -6142,8 +6142,14 @@ it("opens Media, Export and History from the header and keeps project tools in t
   expect(moreButton().querySelector(".needs-you")).toBeNull();
   expect(moreButton().getAttribute("aria-description")).toBeNull();
   await openMenu();
-  expect(menuItems().filter(name => !name?.startsWith("Model") && name !== "Set up a model")).toEqual(["Learnings", "Transcript", "Export", "Make shorts", "Project settings", "App settings"]);
+  expect(menuItems().filter(name => !name?.startsWith("Model") && name !== "Set up a model")).toEqual(["Learnings", "手动剪辑", "Transcript", "Export", "Make shorts", "Project settings", "App settings"]);
   expect(container.querySelector('[role="menu"] .menu-dot')).toBeNull();
+  await click(menuItem("手动剪辑"));
+  const timeline = container.querySelector('[aria-label="手动剪辑"]')!;
+  expect(timeline).not.toBeNull();
+  await click(buttonIn(timeline, "关闭")!);
+  expect(container.querySelector('[aria-label="手动剪辑"]')).toBeNull();
+  await openMenu();
   await click(menuItem("Project settings"));
   expect(useUiStore.getState().projectSettingsOpen).toBe(true);
   useUiStore.getState().setProjectSettingsOpen(false);

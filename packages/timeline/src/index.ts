@@ -21,4 +21,5 @@ export * from "./putBack.js";
 
 export * from "./history.js";
 export * from "./handoff.js";
+export * from "./jianying.js";
 export * from "./fcpxml.js";

@@ -185,7 +185,7 @@ it("logs what was cleared and what was removed for good, by project", async () =
 it("removes a project that has been in the trash for 30 days, and logs that it did", async () => {
   const ctx = workspace.ctx;
   const lines: string[] = [];
-  ctx.log = line => lines.push(line);
+  ctx.log = line => { if (!line.startsWith("[stall]")) lines.push(line); };
   ctx.repos.projects.softDelete(id);
   const day = 24 * 60 * 60 * 1000;
   const deletedAt = Date.parse(ctx.repos.projects.listDeleted()[0]!.deletedAt);

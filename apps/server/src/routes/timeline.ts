@@ -165,10 +165,10 @@ export function timelineRoutes(ctx: Ctx) {
   }
   r.post("/projects/:id/versions/:v/handoff", async (c) => {
     requireProjectEditAttempt(ctx, requestAttempt(c.req.raw), c.req.param("id"));
-    const body = await jsonBody(c, z.object({ folder: z.string().min(1).max(4096) }));
+    const body = await jsonBody(c, z.object({ folder: z.string().min(1).max(4096), format: z.literal("jianying").optional() }));
     const project = requireProject(ctx, c.req.param("id"));
     const timeline = resolveTimeline(ctx, project, c.req.param("v"));
-    return c.json(await buildHandoff(ctx, project, timeline, body.folder, c.req.raw.signal));
+    return c.json(await buildHandoff(ctx, project, timeline, body.folder, c.req.raw.signal, body.format));
   });
 
   return r;

@@ -2047,7 +2047,7 @@ it("rejects one applied edit with the × after Keep, asking Scarlet to put back 
   expect(createTask).toHaveBeenCalledWith(PRJ, expect.objectContaining({
     kind: "edit", agent: "claude", model: "opus",
     instruction: "The editor rejected edit 2, “captions”. Put back exactly what it changed and leave every other edit as it is.",
-    // The editor's own words for it are "Reject edit": the instruction is what Scarlet is told.
+    // The editor's own words for it are "拒绝剪辑": the instruction is what Scarlet is told.
     context: expect.objectContaining({ changeId: "chg_approved_2", editIndex: 1, editNumber: 2, threadId: threadWith("chg_approved_2").id, message: "Reject edit" }),
   }));
   await act(async () => { sent(); });

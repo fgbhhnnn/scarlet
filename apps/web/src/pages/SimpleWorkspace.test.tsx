@@ -472,7 +472,7 @@ it("lists a thread's edits once, numbered, and opens one with its decisions unde
   expect([...panel.querySelectorAll(".review-actions button")].map(b => [b.textContent, b.getAttribute("aria-keyshortcuts"), b.getAttribute("title")]))
     .toEqual([["修改", "R", "修改 (R)"], ["保留", "K", "保留 (K)"]]);
   expect(panel.querySelector(".simple-key")).toBeNull();
-  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing “captions” at 0:00");
+  expect(container.querySelector(".simple-on-video")?.textContent).toBe("正在显示 “captions” · 0:00");
   expect(container.querySelector(".simple-timeline-band")).not.toBeNull();
 
   // A note that fits is plain text: nothing to click.
@@ -1561,7 +1561,7 @@ it("opens a located review check where it needs a look, then replays the edit fr
   const checkButton = () => editPanel()!.querySelector<HTMLButtonElement>("button.edit-card-length.is-check");
   expect([checkButton()?.textContent, checkButton()?.title]).toEqual(["检查", "Play the part to check, 0:10"]);
   expect(editPanel()?.querySelector(".edit-card-title")?.textContent).toBe(`${says} ${reason}`);
-  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing “Assembled the opening and demos” at 0:10");
+  expect(container.querySelector(".simple-on-video")?.textContent).toBe("正在显示 “Assembled the opening and demos” · 0:10");
   expect(container.querySelector(".simple-timeline-cut.is-check")?.textContent).toBe("检查");
   expect(dot()?.style.left).toBe("50%");
   expect(previews).toHaveBeenLastCalledWith({ start: 8, end: 13 }, expect.any(Number), undefined, false);
@@ -2656,7 +2656,7 @@ it("sums a dialogue pass up on one card, and makes its calls in the card on the 
   expect(passRows().map(r => r.getAttribute("aria-current"))).toEqual(["true", null]);
   // The call opens in the same card an applied edit uses, right on top of the timeline.
   expect(call().closest(".cut-transport > .edit-card")).toBe(call());
-  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing cut at 3:50 · 1 of 2 · 剪辑后");
+  expect(container.querySelector(".simple-on-video")?.textContent).toBe("正在显示 3:50 处的剪点 · 1 / 2 · 剪辑后");
   // Like an applied edit, a call is one row: its number, the same as on its line in the chat, then Scarlet's reason.
   // How many still wait is on hover. It has no picker and no script.
   expect([...call().querySelectorAll(".edit-card-bar > .edit-card-count, .edit-card-bar > .edit-card-title")].map(e => e.textContent))
@@ -2699,7 +2699,7 @@ it("sums a dialogue pass up on one card, and makes its calls in the card on the 
   // A approves it and plays the next call. The call is saved on the proposal right away; nothing applies yet.
   await press("a");
   expect(save).toHaveBeenLastCalledWith("chg_ready", expect.objectContaining({ choices: [{ index: 1, choice: "cut" }], applyWhenDone: false }));
-  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing cut at 9:58 · 2 of 2 · 剪辑后");
+  expect(container.querySelector(".simple-on-video")?.textContent).toBe("正在显示 9:58 处的剪点 · 2 / 2 · 剪辑后");
   // The next call is the only one still waiting, and the box is tagged with it. Its transcript opens folded again.
   expect(call().querySelector(".edit-card-count")?.textContent).toBe("剪点 2");
   expect(boxTag()).toBe("剪点 2");
@@ -2713,11 +2713,11 @@ it("sums a dialogue pass up on one card, and makes its calls in the card on the 
   await click(passCard().querySelector(".simple-pass-need")!);
   expect(passRows().map(r => r.getAttribute("aria-current"))).toEqual([null, "true"]);
   await click(passRows()[0]!);
-  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing cut at 3:50 · 1 of 2 · 剪辑后");
+  expect(container.querySelector(".simple-on-video")?.textContent).toBe("正在显示 3:50 处的剪点 · 1 / 2 · 剪辑后");
   expect(buttonIn(call(), "批准")?.getAttribute("aria-pressed")).toBe("true");
   await press("ArrowDown");
   await press("\\");
-  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing cut at 9:58 · 2 of 2 · Before");
+  expect(container.querySelector(".simple-on-video")?.textContent).toBe("正在显示 9:58 处的剪点 · 2 / 2 · 剪辑前");
 
   // The last call applies the pass: Scarlet's pick for the cut it was sure of, and the footage this one skips.
   await click(call().querySelector('[aria-label="跳过"]')!);
@@ -3132,7 +3132,7 @@ it("holds back the cuts a running pass hasn't checked, and applies the calls it 
   await act(async () => {});
   expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 项待审阅");
   await reviewCalls();
-  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing cut at 3:50 · 1 of 1 · 剪辑后");
+  expect(container.querySelector(".simple-on-video")?.textContent).toBe("正在显示 3:50 处的剪点 · 1 / 1 · 剪辑后");
   expect(call().querySelector(".edit-card-title")?.textContent).toBe("Breath before the price.");
   // Scarlet is still checking, so the last call schedules the pass to apply the moment it finishes.
   await press("a");
@@ -3493,7 +3493,7 @@ it("keeps the call on screen on its cut when the pass saves its next part", asyn
   await show();
   await act(async () => {});
   await openCall("Repeated aside.");
-  expect(onVideo()).toBe("Showing cut at 0:11 · 3 of 3 · 剪辑后");
+  expect(onVideo()).toBe("正在显示 0:11 处的剪点 · 3 / 3 · 剪辑后");
   expect(listen).toHaveBeenLastCalledWith({ start: 9, end: 15, skips: [{ start: 11, end: 12, removed: true }] }, expect.any(Number));
   const listens = listen.mock.calls.length;
   // The editor opens the call's transcript in the chat to read the passage.
@@ -3506,9 +3506,9 @@ it("keeps the call on screen on its cut when the pass saves its next part", asyn
   hold("chg_ready_part2");
   await nextPart({ cutReasons: [STAGED[0]!, STAGED[1]!, { start: 8.5, end: 9.5, reason: "A second try at the line." }, STAGED[2]!] });
   expect(call().querySelector(".edit-card-title")?.textContent).toBe("Repeated aside.");
-  expect(onVideo()).toBe("Showing cut at 0:11 · 4 of 4 · 剪辑后");
+  expect(onVideo()).toBe("正在显示 0:11 处的剪点 · 4 / 4 · 剪辑后");
   await release();
-  expect(onVideo()).toBe("Showing cut at 0:11 · 4 of 4 · 剪辑后");
+  expect(onVideo()).toBe("正在显示 0:11 处的剪点 · 4 / 4 · 剪辑后");
   expect(listen).toHaveBeenCalledTimes(listens);
   // It is the same card throughout, and its transcript is still open on the passage.
   expect(call()).toBe(card);
@@ -3521,7 +3521,7 @@ it("keeps the call on screen on its cut when the pass saves its next part", asyn
   await press("s");
   expect(save).toHaveBeenLastCalledWith("chg_ready_part2", expect.objectContaining({ choices: [{ index: 3, choice: "keep" }] }));
   // The next call opens folded again.
-  expect(onVideo()).toBe("Showing cut at 0:02 · 1 of 4 · 剪辑后");
+  expect(onVideo()).toBe("正在显示 0:02 处的剪点 · 1 / 4 · 剪辑后");
   expect(script().getAttribute("aria-expanded")).toBe("false");
   expect(openHead()!.querySelector(".edit-passage")).toBeNull();
 });
@@ -3536,7 +3536,7 @@ it("makes a call while the new proposal's cut list is still on its way", async (
   expect([passCard().querySelector(".simple-pass-need")?.getAttribute("title"), passRows().length]).toEqual(["4 项待审阅", 4]);
   await press("s");
   expect(save).toHaveBeenLastCalledWith("chg_ready_part2", expect.objectContaining({ choices: [{ index: 3, choice: "keep" }] }));
-  expect(onVideo()).toBe("Showing cut at 0:02 · 1 of 4 · 剪辑后");
+  expect(onVideo()).toBe("正在显示 0:02 处的剪点 · 1 / 4 · 剪辑后");
 });
 
 it("counts a pass's cuts as its review will while the cut list is still on its way", async () => {
@@ -3598,7 +3598,7 @@ it("keeps the other calls' dots on the timeline while a call is open, so one pre
   strip.getBoundingClientRect = () => ({ left: 0, width: 1000 }) as DOMRect;
   await act(async () => { strip.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, isPrimary: true, button: 0, pointerId: 1, clientX: parseFloat(dots()[2]!.style.left) * 10 })); });
   await act(async () => {});
-  expect(onVideo()).toBe("Showing cut at 0:11 · 3 of 3 · 剪辑后");
+  expect(onVideo()).toBe("正在显示 0:11 处的剪点 · 3 / 3 · 剪辑后");
   expect(dots().find(d => d.classList.contains("is-on"))?.textContent).toBe("3");
   // Zoomed out to the whole video (0), the other calls are there to see and to press without closing this one.
   await press("0");
@@ -3646,7 +3646,7 @@ it("shows the cuts already in the video around an open call as grey gaps, After 
   await openCall("Breath before the price.");
   await act(async () => {});
   expect(gaps().map(gap => [gap.textContent, gap.classList.contains("is-skipped")])).toEqual([["Cut at 0:07", true]]);
-  expect(onVideo()).toBe("Showing cut at 0:06 · 2 of 3 · 剪辑后");
+  expect(onVideo()).toBe("正在显示 0:06 处的剪点 · 2 / 3 · 剪辑后");
   expect([...container.querySelectorAll(".simple-timeline-mark.is-numbered")].map(d => d.textContent)).toEqual(["1", "2", "3"]);
   // After plays as the video runs now: over the call's footage, then over the cut's.
   expect(rounded(listen.mock.lastCall![0].skips)).toEqual([[6, 7], [7.04, 8.04]]);
@@ -3660,7 +3660,7 @@ it("shows the cuts already in the video around an open call as grey gaps, After 
   expect(beforeIcon(call())).toEqual(["", "剪辑前", "true", "返回剪辑后 (\\)"]);
   expect(call().querySelector(".edit-card-before.is-flash")).not.toBeNull();
   expect([...call().querySelector(".edit-card-switched")!.children].map(part => part.textContent)).toEqual(["Before", "The cut at 0:07 took this part out."]);
-  expect(onVideo()).toBe("Showing what the cut at 0:07 took out · Before");
+  expect(onVideo()).toBe("正在显示 0:07 处剪点移除的片段 · 剪辑前");
   // It plays now, so it's only outlined. The call's card is otherwise as it was.
   expect(gaps()[0]!.classList.contains("is-skipped")).toBe(false);
   expect(call().querySelector(".edit-card-count")?.textContent).toBe("剪点 2");
@@ -3745,7 +3745,7 @@ it("plays just the selected call when another is within earshot and keeps playin
   hold("chg_ready_part2");
   await nextPart({ cutReasons: [...cuts, { start: 14, end: 15, reason: "A cough." }] });
   await release();
-  expect(onVideo()).toBe("Showing cut at 0:06 · 2 of 5 · 剪辑后");
+  expect(onVideo()).toBe("正在显示 0:06 处的剪点 · 2 / 5 · 剪辑后");
   expect(listen).toHaveBeenCalledTimes(1);
   expect(ended).not.toHaveBeenCalled();
 });
@@ -3756,15 +3756,15 @@ it("numbers a call as the pass's cut list does when staged cuts touch", async ()
   await show();
   await act(async () => {});
   await openCall("Repeated aside.");
-  expect(onVideo()).toBe("Showing cut at 0:11 · 3 of 3 · 剪辑后");
+  expect(onVideo()).toBe("正在显示 0:11 处的剪点 · 3 / 3 · 剪辑后");
   hold("chg_ready_part2");
   await nextPart({ cutReasons: [...PAIR, STAGED[1]!, { start: 8.5, end: 9.5, reason: "A second try at the line." }, STAGED[2]!] });
   // The card is still on the aside, the fourth cut of four, before the new cut list arrives and after.
   expect(call().querySelector(".edit-card-title")?.textContent).toBe("Repeated aside.");
-  expect(onVideo()).toBe("Showing cut at 0:11 · 4 of 4 · 剪辑后");
+  expect(onVideo()).toBe("正在显示 0:11 处的剪点 · 4 / 4 · 剪辑后");
   await release();
   expect(call().querySelector(".edit-card-title")?.textContent).toBe("Repeated aside.");
-  expect(onVideo()).toBe("Showing cut at 0:11 · 4 of 4 · 剪辑后");
+  expect(onVideo()).toBe("正在显示 0:11 处的剪点 · 4 / 4 · 剪辑后");
   // Approve approves that cut and no other.
   await press("a");
   expect(save).toHaveBeenLastCalledWith("chg_ready_part2", expect.objectContaining({ choices: [{ index: 3, choice: "cut" }] }));
@@ -3787,7 +3787,7 @@ it("plays a call straight through while the pass saves its next parts, and takes
   await act(async () => {});
   await openCall("Repeated aside.");
   expect(usePlayerStore.getState().playing).toBe(true);
-  expect(onVideo()).toBe("Showing cut at 0:11 · 3 of 3 · 剪辑后");
+  expect(onVideo()).toBe("正在显示 0:11 处的剪点 · 3 / 3 · 剪辑后");
   const listens = listen.mock.calls.length;
   const head = useShownCutStore.getState().head;
   const video = container.querySelector("video");
@@ -3797,7 +3797,7 @@ it("plays a call straight through while the pass saves its next parts, and takes
     { ...STAGED[2]!, start: 9.5, end: 10.5 }] }, [{ start: 4, end: 5.5, reason: "Dead air." }], { whilePlaying: true });
   await act(async () => {});
   expect(useShownCutStore.getState().head).toBe(head);
-  expect(onVideo()).toBe("Showing cut at 0:11 · 3 of 3 · 剪辑后");
+  expect(onVideo()).toBe("正在显示 0:11 处的剪点 · 3 / 3 · 剪辑后");
   expect(call().querySelector(".edit-card-title")?.textContent).toBe("Repeated aside.");
   expect(listen).toHaveBeenCalledTimes(listens);
   expect(container.querySelector("video")).toBe(video);
@@ -3809,7 +3809,7 @@ it("plays a call straight through while the pass saves its next parts, and takes
   await pauses();
   await act(async () => {});
   expect(useShownCutStore.getState().head).toBe("ver_part2");
-  expect(onVideo()).toBe("Showing cut at 0:09 · 4 of 4 · 剪辑后");
+  expect(onVideo()).toBe("正在显示 0:09 处的剪点 · 4 / 4 · 剪辑后");
   expect(call().querySelector(".edit-card-title")?.textContent).toBe("Repeated aside.");
   expect(listen.mock.calls.slice(listens).every(call => call[2] === true)).toBe(true);
 });
@@ -3830,7 +3830,7 @@ it("follows the call's cut, and a revision aimed at it, when the next part's con
   await nextPart({ cutReasons: [STAGED[0]!, { ...STAGED[1]!, start: 4.5, end: 5.5 }, { ...STAGED[2]!, start: 9.5, end: 10.5 }] },
     [{ start: 4, end: 5.5, reason: "Dead air." }, { start: 13, end: 14, reason: "A cough." }]);
   expect(call().querySelector(".edit-card-title")?.textContent).toBe("Repeated aside.");
-  expect(onVideo()).toBe("Showing cut at 0:09 · 3 of 3 · 剪辑后");
+  expect(onVideo()).toBe("正在显示 0:09 处的剪点 · 3 / 3 · 剪辑后");
   // The listen waits for the new cut list and then starts once, on the cut where it is now.
   expect(listen).toHaveBeenCalledTimes(listens);
   await release();
@@ -3862,7 +3862,7 @@ it("moves a Before listen once, onto the new working cut, when a part applies a 
   // The cut sits 1.5 s earlier on the new version. The listen waits for that working cut instead of playing the old one at the new place.
   await nextPart({ cutReasons: [STAGED[0]!, { ...STAGED[1]!, start: 4.5, end: 5.5 }, { ...STAGED[2]!, start: 9.5, end: 10.5 }] }, [{ start: 4, end: 5.5, reason: "Dead air." }]);
   await act(async () => {});
-  expect(onVideo()).toBe("Showing cut at 0:09 · 3 of 3 · Before");
+  expect(onVideo()).toBe("正在显示 0:09 处的剪点 · 3 / 3 · 剪辑前");
   expect(listen).toHaveBeenCalledTimes(listens + 1);
   expect(listen).toHaveBeenLastCalledWith({ start: 7.5, end: 12.5, skips: [] }, expect.any(Number), true);
   // The playhead is on the footage it was on, which sits 1.5 s earlier too.
@@ -3983,7 +3983,7 @@ it("marks, shades and plays a waiting call where its footage sits once the worki
   expect(draft.mock.calls.length).toBe(warmRequestCount);
   readFiles.mockResolvedValue({ renders: [] });
   expect(call().querySelector(".edit-card-count")?.textContent).toBe("剪点 3");
-  expect(onVideo()).toBe("Showing cut at 0:10 · 3 of 3 · 剪辑后");
+  expect(onVideo()).toBe("正在显示 0:10 处的剪点 · 3 / 3 · 剪辑后");
   expect(listen).toHaveBeenLastCalledWith({ start: 8, end: 14, skips: [{ start: 10, end: 11, removed: true }] }, expect.any(Number));
   expect(api.cutReviewDraft).toHaveBeenCalledWith("chg_ready", [0, 1], "ver_moved", expect.any(AbortSignal));
   expect(player.mediaTime(10.5)).toBe(10);
@@ -4062,7 +4062,7 @@ it("keeps an open call's listen on its footage when the working cut moves under 
   // The head moves first. Until the new working cut arrives the call is where it was.
   await event(d => ({ ...d, project: { ...d.project, head: "ver_moved" } }));
   expect(listen).toHaveBeenCalledTimes(listens);
-  expect(onVideo()).toBe("Showing cut at 0:11 · 3 of 3 · 剪辑后");
+  expect(onVideo()).toBe("正在显示 0:11 处的剪点 · 3 / 3 · 剪辑后");
   // Then the working cut, a second shorter ahead of the call. The listen is taken up where the cut is now, not started
   // again, and the playhead goes with the footage it was on.
   await event(d => ({ ...d, timeline: { ...applyOps(d.timeline!, [{ op: "rippleDelete" as const, start: 0.2, end: 1.2 }]), version: "ver_moved" } }));
@@ -4070,7 +4070,7 @@ it("keeps an open call's listen on its footage when the working cut moves under 
   expect(listen).toHaveBeenCalledTimes(listens + 1);
   expect(listen).toHaveBeenLastCalledWith({ start: 8, end: 14, skips: [{ start: 10, end: 11, removed: true }] }, expect.any(Number), true);
   expect(usePlayerStore.getState().time).toBe(9.5);
-  expect(onVideo()).toBe("Showing cut at 0:10 · 3 of 3 · 剪辑后");
+  expect(onVideo()).toBe("正在显示 0:10 处的剪点 · 3 / 3 · 剪辑后");
   // The line over the box follows the cut as well, though the box was aimed before it moved.
   expect(container.querySelector(".simple-target")?.textContent).toContain("Revising the cut at 0:10");
 });
@@ -4084,7 +4084,7 @@ it("leaves the playhead where the editor scrubbed it, away from an open call's l
   await act(async () => usePlayerStore.getState().setTime(3));
   await workingCutMoves(0.2, 1.2);
   await act(async () => {});
-  expect(onVideo()).toBe("Showing cut at 0:10 · 3 of 3 · 剪辑后");
+  expect(onVideo()).toBe("正在显示 0:10 处的剪点 · 3 / 3 · 剪辑后");
   expect(usePlayerStore.getState().time).toBe(3);
 });
 
@@ -4317,7 +4317,7 @@ it("closes a call rather than moving it onto another request's pass", async () =
   await event(d => ({ ...d, tasks: d.tasks.filter(t => t.id !== "task_queued_revision") }));
   expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("3 项待审阅");
   await openCall("Repeated aside.");
-  expect(onVideo()).toBe("Showing cut at 0:11 · 3 of 3 · 剪辑后");
+  expect(onVideo()).toBe("正在显示 0:11 处的剪点 · 3 / 3 · 剪辑后");
   // The pass on screen is applied, and the earlier one is the pass that waits now. The card doesn't move onto its cut.
   await act(async () => {
     data = { ...data, changes: data.changes.map(c => c.id === "chg_ready" ? { ...c, state: "approved" as const, appliedVersion: c.toVersion } : c),
@@ -4383,7 +4383,7 @@ it("follows the call's cut when the next part applies a cut that ends exactly wh
   await openCall("Repeated aside.");
   await nextPart({ cutReasons: [STAGED[0]!, STAGED[1]!, { ...STAGED[2]!, start: 10, end: 11 }] }, [{ start: 10, end: 11, reason: "Dead air." }]);
   await act(async () => {});
-  expect(onVideo()).toBe("Showing cut at 0:10 · 3 of 3 · 剪辑后");
+  expect(onVideo()).toBe("正在显示 0:10 处的剪点 · 3 / 3 · 剪辑后");
   await press("a");
   expect(save).toHaveBeenLastCalledWith("chg_ready_part2", expect.objectContaining({ choices: [{ index: 2, choice: "cut" }] }));
 });
@@ -5015,7 +5015,7 @@ it("keeps the call on screen on its cut when the pass saves its next part after 
   await show();
   await act(async () => {});
   await openCall("Repeated aside.");
-  expect(onVideo()).toBe("Showing cut at 0:11 · 3 of 3 · 剪辑后");
+  expect(onVideo()).toBe("正在显示 0:11 处的剪点 · 3 / 3 · 剪辑后");
   const card = call();
   await crossfadesBetweenParts();
   await partAfterCrossfades();
@@ -5023,7 +5023,7 @@ it("keeps the call on screen on its cut when the pass saves its next part after 
   // The card stays open on the same cut, now the fourth, and Skip still means it.
   expect(call()).toBe(card);
   expect(call().querySelector(".edit-card-title")?.textContent).toBe("Repeated aside.");
-  expect(onVideo()).toBe("Showing cut at 0:11 · 4 of 4 · 剪辑后");
+  expect(onVideo()).toBe("正在显示 0:11 处的剪点 · 4 / 4 · 剪辑后");
   await press("s");
   expect(save).toHaveBeenLastCalledWith("chg_ready_part2", expect.objectContaining({ fromVersion: "ver_fades", choices: [{ index: 3, choice: "keep" }] }));
 });
@@ -5344,7 +5344,7 @@ it("keeps a pass's other calls open while Scarlet revises one of them, and waits
   expect(passCard().querySelector(".simple-pass-quiet")).toBeNull();
   await reviewCalls();
   // It is numbered among all the pass's calls, the one with Scarlet included, as its row in the list is.
-  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing cut at 9:58 · 2 of 2 · 剪辑后");
+  expect(container.querySelector(".simple-on-video")?.textContent).toBe("正在显示 9:58 处的剪点 · 2 / 2 · 剪辑后");
   await press("a");
   expect(save).toHaveBeenLastCalledWith("chg_ready", expect.objectContaining({ choices: [{ index: 2, choice: "cut" }] }));
   // That was the last open call, but the revised cut comes back as a new one, so nothing applies yet.
@@ -5775,11 +5775,11 @@ it("steps through a pass's calls with ↑ and ↓, and Esc closes the call", asy
   await act(async () => {});
   // ↓ starts on the first call, and steps on from there. ↑ steps back.
   await press("ArrowDown");
-  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing cut at 3:50 · 1 of 2 · 剪辑后");
+  expect(container.querySelector(".simple-on-video")?.textContent).toBe("正在显示 3:50 处的剪点 · 1 / 2 · 剪辑后");
   await press("ArrowDown");
-  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing cut at 9:58 · 2 of 2 · 剪辑后");
+  expect(container.querySelector(".simple-on-video")?.textContent).toBe("正在显示 9:58 处的剪点 · 2 / 2 · 剪辑后");
   await press("ArrowUp");
-  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing cut at 3:50 · 1 of 2 · 剪辑后");
+  expect(container.querySelector(".simple-on-video")?.textContent).toBe("正在显示 3:50 处的剪点 · 1 / 2 · 剪辑后");
   await press("Escape");
   expect(container.querySelector('[aria-label="剪点"]')).toBeNull();
   expect(container.querySelector(".simple-on-video")).toBeNull();
@@ -5794,21 +5794,21 @@ it("starts ↓ on the first call still waiting when nothing is open, and ↑ on 
   // The first call is approved, which opens the second. Esc closes it.
   await press("ArrowDown");
   await press("a");
-  expect(onVideo()).toBe("Showing cut at 9:58 · 2 of 2 · 剪辑后");
+  expect(onVideo()).toBe("正在显示 9:58 处的剪点 · 2 / 2 · 剪辑后");
   await press("Escape");
   expect(container.querySelector('[aria-label="剪点"]')).toBeNull();
   // ↓ goes to the call that still waits, not back to the one already decided.
   await press("ArrowDown");
-  expect(onVideo()).toBe("Showing cut at 9:58 · 2 of 2 · 剪辑后");
+  expect(onVideo()).toBe("正在显示 9:58 处的剪点 · 2 / 2 · 剪辑后");
   expect(call().querySelector(".edit-card-count")?.textContent).toBe("剪点 2");
   // From a call, the arrows still reach the one beside it, decided or not.
   await press("ArrowUp");
-  expect(onVideo()).toBe("Showing cut at 3:50 · 1 of 2 · 剪辑后");
+  expect(onVideo()).toBe("正在显示 3:50 处的剪点 · 1 / 2 · 剪辑后");
   expect(buttonIn(call(), "批准")?.getAttribute("aria-pressed")).toBe("true");
   // ↑ from nothing starts on the last call still waiting.
   await press("Escape");
   await press("ArrowUp");
-  expect(onVideo()).toBe("Showing cut at 9:58 · 2 of 2 · 剪辑后");
+  expect(onVideo()).toBe("正在显示 9:58 处的剪点 · 2 / 2 · 剪辑后");
 });
 
 it("starts ↓ on the first call when every call is made and the pass hasn't applied yet", async () => {
@@ -5820,10 +5820,10 @@ it("starts ↓ on the first call when every call is made and the pass hasn't app
   await show();
   await act(async () => {});
   await press("ArrowDown");
-  expect(onVideo()).toBe("Showing cut at 3:50 · 1 of 2 · 剪辑后");
+  expect(onVideo()).toBe("正在显示 3:50 处的剪点 · 1 / 2 · 剪辑后");
   await press("Escape");
   await press("ArrowUp");
-  expect(onVideo()).toBe("Showing cut at 9:58 · 2 of 2 · 剪辑后");
+  expect(onVideo()).toBe("正在显示 9:58 处的剪点 · 2 / 2 · 剪辑后");
 });
 
 it("labels a length in seconds under a minute, as minutes and seconds above and with its hours from an hour, carrying a rounded 60", () => {
@@ -5902,7 +5902,7 @@ it("plays changed footage while the editor answers the question about that cut",
   await show();
   await click(buttonIn(container, "回答")!);
   expect(call().textContent).toContain("等待你的回答");
-  expect(onVideo()).toBe("Current passage at 0:08");
+  expect(onVideo()).toBe("当前片段 · 0:08");
   expect(listen).toHaveBeenLastCalledWith({ start: 6, end: 12, skips: [] }, expect.any(Number));
   expect(boxTag()).toBe("回答");
   expect(useUiStore.getState().agentContext).toBeNull();
@@ -5915,7 +5915,7 @@ it("plays changed footage while the editor answers the question about that cut",
   await event(d => ({ ...d, project: { ...d.project, head: shifted.version }, timeline: shifted }));
   await click(call().querySelector('button[aria-label="回答"]')!);
   expect(listen).toHaveBeenLastCalledWith({ start: 5, end: 11, skips: [] }, expect.any(Number));
-  expect(onVideo()).toBe("Current passage at 0:07");
+  expect(onVideo()).toBe("当前片段 · 0:07");
   expect(boxTag()).toBe("回答");
   // When Scarlet has no unique passage, the same card can still take the editor's answer without seeking.
   listen.mockClear();
@@ -5942,7 +5942,7 @@ it("uses the reviewed footage and preview for a call revised on a newer timeline
   await reviewCalls();
   await click(passRow(STAGED[0]!.reason));
   expect(load.mock.calls.filter(([project, version]) => project === PRJ && version === preview.version)).toHaveLength(1);
-  expect(onVideo()).toBe("Showing cut at 0:08 · 1 of 3 · 剪辑后");
+  expect(onVideo()).toBe("正在显示 0:08 处的剪点 · 1 / 3 · 剪辑后");
   expect(listen).toHaveBeenLastCalledWith({ start: 6, end: 13, skips: [{ ...range, removed: true }] }, expect.any(Number));
   expect(useUiStore.getState().agentContext).toMatchObject({ cutIndex: 0, version: before.version, time: 8, end: 10 });
   await click(call().querySelector(".edit-card-before")!);
@@ -5955,7 +5955,7 @@ it("uses the reviewed footage and preview for a call revised on a newer timeline
   // The version it was reviewed on was the working cut a moment ago: it is still in hand, and isn't read again. Reading
   // it again left a moment with no timeline, in which the card went back to the video and came up again.
   expect(load.mock.calls.filter(([project, version]) => project === PRJ && version === before.version)).toEqual([]);
-  expect(onVideo()).toBe("Showing cut at 0:08 · 1 of 3 · Before · As reviewed");
+  expect(onVideo()).toBe("正在显示 0:08 处的剪点 · 1 / 3 · 剪辑前 · 审阅时的版本");
 });
 
 it.each([false, true])("answers the carried cut after another part moved and renumbered it (saved current index: %s)", async savedIndex => {
@@ -5980,7 +5980,7 @@ it.each([false, true])("answers the carried cut after another part moved and ren
   await click(buttonIn(container, "回答")!);
   expect(call().querySelector(".edit-card-count")?.textContent).toBe("剪点 3");
   expect(call().textContent).toContain(STAGED[1]!.reason);
-  expect(onVideo()).toBe("Current passage at 0:08");
+  expect(onVideo()).toBe("当前片段 · 0:08");
   expect(boxTag()).toBe("回答");
   await click(call().querySelector('button[aria-label="回答"]')!);
   expect(listen).toHaveBeenLastCalledWith({ start: 6, end: 12, skips: [] }, expect.any(Number));
@@ -6006,14 +6006,14 @@ it("revises just the applied edit that's showing, even with a pass waiting, and 
   const bar = editPanel()!;
   expect(buttonIn(bar, "应用")).toBeUndefined();
   expect(turnFor("chg_approved_2").querySelector(".simple-edit.is-on .simple-edit-value")?.textContent).toBe("−2.4 s");
-  expect(container.textContent).toContain("Removed · 2.4 s");
+  expect(container.textContent).toContain("已移除 2.4 s");
   // It quotes what the cut took out, struck through, and plays on the version before it: the timeline shades what came out
   // and After steps over it.
   expect(beforeTimeline).toHaveBeenCalledWith(PRJ, "v_before");
-  expect(container.querySelector(".simple-timeline-band")?.textContent).toBe("Removed · 2.4 s");
+  expect(container.querySelector(".simple-timeline-band")?.textContent).toBe("已移除 2.4 s");
   // The timeline is on the version before the cut, where the waiting pass's times don't hold: its calls draw no dot here.
   expect(container.querySelector(".simple-timeline-mark")).toBeNull();
-  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing “Keep the image test” · 剪辑后");
+  expect(container.querySelector(".simple-on-video")?.textContent).toBe("正在显示 “Keep the image test” · 剪辑后");
   // A cut has no Before/After switch. One icon plays it with the cut footage: unlit while it plays as the video runs.
   expect(bar.querySelector(".compare-switch")).toBeNull();
   expect(beforeIcon(bar)).toEqual(["", "剪辑前", "false", "播放剪辑前 (\\)"]);
@@ -6055,7 +6055,7 @@ it("revises just the applied edit that's showing, even with a pass waiting, and 
   // \\ switches to Before, which plays straight through the cut.
   await press("\\");
   expect(beforeIcon(bar)).toEqual(["", "剪辑前", "true", "返回剪辑后 (\\)"]);
-  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing “Keep the image test” · Before");
+  expect(container.querySelector(".simple-on-video")?.textContent).toBe("正在显示 “Keep the image test” · 剪辑前");
   expect(audition).toHaveBeenLastCalledWith({ start: 8, end: 14.4, skips: [] }, expect.any(Number));
 
   await click(buttonIn(bar, "修改")!);
@@ -7146,7 +7146,7 @@ it("plays an applied cut's After from the version the cut made, so the join soun
   await click(buttonIn(turnFor("chg_approved_2"), "查看剪辑")!);
   await act(async () => {});
   // The timeline stays on the version before, shading what came out, and the listen is in its clock.
-  expect(container.querySelector(".simple-timeline-band")?.textContent).toBe("Removed · 2.4 s");
+  expect(container.querySelector(".simple-timeline-band")?.textContent).toBe("已移除 2.4 s");
   expect(audition).toHaveBeenLastCalledWith({ start: 8, end: 15.4, skips: [{ start: 10, end: 12.4, removed: true }] }, expect.any(Number));
   // The picture and sound come from the working cut, where the join is inside the rendered media.
   expect(player.mediaTime(9)).toBe(9);
@@ -7354,7 +7354,7 @@ it("greys out the pass's other cuts on After, and a click into one plays it in B
   expect(notice.querySelector("button, kbd")).toBeNull();
   expect(beforeIcon(editPanel()!)).toEqual(["", "剪辑前", "true", "返回剪辑后 (\\)"]);
   expect(container.querySelector(".edit-card-before.is-flash[aria-pressed='true']")).not.toBeNull();
-  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing what the cut at 0:06 took out · Before");
+  expect(container.querySelector(".simple-on-video")?.textContent).toBe("正在显示 0:06 处剪点移除的片段 · 剪辑前");
   // On Before the footage plays, so it's only outlined.
   expect(gap().classList.contains("is-skipped")).toBe(false);
   expect(gap().textContent).toBe("Cut at 0:06");
@@ -7641,7 +7641,7 @@ it("opens a call that's with Scarlet: its card says so, and its revision is at w
   // "1 needs you" opened the one call still waiting.
   expect(passRow("The corrected image-input take belongs here.").getAttribute("aria-current")).toBe("true");
   await press("ArrowUp");
-  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing cut at 3:50 · 1 of 2 · 剪辑后");
+  expect(container.querySelector(".simple-on-video")?.textContent).toBe("正在显示 3:50 处的剪点 · 1 / 2 · 剪辑后");
   expect(call().querySelector(".edit-card-title")?.textContent).toBe("Breath before the price.");
   expect(call().querySelector(".edit-card-status")?.textContent).toBe("正在修改…");
   expect(call().querySelector(".review-actions")).toBeNull();
@@ -7925,12 +7925,12 @@ it("says Queued on the card of a cut sent back until Scarlet starts on it, and s
   // "1 needs you" opened the call still waiting.
   expect(passRow("Breath before the price.").getAttribute("aria-current")).toBe("true");
   await press("ArrowDown");
-  expect([onVideo(), call().querySelector(".edit-card-status")?.textContent]).toEqual(["Showing cut at 0:11 · 3 of 3 · 剪辑后", "排队中"]);
+  expect([onVideo(), call().querySelector(".edit-card-status")?.textContent]).toEqual(["正在显示 0:11 处的剪点 · 3 / 3 · 剪辑后", "排队中"]);
   // ↑ steps back through every call, the one Scarlet is revising too.
   await press("ArrowUp");
-  expect([onVideo(), !!buttonIn(call(), "批准")]).toEqual(["Showing cut at 0:06 · 2 of 3 · 剪辑后", true]);
+  expect([onVideo(), !!buttonIn(call(), "批准")]).toEqual(["正在显示 0:06 处的剪点 · 2 / 3 · 剪辑后", true]);
   await press("ArrowUp");
-  expect([onVideo(), call().querySelector(".edit-card-status")?.textContent]).toEqual(["Showing cut at 0:02 · 1 of 3 · 剪辑后", "正在修改…"]);
+  expect([onVideo(), call().querySelector(".edit-card-status")?.textContent]).toEqual(["正在显示 0:02 处的剪点 · 1 / 3 · 剪辑后", "正在修改…"]);
   // Scarlet starts on the note about the aside. It wasn't sent as a revision, but its card says Scarlet is on it.
   await press("ArrowDown");
   await press("ArrowDown");
@@ -8026,7 +8026,7 @@ it("keeps the waiting pass's flagged edit on the timeline, numbered after its ca
   const strip = () => { const el = container.querySelector<HTMLElement>(".simple-timeline-hover")!; el.getBoundingClientRect = () => ({ left: 0, width: 1000 }) as DOMRect; return el; };
   const dot = [...container.querySelectorAll<HTMLElement>(".simple-timeline-mark")].find(m => m.textContent === "4")!;
   await act(async () => { strip().dispatchEvent(new PointerEvent("pointermove", { bubbles: true, pointerId: 1, clientX: parseFloat(dot.style.left) * 10 })); });
-  expect(container.querySelector(".simple-timeline-need")?.textContent).toBe("Edit 4 needs you");
+  expect(container.querySelector(".simple-timeline-need")?.textContent).toBe("剪辑 4待确认");
   await act(async () => { strip().dispatchEvent(new PointerEvent("pointerleave", { bubbles: true, pointerId: 1 })); });
   // With a call open and the whole video in view, the flagged edit still has its dot: "4 need you" still counts it.
   await openCall("Breath before the price.");
@@ -8072,7 +8072,7 @@ it("keeps the number a call or a flagged edit was shown under when another call 
     await act(async () => { strip().dispatchEvent(new PointerEvent("pointermove", { bubbles: true, pointerId: 1, clientX: parseFloat(dot.style.left) * 10 })); });
     return container.querySelector(".simple-timeline-need")?.textContent;
   };
-  expect([await tip("2"), await tip("4"), await tip("3")]).toEqual(["Cut 2 needs you", "Cut 4 needs you", "Edit 3 needs you"]);
+  expect([await tip("2"), await tip("4"), await tip("3")]).toEqual(["剪点 2待确认", "剪点 4待确认", "剪辑 3待确认"]);
   // Opened again, the project shows the numbers the editor has seen.
   await act(async () => root.unmount());
   root = createRoot(container);
@@ -8673,7 +8673,7 @@ it("keeps the chat anchored while scrolling a pass's edits, including when a rev
     const list = pass.querySelector(".simple-pass-list")!;
     const label = list.querySelector("li:last-child .simple-pass-time > span")!;
     expect(list.children).toHaveLength(20);
-    expect(label.textContent).toContain("needs you");
+    expect(label.textContent).toContain("待确认");
     expect(styled(label, "position")).toEqual(["absolute"]);
     expect(styled(list, "position", "overflow-y")).toEqual(["relative", "auto"]);
 
@@ -8897,7 +8897,7 @@ it("returns the cut to an open cut's join when a clip from Media was played over
   await show();
   await click(buttonIn(turnFor("chg_approved_2"), "查看剪辑")!);
   await act(async () => {});
-  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing “Keep the image test” · 剪辑后");
+  expect(container.querySelector(".simple-on-video")?.textContent).toBe("正在显示 “Keep the image test” · 剪辑后");
   // The editor is inside the cut's passage, on that earlier version's clock.
   await act(async () => usePlayerStore.setState({ time: 11 }));
   await click(mediaButton());
@@ -8952,7 +8952,7 @@ it("bookmarks a place in the video itself while a suggestion, an open cut or a c
   // An open cut plays on the version before it. Its place is its join, where closing it goes.
   await click(buttonIn(turnFor("chg_approved_2"), "查看剪辑")!);
   await act(async () => {});
-  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing “Keep the image test” · 剪辑后");
+  expect(container.querySelector(".simple-on-video")?.textContent).toBe("正在显示 “Keep the image test” · 剪辑后");
   await act(async () => usePlayerStore.setState({ time: 11 }));
   // The cut that's open goes with the place, so a launch after a quit opens it again.
   expect(place()).toBe(`/p/${PRJ}?t=6&open=${encodeURIComponent(`edit:${threadWith("chg_approved_2").id}:chg_approved_2:0`)}`);
@@ -9015,7 +9015,7 @@ it("writes a time past the first hour with its hour, over the player as on the l
   await act(async () => {});
   await reviewCalls();
   expect(save).not.toHaveBeenCalled();
-  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing cut at 1:02:07 · 1 of 1 · 剪辑后");
+  expect(container.querySelector(".simple-on-video")?.textContent).toBe("正在显示 1:02:07 处的剪点 · 1 / 1 · 剪辑后");
   // The call goes by its number in the box; the line that names the aim says where it is.
   expect(boxTag()).toBe("剪点 1");
   expect(container.querySelector(".simple-target")?.textContent).toContain("Revising the cut at 1:02:07");
@@ -10726,7 +10726,7 @@ it("opens a cut unlit with its words folded when it is opened again, after Befor
   await click(buttonIn(turnFor("chg_approved_2"), "查看剪辑")!);
   await act(async () => {});
   expect(beforeIcon(editPanel()!)).toEqual(["", "剪辑前", "false", "播放剪辑前 (\\)"]);
-  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing “Keep the image test” · 剪辑后");
+  expect(container.querySelector(".simple-on-video")?.textContent).toBe("正在显示 “Keep the image test” · 剪辑后");
   expect(transcriptLink().getAttribute("aria-expanded")).toBe("false");
   expect(openHead()!.querySelector(".edit-passage")).toBeNull();
   expect(audition).toHaveBeenLastCalledWith({ start: 8, end: 15.4, skips: [{ start: 10, end: 12.4, removed: true }] }, expect.any(Number));
@@ -10775,7 +10775,7 @@ it("plays a cut again from the top when the line of the request that made it is 
   expect([line().textContent, line().title]).toEqual(["The false start", "在时间线上显示"]);
   await click(line());
   await act(async () => {});
-  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing “The false start” · 剪辑后");
+  expect(container.querySelector(".simple-on-video")?.textContent).toBe("正在显示 “The false start” · 剪辑后");
   expect(boxTag()).toBe("Cut at 0:10");
   await press("\\");
   await click(transcriptLink());
@@ -11011,7 +11011,7 @@ it("says a cut's length the same way in its row, its mark and on the timeline", 
   expect(rows().map(r => r.querySelector(".simple-edit-value")?.textContent)).toEqual(["−10 s", "−3:41"]);
   await click(rows()[0]!);
   await act(async () => {});
-  expect(container.querySelector(".simple-timeline-band")?.textContent).toBe("Removed · 10 s");
+  expect(container.querySelector(".simple-timeline-band")?.textContent).toBe("已移除 10 s");
   await click(transcriptLink());
   expect(openHead()!.querySelector(".edit-passage-cut")?.textContent).toBe("10 s");
 });

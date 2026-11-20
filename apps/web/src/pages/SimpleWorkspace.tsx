@@ -723,7 +723,7 @@ function PassSummary({ projectId, thread, edits, rejected = noRejected, actions,
           counted on from the calls, so the list is one run of numbers. The full list keeps each row's time, version
           and amount: the time is bold amber on a tint while the row needs the editor, and a decided row is ticked. */}
       {filter === "calls" && row.num ? <EditBadge n={row.num} check={row.needs} />
-        : <span className={row.needs ? "simple-pass-time is-need" : "simple-pass-time"}>{clockLabel(row.displayAt)}{row.needs && <span>, needs you</span>}</span>}
+        : <span className={row.needs ? "simple-pass-time is-need" : "simple-pass-time"}>{clockLabel(row.displayAt)}{row.needs && <span>，{zh.workspace.pendingReview}</span>}</span>}
       <span className="simple-pass-label">{filter === "calls" ? row.label : <>{row.rejected && <RejectedMark />}{row.decided && !row.needs && <span className="simple-pass-tick" aria-label={zh.workspace.decided}><Icon name="check" size={10} /></span>}<span className="simple-pass-words">{row.label}</span>
         {row.version > 0 && <EditVersion n={row.version} hover={spent.get(row.key)} />}{row.fresh && <small className="edit-version is-new">{zh.workspace.new}</small>}
         {/* What else the moment holds, which unfolds its edits under the row and folds them again. */}
@@ -1804,7 +1804,7 @@ export function SimpleWorkspace() {
     if (start === null || end === null || end < start) return;
     const cut = { start, end };
     const after = cutAudition(cut, "after", duration, { others: baseCuts, beyond: true });
-    const focus = focusAround(cut, duration, `Removed · ${lengthLabel(heard.end - heard.start)}`, { playbackEnd: after.end });
+    const focus = focusAround(cut, duration, zh.workspace.removed(lengthLabel(heard.end - heard.start)), { playbackEnd: after.end });
     const shown = focus && baseRemovals.filter(r => r.removed.end > focus.view.start && r.removed.start < focus.view.end);
     if (!focus || !shown?.length) return;
     // The working cut must be this version with exactly those passages out. One that differs here in any other way
@@ -2394,7 +2394,7 @@ export function SimpleWorkspace() {
   }, [pass, passThread?.id, passRoot?.id, allCalls, passEdits, current.id]); // eslint-disable-line react-hooks/exhaustive-deps
   // A call says its place among the calls ("Cut 2 of 5") while its number is one of theirs. A call that arrived after
   // the edits were numbered has a number past them, and says the number alone.
-  const ofCalls = (n?: number) => n !== undefined && n <= allCalls.length ? ` of ${allCalls.length}` : "";
+  const callPosition = (n: number) => n <= allCalls.length ? zh.workspace.position(n, allCalls.length) : String(n);
   const revisions = useMemo(() => pass ? callRevisions(pass, tasks, changes) : undefined, [pass, tasks, changes]);
   const queuedCuts = new Set(cutRuns.keys());
   const sentBack = (index: number) => index === revisingIndex || queuedCuts.has(index);
@@ -2480,20 +2480,21 @@ export function SimpleWorkspace() {
       const at = sentBack(a.index) || passChoices[a.index] !== undefined ? undefined
         : override ? override.version === (pinnedCallVersion ?? head) ? override.range : undefined
         : pinnedCallVersion ? undefined : placeCut(a);
-      return at ? [{ time: at.start, n: callNo.get(a.index), group: "call", title: `Cut ${callNo.get(a.index)}${ofCalls(callNo.get(a.index))} · ${clockLabel(at.start)}`, summary: a.reason,
-        detail: `Removes ${lengthLabel(a.end - a.start)}`, context: pass.description, state: "check" as const, need: `Cut ${callNo.get(a.index)}`,
+      const n = callNo.get(a.index)!;
+      return at ? [{ time: at.start, n, group: "call", title: `${zh.workspace.call} ${callPosition(n)} · ${clockLabel(at.start)}`, summary: a.reason,
+        detail: zh.workspace.removes(lengthLabel(a.end - a.start)), context: pass.description, state: "check" as const, need: zh.workspace.cutNumber(n),
         current: listening?.changeId === pass.id && listening.index === a.index, open: () => actions.listen(pass, a) }] : [];
     })
     // A suggestion's band is on the place the player is on. Each of its other places is a dot beside it, and a press
     // on one moves the player and the band there. The place on screen has a dot only when it has no band, as when it
     // runs over most of the video: a press on that one scrubs, as on any point of the timeline.
-    : places.flatMap((r, i): TimelineDot[] => i === shownPlace && suggestionLine ? [] : [{ time: r.start, title: `Suggestion · ${clockLabel(r.start)}`, summary: suggestion?.description,
+    : places.flatMap((r, i): TimelineDot[] => i === shownPlace && suggestionLine ? [] : [{ time: r.start, title: `${zh.workspace.suggestion} · ${clockLabel(r.start)}`, summary: suggestion?.description,
       detail: span(r), ...i !== shownPlace && { open: () => { player.pause(); setPlace(i); } } }]);
   // The call that's open, also one sent back for revision: it keeps its note, Before and After while Scarlet works on it.
   const openCall = listening && listening.changeId === pass?.id ? allCalls.find(a => a.index === listening.index) : undefined;
   const openCallBack = !!openCall && sentBack(openCall.index);
   // What the video shows of the open call. Nothing, while its cut isn't on the working cut to be shown.
-  const cutPosition = openCall && heard ? `cut at ${clockLabel(heard.start)} · ${callNo.get(openCall.index)}${ofCalls(callNo.get(openCall.index))}` : "";
+  const cutPosition = openCall && heard ? `${zh.workspace.cutAt(clockLabel(heard.start))} · ${callPosition(callNo.get(openCall.index)!)}` : "";
   const shownEdit = actions.showing;
   const reviewed = useReviewed(current.id, focusThread);
   const revisingEdit = useRevising(focusThread);
@@ -2733,21 +2734,21 @@ export function SimpleWorkspace() {
     window.addEventListener("scarlet:bookmark-project", bookmark);
     return () => window.removeEventListener("scarlet:bookmark-project", bookmark);
   }, []);
-  const onVideo = openCall && conflict ? (heard && callTimeline ? `Current passage at ${clockLabel(heard.start)}` : undefined)
-    : openCall && visit?.side === "before" ? `Showing what the cut at ${visit.label} took out · Before`
-    : openCall ? (cutPosition ? `Showing ${cutPosition} · ${listening!.side === "after" ? zh.workspace.after : zh.workspace.before}${pinnedCallVersion ? zh.workspace.asReviewed : ""}` : undefined)
-    : suggestion ? `Showing the suggestion · ${side === "after" ? zh.workspace.after : zh.workspace.before}`
-    : shownEdit && visiting ? `Showing what the cut at ${visiting.at} took out · Before`
-    : shownEdit && appliedCut ? `Showing “${shownEdit.label}” · ${appliedSide === "after" ? zh.workspace.after : zh.workspace.before}`
-    : shownEdit ? `Showing “${shownEdit.label}” at ${clockLabel(reviewRange?.start ?? shownEdit.at ?? shownEdit.range.start)}`
-    : chosenSource && source === chosenSource ? `Showing ${chosenSource.name}` : undefined;
+  const onVideo = openCall && conflict ? (heard && callTimeline ? zh.workspace.currentPassageAt(clockLabel(heard.start)) : undefined)
+    : openCall && visit?.side === "before" ? `${zh.workspace.showing(zh.workspace.removedPassageAt(visit.label))} · ${zh.workspace.before}`
+    : openCall ? (cutPosition ? `${zh.workspace.showing(cutPosition)} · ${listening!.side === "after" ? zh.workspace.after : zh.workspace.before}${pinnedCallVersion ? zh.workspace.asReviewed : ""}` : undefined)
+    : suggestion ? `${zh.workspace.showing(zh.workspace.suggestion)} · ${side === "after" ? zh.workspace.after : zh.workspace.before}`
+    : shownEdit && visiting ? `${zh.workspace.showing(zh.workspace.removedPassageAt(visiting.at))} · ${zh.workspace.before}`
+    : shownEdit && appliedCut ? `${zh.workspace.showing(`“${shownEdit.label}”`)} · ${appliedSide === "after" ? zh.workspace.after : zh.workspace.before}`
+    : shownEdit ? `${zh.workspace.showing(`“${shownEdit.label}”`)} · ${clockLabel(reviewRange?.start ?? shownEdit.at ?? shownEdit.range.start)}`
+    : chosenSource && source === chosenSource ? zh.workspace.showing(chosenSource.name) : undefined;
   // A call's passage is shaded where its footage is on the working cut. One that can't be placed there shades nothing.
-  const lineFocus = listening ? callView ? callView.focus : heard && callTimeline && focusAround(heard, callDuration ?? 0, conflict ? zh.workspace.currentPassage : `Removed · ${lengthLabel(heard.end - heard.start)}`)
+  const lineFocus = listening ? callView ? callView.focus : heard && callTimeline && focusAround(heard, callDuration ?? 0, conflict ? zh.workspace.currentPassage : zh.workspace.removed(lengthLabel(heard.end - heard.start)))
     : places.length ? suggestionLine
-    : appliedCut ? focusAround(appliedCut, beforeDuration, `Removed · ${lengthLabel(appliedCut.end - appliedCut.start)}`, { playbackEnd: afterListen?.end })
+    : appliedCut ? focusAround(appliedCut, beforeDuration, zh.workspace.removed(lengthLabel(appliedCut.end - appliedCut.start)), { playbackEnd: afterListen?.end })
     // Until the earlier version arrives, a line marks the join in the working cut and says how much came out there.
     : shownEdit?.beforeCut ? focusAround({ start: shownAt!, end: shownAt! }, cutDuration ?? 0,
-      `Removed · ${lengthLabel(shownEdit.beforeCut.removed.end - shownEdit.beforeCut.removed.start)}`)
+      zh.workspace.removed(lengthLabel(shownEdit.beforeCut.removed.end - shownEdit.beforeCut.removed.start)))
     // A rejected edit is out of the video: its band is where it was, outlined, over the video as it runs without it.
     : shownEdit?.rejected ? focusAround(shownEdit.at !== undefined ? { start: shownEdit.at, end: shownEdit.at } : shownEdit.range, cutDuration ?? 0, zh.workspace.rejected, { tone: "kept" })
     // Any other edit is drawn for what it did: a sound fix or a zoom keeps its footage, so After plays it.
@@ -2760,14 +2761,14 @@ export function SimpleWorkspace() {
   const editDot = (thread: Thread, e: ThreadEdit, title: string, at: number): TimelineDot => {
     const landed = justLanded(e.changeId) ? e.beforeCut || e.at !== undefined ? "cut" as const : "edit" as const : undefined;
     return { time: at, landed, landedAt: landed && landing.current?.at.get(e.changeId), title, summary: e.label, edit: `${e.changeId}/${e.spot}`,
-      detail: e.beforeCut ? `Removed ${lengthLabel(e.beforeCut.removed.end - e.beforeCut.removed.start)}`
-        : e.at !== undefined ? editKindWord(e) ?? "Cut" : [editKindWord(e), span(e.range)].filter(Boolean).join(" · "),
+      detail: e.beforeCut ? zh.workspace.removed(lengthLabel(e.beforeCut.removed.end - e.beforeCut.removed.start))
+        : e.at !== undefined ? editKindWord(e) ?? zh.workspace.call : [editKindWord(e), span(e.range)].filter(Boolean).join(" · "),
       context: [...thread.changes, ...thread.flagged ?? []].find(c => belongsTo(e, c))?.description,
       // A press on the edit's marker opens it, as its row in the chat does.
       open: () => actions.openEdit(thread, e) };
   };
   /** A pass's edit by its time, as its row in the pass's list and the message box's tag say it: "Cut at 2:05". */
-  const passEditName = (e: ThreadEdit, at: number) => `${e.beforeCut ? "Cut" : "Edit"} at ${clockLabel(at)}`;
+  const passEditName = (e: ThreadEdit, at: number) => (e.beforeCut ? zh.workspace.cutAt : zh.workspace.editAt)(clockLabel(at));
   /** One that asks for a look while the pass waits has its number, counted on from the calls: "Cut 6 · 8:52". */
   const passEditDot = (thread: Thread, e: ThreadEdit, at: number) => {
     const numbered = passEditNo.get(editKey(e));
@@ -2805,8 +2806,9 @@ export function SimpleWorkspace() {
     const need = state === "check" ? passEditNo.get(editKey(e))?.name ?? passEditName(e, at) : undefined;
     if (passWaits) return state === "check" || current ? [{ ...passEditDot(focusThread, e, at), group: "pass", state, current, need }] : [];
     // The hover note names the request first: "Edit 3" alone would read as the chat's third request.
-    const dot = editDot(focusThread, e, `${shortTitle(focusThread.title)} · ${dotNumbers.get(e) ?? i + 1} of ${playerView.edits.length} · ${clockLabel(at)}`, at);
-    return [{ ...dot, n: dotNumbers.get(e) ?? i + 1, state, current, need }];
+    const n = dotNumbers.get(e) ?? i + 1;
+    const dot = editDot(focusThread, e, `${shortTitle(focusThread.title)} · ${zh.workspace.position(n, playerView.edits.length)} · ${clockLabel(at)}`, at);
+    return [{ ...dot, n, state, current, need }];
   }) : [];
   // The waiting pass's edits that ask for a look are with its calls when the timeline is on another request, numbered
   // after the calls as For you counts them. While the timeline is the pass's own, its dots above draw them.
@@ -2828,7 +2830,7 @@ export function SimpleWorkspace() {
       if (drawnChecks.has(key)) return [];
       drawnChecks.add(key);
       const at = edit.reviewRange?.start ?? edit.at ?? edit.range.start;
-      return [{ ...editDot(thread, edit, `${shortTitle(thread.title)} · ${number} of ${total} · ${clockLabel(at)}`, at),
+      return [{ ...editDot(thread, edit, `${shortTitle(thread.title)} · ${zh.workspace.position(number, total)} · ${clockLabel(at)}`, at),
         n: number, group: thread.id, state: "check" as const, need: passEditName(edit, at) }];
     });
   }) : [];

@@ -681,7 +681,7 @@ function Scrubber({ duration, start = 0, playhead, waveform, activeShortcuts, su
   // says which, and the frame is that one's.
   const hotDots = hotMark === undefined ? undefined : markLayout.find(mark => mark.key === hotMark)?.dots;
   const waiting = hotDots?.find(dot => dot.state === "check" && dot.need);
-  const markNote = waiting && <span className="simple-timeline-need">{zhReview.timeline.needsEditor(waiting.need)}</span>;
+  const markNote = waiting?.need && <span className="simple-timeline-need">{zhReview.timeline.needsEditor(waiting.need)}</span>;
   // Skipped footage can be heard: a press hands it to the caller. Its label says which cut took it out.
   const gapNodes = useMemo(() => <>{gaps?.map(gap => {
     const left = Math.max(0, percent(gap.start)), right = Math.min(100, percent(gap.end));

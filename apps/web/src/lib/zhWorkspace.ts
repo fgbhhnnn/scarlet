@@ -1,5 +1,6 @@
 /** Workspace controls, status and review text. */
 export const workspace = {
+  kind: { cut: "剪点", added: "已添加", audio: "音频", zoom: "缩放", reframe: "重新构图", text: "文字", overlay: "叠加", graphic: "图形", speed: "速度", transition: "转场", todo: "待办", edit: "剪辑" },
   addFootage: "向此项目添加素材",
   chat: "对话",
   history: "历史记录",
@@ -134,6 +135,13 @@ export const workspace = {
   currentPassageAt: (time: string) => `当前片段 · ${time}`,
   removedPassageAt: (time: string) => `${time} 处剪点移除的片段`,
   showing: (label: string) => `正在显示 ${label}`,
+  showingNamed: (what: string) => `正在显示“${what}”`,
+  showingSuggestion: "正在显示剪辑建议",
+  removedAt: (time: string) => `正在显示 ${time} 处剪点移除的素材`,
+  revisingTarget: (target: string) => `正在修改${target}`,
+  atOnce: (count: number) => `同时处理 ${count} 项`,
+  atOnceHint: (count: number) => `Scarlet 正在同时处理 ${count} 个剪点或剪辑。`,
+  markedFrame: (time: string, count: number) => `标记画面 ${time} · ${count} 处标记`,
   removes: (duration: string) => `移除 ${duration}`,
   removed: (duration: string) => `已移除 ${duration}`,
   checkRange: (range: string) => `播放待检查片段 ${range}`,

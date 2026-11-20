@@ -1,14 +1,19 @@
 import { workspace } from "./zhWorkspace";
+import { zhModels } from "./zhModels";
+import { zhReview } from "./zhReview";
+import { zhSettings } from "./zhSettings";
 
 /** Simplified Chinese interface text. */
 export const zh = {
   workspace,
+  review: zhReview,
+  settingsDetails: zhSettings,
   learning: { title: "学习规则", retry: "重试", loadFailed: "无法加载技能。", empty: "暂无学习规则。", waiting: "你提出的规则会在这里等待确认。", said: "你说过", replaces: "替换", saveTo: "保存到", chooseSkill: "选择技能", saving: "保存中…", revise: "修改", approve: "批准", decline: "拒绝", rule: "规则" },
   terms: { import: "导入", analyze: "分析", timeline: "时间线", review: "审阅", export: "导出", draft: "草稿" },
   common: {
     cancel: "取消", save: "保存", close: "关闭", retry: "重试", clear: "清除", add: "添加", remove: "移除",
     loading: "加载中…", select: "选择", projects: "项目", project: "项目", settings: "设置", allProjects: "全部项目",
-    somethingWrong: "出了点问题", confirm: "确认", closeShortcut: "关闭（Esc）",
+    somethingWrong: "出了点问题", unavailable: "不可用", yes: "是", no: "否", confirm: "确认", closeShortcut: "关闭（Esc）",
   },
   project: {
     actions: "项目操作", rename: "重命名", archive: "归档", unarchive: "取消归档", pause: "暂停", resume: "恢复",
@@ -53,7 +58,8 @@ export const zh = {
     on: "开启", off: "关闭", description: "每条短视频会创建一个新项目，使用当前成片作为素材，保留原项目。",
     missingVideo: "请先将素材加入时间线，再制作短视频。",
   },
-  shell: { demo: "演示", settings: "设置", createSkill: "创建技能", chooseModels: "选择模型", signIn: "登录", backToProject: "返回项目", offline: "离线：实时更新已暂停", reconnecting: "正在重新连接 Scarlet…" },
+  shell: { openingProject: "正在打开项目…", loadingHistory: "正在加载剪辑历史…", projectFailed: "无法打开项目", historyFailed: "无法加载剪辑历史", demo: "演示", settings: "设置", createSkill: "创建技能", chooseModels: "选择模型", signIn: "登录", backToProject: "返回项目", offline: "离线：实时更新已暂停", reconnecting: "正在重新连接 Scarlet…" },
+  model: { ...zhModels, model: "模型", models: "模型", connecting: "连接中…", offline: "离线", choose: "选择模型", chooseVisible: "选择可见模型", setup: "设置模型", refresh: "刷新模型", search: "搜索模型…", favorites: "收藏", effort: "思考强度", speed: "速度", standard: "标准", manage: "管理模型…", signIn: "管理登录…", noMatch: "没有匹配的模型。", providerDefault: "提供方默认" },
   ui: {
     review: {
       before: "剪辑前", retryPreview: "重试预览", retryBefore: "重新打开剪辑前的版本",

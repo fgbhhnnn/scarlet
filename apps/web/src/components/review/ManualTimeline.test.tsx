@@ -81,3 +81,15 @@ describe("ManualTimeline first video", () => {
     expect(manual.apply).not.toHaveBeenCalled();
   });
 });
+
+it("keeps the V1 entry point enabled even when the empty workspace is read-only", async () => {
+  const onAddFirstVideo = vi.fn().mockResolvedValue(undefined);
+  await act(async () => root.render(<ManualTimeline open projectId="prj_first" timeline={undefined} media={media} fps={30}
+    canEdit={false} onClose={vi.fn()} onMedia={vi.fn()} onAddFirstVideo={onAddFirstVideo} />));
+
+  const button = [...container.querySelectorAll<HTMLButtonElement>("button")].find(button => button.textContent?.includes("将首个视频添加到 V1"));
+  expect(button).toBeDefined();
+  expect(button!.disabled).toBe(false);
+  await act(async () => button!.click());
+  expect(onAddFirstVideo).toHaveBeenCalledOnce();
+});

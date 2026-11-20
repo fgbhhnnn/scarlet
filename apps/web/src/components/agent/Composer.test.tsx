@@ -211,6 +211,31 @@ it.each(["missing", "disabled"])("sends and rewords explicit dialogue shortcuts 
   expect(rewording.onSave).toHaveBeenCalledWith(rewording.text, undefined);
 });
 
+it("creates a built-in first-cut task when the skill library request fails", async () => {
+  vi.spyOn(api, "skills").mockRejectedValue(new Error("engine away"));
+  useSkillsStore.setState({ status: "idle", skills: [], error: null });
+  const instruction = "/dialogue-pass 请给这段中文口播做一版粗剪。";
+  await show();
+  await type(instruction);
+  await submit();
+  expect(useProjectStore.getState().createTask).toHaveBeenCalledWith(PRJ, expect.objectContaining({
+    instruction, context: { version: project.head, skillIds: undefined },
+  }));
+  expect(container.textContent).not.toContain("engine away");
+});
+
+it("keeps the model requirement when the skill library is also unavailable", async () => {
+  vi.spyOn(api, "skills").mockRejectedValue(new Error("engine away"));
+  useHostsStore.setState({ hosts: [] });
+  useSkillsStore.setState({ status: "error", skills: [], error: "engine away" });
+  await show();
+  await type("/dialogue-pass");
+  const field = container.querySelector<HTMLTextAreaElement>("textarea")!;
+  await act(() => { field.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true })); });
+  expect(useProjectStore.getState().createTask).not.toHaveBeenCalled();
+  expect(container.querySelector('[role="alert"]')?.textContent).toBe(NO_AGENT_REASON);
+});
+
 it.each(["click", "keyboard"])("creates a skill from the picker by %s and returns to the same draft", async method => {
   useProjectStore.setState({ load: vi.fn(), status: "ready" });
   useSkillsStore.setState({ status: "ready", skills: [db.skills[0]!] });

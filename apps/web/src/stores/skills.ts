@@ -32,7 +32,13 @@ export async function commandSkillIds(draft: string): Promise<string[] | undefin
   const library = useSkillsStore.getState();
   if (library.status !== "ready") await library.load();
   const { skills, error } = useSkillsStore.getState();
-  if (error) throw new Error(error);
+  // The engine can recognize the built-in first-cut commands without client-supplied skill IDs.
+  if (error) {
+    const builtInFirstCut = [...names].every(name => dialogueShortcut(name, []) === "first-cut" &&
+      !skills.some(skill => skill.name === name && !isDialogueGuide(skill)));
+    if (builtInFirstCut) return;
+    throw new Error(error);
+  }
   const available = enabledSkills(skills);
   const ids = new Set<string>();
   for (const name of names) {

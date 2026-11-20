@@ -57,15 +57,19 @@ async function claimed(agent = "claude", instruction = "Tighten the intro", cont
   return task;
 }
 
-it("recognizes the automatic first-cut request as a dialogue pass", async () => {
-  const result = await api<{ task: Task }>("POST", `/projects/${project.id}/tasks`, {
-    kind: "edit", agent: "codex",
-    instruction: "Make a first cut from this project’s footage and send it to me for review.",
-    context: { message: "Make first cut" },
-  });
+it.each([
+  { instruction: "/dialogue-pass 请给这段中文口播做一版粗剪。" },
+  { instruction: "Make a first cut from this project’s footage and send it to me for review.", context: { message: "Make first cut" } },
+])("creates the first-cut task without skill IDs ($instruction)", async request => {
+  const path = `/projects/${project.id}/tasks`;
+  const result = await api<{ task: Task }>("POST", path, { kind: "edit", agent: "codex", ...request });
   expect(result.status).toBe(201);
-  expect(result.body.task.context.dialogueOperation).toBe("first-cut");
-  expect(taskRunKind(result.body.task)).toBe("pass");
+  const { task } = result.body;
+  expect(task.state).toBe("queued");
+  expect(task.context.dialogueOperation).toBe("first-cut");
+  expect(task.context).not.toHaveProperty("skillIds");
+  expect(taskRunKind(task)).toBe("pass");
+  expect((await api<{ tasks: Task[] }>("GET", path)).body.tasks).toContainEqual(task);
 });
 
 it("builds the one prompt every host uses, with answers in the system prompt for a fresh run", async () => {

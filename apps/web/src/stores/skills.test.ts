@@ -90,6 +90,19 @@ it("refuses a command with the reason when the library can't be loaded", async (
   expect(useSkillsStore.getState()).toMatchObject({ status: "error", error: "engine away" });
 });
 
+it.each(["/dialogue-pass", "/first-cut-dialogue"])("keeps the built-in first-cut shortcut usable when the skill library is unavailable (%s)", async command => {
+  vi.spyOn(api, "skills").mockRejectedValue(new Error("engine away"));
+  await expect(commandSkillIds(command)).resolves.toBeUndefined();
+  expect(useSkillsStore.getState()).toMatchObject({ status: "error", error: "engine away" });
+});
+
+it("reports a skill lookup failure for a first-cut request that also names a custom skill", async () => {
+  vi.spyOn(api, "skills").mockRejectedValue(new Error("engine away"));
+  await expect(commandSkillIds("/dialogue-pass /captions")).rejects.toThrow("engine away");
+  useSkillsStore.getState().apply(skill("dialogue-pass", { source: undefined, bundledName: undefined }));
+  await expect(commandSkillIds("/dialogue-pass")).rejects.toThrow("engine away");
+});
+
 it("loads the library once for callers that ask together, and again after a failure", async () => {
   let answer!: (response: { skills: Skill[] }) => void;
   const read = vi.spyOn(api, "skills").mockImplementationOnce(() => new Promise(resolve => { answer = resolve; }));

@@ -3,16 +3,17 @@ import { z } from "zod/v3";
 import type { AppEnv } from "../auth.js";
 import type { Ctx } from "../context.js";
 import { badRequest } from "../errors.js";
-import { availableTranscriptionProvider } from "../transcribe/index.js";
-import { localRuntimeIssue, localRuntimeStatus, resolveLocalRuntime } from "../transcribe/localRuntime.js";
+import { availableTranscriptionProvider, transcriptionProviderIssue } from "../transcribe/index.js";
+import { localRuntimeStatus, resolveLocalRuntime, localRuntimeIssue } from "../transcribe/localRuntime.js";
 import { jsonBody } from "./util.js";
 
 /** Why nothing can transcribe, in the editor's words, so Media can say it and offer the fix. */
 async function transcriptionIssue(ctx: Ctx): Promise<string> {
-  const s = ctx.settings().transcription;
-  if (s.provider === "openai") return ctx.env.openaiKey ? "OpenAI transcription is unavailable." : "OpenAI transcription needs an API key.";
-  // A library is left off only where no local runtime was found: each launch that finds one turns it on.
-  return await localRuntimeIssue(resolveLocalRuntime(ctx, { ...s, provider: "whispercpp" })) ?? "Local transcription is unavailable.";
+  if (ctx.settings().transcription.provider === "none") {
+    return await localRuntimeIssue(resolveLocalRuntime(ctx, { ...ctx.settings().transcription, provider: "whispercpp" }))
+      ?? "Local transcription is unavailable.";
+  }
+  return transcriptionProviderIssue(ctx);
 }
 
 export function settingsRoutes(ctx: Ctx) {

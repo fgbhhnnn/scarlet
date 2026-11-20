@@ -50,6 +50,8 @@
     ],
     "externalBin": [
       "binaries/scarlet-engine",
+      "binaries/ffmpeg",
+      "binaries/ffprobe",
       "binaries/whisper-cli"
     ],
     "resources": {

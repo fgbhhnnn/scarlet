@@ -5,6 +5,7 @@ import { usePlayerStore } from "../../stores/player";
 import { ChangeClip, type ComparisonPanePlayback } from "./ChangeClip";
 import { useReviewTimeline } from "./useReviewTimeline";
 import { zh } from "../../lib/zh";
+import { zhReview } from "../../lib/zhReview";
 
 /** A replacement shot can have no source frames in common with its predecessor. */
 function savedBeforeRange(change: Change, edit: ThreadEdit, version: string) {
@@ -42,8 +43,8 @@ export function useEditBefore(projectId: string, working: Timeline | null | unde
     // A stored comparison may already contain handles.
     if (saved && saved.start < Math.min(saved.end, duration)) return { start: saved.start, end: Math.min(saved.end, duration) };
   }, [duration, edit, change, version, framing, map, passage?.start, passage?.end]);
-  const unavailable = !version ? "No earlier version is available." : duration === 0 ? "The timeline was empty before this edit."
-    : source && !framing && !range ? "No matching passage in the earlier version." : undefined;
+  const unavailable = !version ? zhReview.before.noEarlierVersion : duration === 0 ? zhReview.before.emptyEarlierTimeline
+    : source && !framing && !range ? zhReview.before.noMatchingPassage : undefined;
   return { ...original, duration, map, range, unavailable };
 }
 

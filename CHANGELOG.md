@@ -6,6 +6,7 @@ Add one line under today's date for each change an editor would notice. Leave ou
 
 ## November 21, 2026
 
+- 转写进度、成片复查和剪辑前预览提示现在使用简体中文。
 - 项目库、剪辑工作区、设置和系统菜单现在都使用简体中文。
 
 ## November 20, 2026

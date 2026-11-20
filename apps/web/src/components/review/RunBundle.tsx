@@ -190,8 +190,6 @@ interface RunBundleProps {
   onWaitForTranscripts?(on: boolean): void;
 }
 
-/** What a pass sent back to check the finished cut is doing, whatever it said on its way in. */
-const FINAL_CHECK = "Final check of the finished cut";
 /** The events of a pass's latest run, once the engine has sent it back to check for repeats; every event otherwise. */
 const sinceRerun = (task: Task, events: readonly TaskEvent[]) => {
   const from = task.repeatAudit?.returns ? task.startedAt : undefined;
@@ -251,7 +249,7 @@ export function RequestMetrics({ attempts, events }: { attempts: readonly Task[]
   for (const [i, task] of attempts.entries()) {
     const report = reports[i];
     if (!report) continue;
-    for (const model of report.models?.length ? report.models : [task.model ?? "Unknown"]) models.add(runModelName(model));
+    for (const model of report.models?.length ? report.models : [task.model ?? zhReview.history.unknown]) models.add(runModelName(model));
     efforts.add(task.effort ? task.effort.charAt(0).toUpperCase() + task.effort.slice(1) : zhReview.run.providerDefault);
   }
   return <Tokens usage={usage} time={time} className="unit-tokens" details={[
@@ -266,7 +264,7 @@ function WorkingRun({ task, events: all, changes, callNumber, say, result, onSto
   const events = useMemo(() => sinceRerun(task, all), [task, all]);
   // That check is named for what it is, above the line that says what it's on this moment.
   const rerun = !!task.repeatAudit?.returns;
-  const aim = useMemo(() => rerun ? { text: FINAL_CHECK, note: "" } : runAim(events), [events, rerun]);
+  const aim = useMemo(() => rerun ? { text: zhReview.run.finalCheck, note: "" } : runAim(events), [events, rerun]);
   const progress = useMemo(() => runProgress(events), [events]);
   const voices = useProjectStore(s => s.current?.speakerProgress);
   const voice = progress.read && !progress.read.seconds ? progress.recordings?.map(id => voices?.[id]).find(Boolean) : undefined;
@@ -289,7 +287,7 @@ function WorkingRun({ task, events: all, changes, callNumber, say, result, onSto
   // A run cut short, by Scarlet closing or restarting or by a pause, carries on under a new task. Until that attempt
   // makes its first call the line says so: the editor who just reopened Scarlet sees the edit wasn't started over.
   const pickingUp = !!task.resumeRootId && !rerun && !voice && (!doing || doing === STARTING);
-  const words = transcripts ? `Transcribing the recordings · ${transcripts}`
+  const words = transcripts ? zhReview.run.transcribing(transcripts)
     : pickingUp ? PICKING_UP
     : doing ?? (voice ? voicePhase[voice.phase] : task.state === "claimed" ? STARTING : WORKING);
   return <div className="req" data-state="working" aria-label={zhReview.run.scarletWork} aria-busy>
@@ -375,7 +373,7 @@ function FinishedRun({ task, finalChange, say, told, result, recovery, summary, 
     {say}
     {rows ?? (!(waits || (((told && !opens) || madeAbove) && !usage?.totalTokens)) && <div className="req-row req-result">
       {madeAbove ? null : opens ? <button type="button" className={madeClass} aria-current={showing || undefined}
-          title={summary ? `${made}\nShow on the timeline` : "Show on the timeline"} onClick={opens}><span>{made}</span></button>
+          title={summary ? `${made}\n${zh.workspace.showOnTimeline}` : zh.workspace.showOnTimeline} onClick={opens}><span>{made}</span></button>
         : <span className={madeClass} title={summary}><span>{made}</span></span>}
       {/* What a stopped run saved is one line, and its one action follows on it. */}
       {actsOnLine && action}
@@ -392,7 +390,7 @@ const PICKING_UP = zhReview.run.pickingUp;
 
 /** How a run that didn't finish ended, in the words its block says: paused for its transcripts, stopped, or failed. */
 export function runEnded(task: Task) {
-  return taskNeedsTranscripts(task) ? `Paused · needs ${task.needsTranscripts!.length > 1 ? "transcripts" : "transcript"}`
+  return taskNeedsTranscripts(task) ? zhReview.run.pausedTranscripts
     : task.state === "cancelled" ? zhReview.run.stopped : task.state === "failed" ? zhReview.run.couldNotFinish : undefined;
 }
 
@@ -430,27 +428,25 @@ function TranscriptWait({ task, onResume, onWait, aside }: { task: Task; onResum
   const tasks = useProjectStore(s => s.current?.tasks);
   const media = useProjectStore(s => s.current?.media);
   const pending = (task.needsTranscripts ?? []).filter(id => !media?.find(m => m.id === id)?.transcriptId);
-  // Named for what the run waits on, so two that are both ready don't read "Transcript ready".
-  const noun = (pending.length || (task.needsTranscripts?.length ?? 0)) > 1 ? "转写稿" : "转写稿";
   const making = pending.some(id => runningTranscription(tasks ?? [], id));
   // The figure is of every recording the run waited for. Counted over the ones still pending, it started again each
   // time a transcript was saved.
   const progress = transcriptionProgressLabel(transcriptsProgress(tasks ?? [], media ?? [], task.needsTranscripts ?? []));
   let status: string, action: { label: string; run(): void } | undefined;
   if (!pending.length) {
-    status = `${noun}已就绪`;
+    status = zhReview.run.transcriptsReady(task.needsTranscripts?.length ?? 0);
     action = onResume && { label: zhReview.run.finishEdit, run: onResume };
   } else if (task.continueWhenReady) {
     status = `${zhReview.run.finishesWhenReady}${progress ? ` · ${progress}` : ""}`;
     action = onWait && { label: zhReview.run.dontWait, run: () => onWait(false) };
   } else if (making) {
-    status = `${noun}${progress ?? zhReview.run.inProgress}`;
+    status = progress ? zhReview.run.transcribing(progress) : zhReview.run.transcriptsInProgress;
     action = onWait && { label: zhReview.run.finishWhenReady, run: () => onWait(true) };
   } else {
     // A transcription that was started and isn't running ended without its transcript. Asked to finish once the
     // transcript is ready, the engine starts one that isn't being made.
     const stopped = pending.some(id => (tasks ?? []).some(t => t.kind === "transcribe" && t.context.mediaId === id));
-    status = stopped ? `${noun}${zhReview.run.stoppedTranscripts}` : zhReview.run.noTranscripts(noun);
+    status = stopped ? zhReview.run.stoppedTranscripts : zhReview.run.noTranscripts;
     action = onWait && { label: stopped ? zhReview.run.retry : zhReview.run.transcribe, run: () => onWait(true) };
   }
   return <div className="req-row run-wait">

@@ -14,7 +14,7 @@ import "./workspace.css";
 
 async function launch() {
   const root = document.getElementById("root")!;
-  const desktopOnly = "Open Scarlet in the desktop app.";
+  const desktopOnly = "请在桌面应用中打开 Scarlet。";
   if (!isDesktop()) {
     root.textContent = desktopOnly;
     return;

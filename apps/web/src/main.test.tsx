@@ -27,7 +27,7 @@ beforeEach(() => {
 it("keeps the editor unloaded when a browser opens a project with a legacy launch token", async () => {
   window.history.replaceState({}, "", "/p/prj_demo#token=test-token");
   await import("./main");
-  expect(document.body.textContent).toContain("desktop app");
+  expect(document.body.textContent).toContain("请在桌面应用中打开 Scarlet。");
   expect(info).not.toHaveBeenCalled();
   expect(loadEditor).not.toHaveBeenCalled();
   expect(render).not.toHaveBeenCalled();
@@ -66,7 +66,7 @@ it("keeps the editor unloaded on unsupported native platforms", async () => {
   Object.assign(window, { __TAURI_INTERNALS__: {} });
   info.mockResolvedValueOnce({ platform: "android" });
   await import("./main");
-  await vi.waitFor(() => expect(render).toHaveBeenLastCalledWith(expect.stringContaining("desktop app")));
+  await vi.waitFor(() => expect(render).toHaveBeenLastCalledWith("请在桌面应用中打开 Scarlet。"));
   expect(loadEditor).not.toHaveBeenCalled();
 });
 

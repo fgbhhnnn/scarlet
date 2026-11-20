@@ -284,7 +284,7 @@ it("says how far the transcripts it waits on are, and keeps file progress in Med
   try {
     const activity = () => view.host.querySelector(".req-now [role=status]")?.textContent;
     // While the run waits on the transcript, the line says so with how far along it is: the words the run reads.
-    expect(activity()).toBe("Transcribing the recordings · 30%");
+    expect(activity()).toBe("正在转写录音 · 30%");
     act(() => vi.advanceTimersByTime(30_000));
     view.rerender(run([wait, answer]));
     const media = view.host.querySelector("[data-media]");
@@ -294,7 +294,7 @@ it("says how far the transcripts it waits on are, and keeps file progress in Med
 
     // A fresh transcript request can block the edit again.
     view.rerender(run([wait, answer, { ...wait, at: "2026-11-05T10:00:45.000Z" }]));
-    expect(activity()).toBe("Transcribing the recordings · 30%");
+    expect(activity()).toBe("正在转写录音 · 30%");
     // Waiting its turn behind other audio work, there is no figure yet.
     act(() => useProjectStore.setState(s => ({ current: { ...s.current!, tasks: [running, { ...transcribing, progress: { stage: "queued", fraction: 0 } }] } })));
     expect(activity()).toBe("等待转写稿");
@@ -319,20 +319,20 @@ it("says a run that ended without its transcripts is paused, and offers to finis
   const view = render(<RunBundle task={paused} events={[]} changes={[]} onResume={onResume} onWaitForTranscripts={onWait} />);
   const line = () => [view.host.querySelector(".run-summary")?.textContent, view.host.querySelector(".run-wait")?.textContent];
   // How far along it is, as a percent: no guess at how long is left.
-  expect(line()).toEqual(["Paused · needs transcript", "转写稿18%准备好后完成"]);
+  expect(line()).toEqual(["已暂停 · 等待转写稿", "正在转写录音 · 18%准备好后完成"]);
   act(() => view.host.querySelector<HTMLButtonElement>(".run-wait button")!.click());
   expect(onWait).toHaveBeenCalledWith(true);
   view.unmount();
 
   // Under a heading that says Paused, a run that saved nothing has that one row: none says "没有保存任何内容" under it.
   const banded = render(<RunBundle task={paused} events={[]} changes={[]} banded onResume={onResume} onWaitForTranscripts={onWait} />);
-  expect([...banded.host.querySelectorAll(".req-row")].map(row => row.textContent)).toEqual(["转写稿18%准备好后完成"]);
+  expect([...banded.host.querySelectorAll(".req-row")].map(row => row.textContent)).toEqual(["正在转写录音 · 18%准备好后完成"]);
   banded.unmount();
   // The tokens the run used, when those show, are in the heading: they don't end its row or bring back one that says "没有保存任何内容".
   act(() => useUiStore.getState().setShowRunTokens(true));
   act(() => useProjectStore.setState(s => ({ current: { ...s.current!, taskUsage: { [paused.id]: totals() } } })));
   const counted = render(<RunBundle task={paused} events={[]} changes={[]} banded onResume={onResume} onWaitForTranscripts={onWait} />);
-  expect([...counted.host.querySelectorAll(".req-row")].map(row => row.textContent)).toEqual(["转写稿18%准备好后完成"]);
+  expect([...counted.host.querySelectorAll(".req-row")].map(row => row.textContent)).toEqual(["正在转写录音 · 18%准备好后完成"]);
   counted.unmount();
   // With no heading, they end its one row.
   const unheaded = render(<RunBundle task={paused} events={[]} changes={[]} onResume={onResume} onWaitForTranscripts={onWait} />);
@@ -344,7 +344,7 @@ it("says a run that ended without its transcripts is paused, and offers to finis
   // its Media row. The engine starts it when the run is asked to finish once it's ready.
   project([paused, { ...transcribing, state: "failed", error: "Transcription failed.", progress: undefined }]);
   const stopped = render(<RunBundle task={paused} events={[]} changes={[]} banded onResume={onResume} onWaitForTranscripts={onWait} />);
-  expect([...stopped.host.querySelectorAll(".req-row")].map(row => row.textContent)).toEqual(["转写稿已停止重试"]);
+  expect([...stopped.host.querySelectorAll(".req-row")].map(row => row.textContent)).toEqual(["转写已停止重试"]);
   onWait.mockClear();
   act(() => stopped.host.querySelector<HTMLButtonElement>(".run-wait button")!.click());
   expect(onWait).toHaveBeenCalledWith(true);
@@ -377,7 +377,7 @@ it("says a run that ended without its transcripts is paused, and offers to finis
   act(() => useProjectStore.setState({ current: { id: "prj_1", tasks: [two], taskEvents: {},
     media: [{ id: "cam", duration: 3300, transcriptId: "tr_cam" }, { id: "mic", duration: 3300, transcriptId: "tr_mic" }] } as unknown as ProjectData }));
   const both = render(<RunBundle task={two} events={[]} changes={[]} onResume={onResume} onWaitForTranscripts={onWait} />);
-  expect(both.host.querySelector(".run-wait")?.textContent).toBe("转写稿已就绪完成剪辑");
+  expect(both.host.querySelector(".run-wait")?.textContent).toBe("2 份转写稿已就绪完成剪辑");
   both.unmount();
 
   // Once resumed, the earlier run reads as an ordinary finished one.
@@ -599,7 +599,7 @@ it("names a pass's final check for what it is, and says what it is doing now, no
   ];
   const again: Task = { ...task, state: "running", summary: null, finishedAt: undefined, startedAt: at(4000), repeatAudit: { version: "v2", returns: 1 } };
   const view = render(<RunBundle task={again} events={events} changes={[]} banded />);
-  expect(view.host.querySelector(".req-lead")?.textContent).toBe("Final check of the finished cut");
+  expect(view.host.querySelector(".req-lead")?.textContent).toBe("正在检查已完成的成片");
   expect(view.host.textContent).not.toContain(FIRST);
   expect(view.host.querySelector(".req-now [role=status]")?.textContent).toBe("检查成片对白中的重复");
 });

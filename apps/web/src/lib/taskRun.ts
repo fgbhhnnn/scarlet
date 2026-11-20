@@ -1,7 +1,7 @@
 import { DialogueScanPage, requestText, type Task, type TaskEvent } from "@scarlet/shared";
 import { cutSummary, mergeRanges, type Change, type TimeRange } from "@scarlet/timeline";
 import { appliedEditSummary } from "../components/review/cutReviewDetails";
-import { clock, lengthLabel, tokenLabel } from "./format";
+import { clock, lengthLabel, plural, tokenLabel } from "./format";
 import { editConfirmation, inputMediaIds, taskChatText, toolName, waitLabels, waitTools } from "./taskActivity";
 
 /**
@@ -78,28 +78,28 @@ const transcript: StepSpec = { group: "transcript", verb: "读取", doing: "正�
 const toolSteps: Record<string, StepSpec> = {
   project_get: project, timeline_get: project, timeline_summary: project, timeline_at: project, timeline_diff: project,
   skills_list: project, media_list: project, graphic_get: project,
-  attachment_read: { group: "attachment", verb: "Read", doing: "Reading", detail: n => n > 1 ? `${n} attached files` : "an attached file", once: true }, change_list: project, change_get: project, notes_list: project,
-  timeline_transcript: { group: "edit-transcript", verb: "Read", doing: "Reading", detail: () => "the edit’s transcript", once: true },
-  timeline_join_audit: { group: "joins", verb: "Checked", doing: "Checking", detail: n => n > 1 ? `${n} joins` : "a join", once: true },
+  attachment_read: { group: "attachment", verb: "读取", doing: "正在读取", detail: n => `${n} 个附件`, once: true }, change_list: project, change_get: project, notes_list: project,
+  timeline_transcript: { group: "edit-transcript", verb: "读取", doing: "正在读取", detail: () => "剪辑转写稿", once: true },
+  timeline_join_audit: { group: "joins", verb: "检查", doing: "正在检查", detail: n => `${n} 个衔接`, once: true },
   transcript_get: transcript,
-  transcript_search: { group: "search", verb: "Searched", doing: "Searching", once: true, detail: (n, _, first) => {
+  transcript_search: { group: "search", verb: "搜索", doing: "正在搜索", once: true, detail: (n, _, first) => {
     const query = n === 1 ? input(first).query : undefined;
-    return typeof query === "string" && query.length <= 40 ? `the transcript for “${query}”` : n > 1 ? `the transcript ${n} times` : "the transcript";
+    return typeof query === "string" && query.length <= 40 ? `“${query}”对应的转写稿` : n > 1 ? `转写稿 ${n} 次` : "转写稿";
   } },
   media_profile: sound, waveform_get: sound, sound_picture: sound, source_audio: sound,
-  audio_sync: { group: "sync", verb: "Lined up", doing: "Lining up", detail: () => "the sound", once: true },
+  audio_sync: { group: "sync", verb: "同步", doing: "正在同步", detail: () => "声音", once: true },
   media_frame: picture, frame_contact_sheet: picture, frame_contact_sheet_batch: picture, screen_area: picture,
-  screen_text: { group: "screen-text", verb: "Read", doing: "Reading", detail: () => "the text on screen", once: true },
-  screen_reading: { group: "screen-text", verb: "Read", doing: "Reading", detail: () => "the text on screen", once: true },
+  screen_text: { group: "screen-text", verb: "读取", doing: "正在读取", detail: () => "屏幕文字", once: true },
+  screen_reading: { group: "screen-text", verb: "读取", doing: "正在读取", detail: () => "屏幕文字", once: true },
   screen_motion: picture,
-  faces: { group: "faces", verb: "Found", doing: "Finding", detail: () => "where the faces are", once: true },
-  lip_sync: { group: "lip-sync", verb: "Checked", doing: "Checking", detail: () => "the lip sync", once: true },
+  faces: { group: "faces", verb: "查找", doing: "正在查找", detail: () => "人脸位置", once: true },
+  lip_sync: { group: "lip-sync", verb: "检查", doing: "正在检查", detail: () => "口型同步", once: true },
   dialogue_check_repeats: sound,
-  dialogue_check_join: { group: "joins", verb: "Checked", doing: "Checking", detail: n => n > 1 ? `${n} joins` : "a join", once: true },
-  dialogue_review_inspect: { group: "inspect", verb: "Checked", doing: "Checking", detail: n => n > 1 ? `${n} suggested cuts` : "a suggested cut", once: true },
-  dialogue_review_save: { group: "save", verb: "Saved", doing: "Saving", detail: () => "the cut recommendations" },
-  dialogue_revise_cut: { group: "revise", verb: "Moved", doing: "Moving", detail: () => "the cut" },
-  render_request: { group: "render", verb: "Rendered", doing: "Rendering", detail: () => "a preview" },
+  dialogue_check_join: { group: "joins", verb: "检查", doing: "正在检查", detail: n => `${n} 个衔接`, once: true },
+  dialogue_review_inspect: { group: "inspect", verb: "检查", doing: "正在检查", detail: n => n > 1 ? `${n} 个剪点` : "剪点建议", once: true },
+  dialogue_review_save: { group: "save", verb: "保存", doing: "正在保存", detail: () => "剪辑建议" },
+  dialogue_revise_cut: { group: "revise", verb: "移动", doing: "正在移动", detail: () => "剪点" },
+  render_request: { group: "render", verb: "渲染", doing: "正在渲染", detail: () => "预览" },
 };
 
 /** How each step's verb reads while it's still going: "Read" → "Reading". */

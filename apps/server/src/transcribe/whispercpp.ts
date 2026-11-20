@@ -64,6 +64,11 @@ export function bundledWhisperOnGpu(platform: string = process.platform, arch: s
   return platform === "darwin" && arch === "arm64";
 }
 
+/** Intel macOS ships the Metal-capable binary, but its Metal path can return no Chinese words. */
+export function bundledWhisperNeedsCpu(platform: string = process.platform, arch: string = process.arch) {
+  return platform === "darwin" && arch === "x64";
+}
+
 /** GPU builds that failed a run the CPU build then finished. Each falls back to the CPU build until the engine restarts. */
 const failedGpu = new Set<string>();
 
@@ -108,6 +113,8 @@ export class WhisperCppProvider implements TranscriptionProvider {
     binary: string; model?: string | ((signal?: AbortSignal) => Promise<string>); language?: string;
     crisperScript?: string;
     beforeRun?: () => void;
+    /** Disable the Metal path on Intel macOS, where the bundled binary can produce an empty Chinese transcript. */
+    noGpu?: boolean;
     /** Tried first. A run that fails there, for example without a Vulkan driver, runs again on `binary`. */
     gpuBinary?: string;
     log?: (message: string) => void;
@@ -193,6 +200,7 @@ export class WhisperCppProvider implements TranscriptionProvider {
       const args = this.opts.crisperScript ? ["-I", "-B", this.opts.crisperScript] : [];
       if (model) args.push("-m", model);
       args.push("-f", wav, "-ojf", "-of", base, "-np", "-l", language || this.opts.language || "auto", "-t", String(whisperThreads()));
+      if (this.opts.noGpu && !this.opts.crisperScript) args.push("--no-gpu");
       // Conditioning on earlier text can lock long recordings into repeating one sentence for minutes.
       // A prompt is part of that text context, so prompted dialogue windows keep it.
       if (prompt) args.push("--prompt", prompt);

@@ -3,7 +3,7 @@ import { basename, join, resolve } from "node:path";
 import { findOnPath } from "@scarlet/agent";
 import { selectedLocalModel, type LocalModelStatus, type LocalTranscriptionModel, type ServerSettings } from "@scarlet/shared";
 import type { Ctx } from "../context.js";
-import { bundledWhisperOnGpu } from "./whispercpp.js";
+import { bundledWhisperNeedsCpu, bundledWhisperOnGpu } from "./whispercpp.js";
 
 type Settings = ServerSettings["transcription"];
 
@@ -50,6 +50,8 @@ export interface LocalRuntime {
   adapterOwnsModel?: boolean;
   separateWhisperLane?: boolean;
   gpuBinary?: string;
+  /** Intel macOS uses the CPU path explicitly even though its bundled binary includes Metal. */
+  noGpu?: boolean;
   reason?: string;
 }
 
@@ -83,6 +85,7 @@ export function resolveLocalRuntime(ctx: Pick<Ctx, "paths" | "whisperCli" | "whi
   return { selected, active: selected === "custom" ? "custom" : "whispercpp", binary, model,
     adapterOwnsModel: settings.localModel === "custom" && !!customBinary && !model,
     separateWhisperLane: bundledBinary && bundledWhisperOnGpu(), gpuBinary: bundledBinary ? ctx.whisperGpu : undefined,
+    noGpu: bundledBinary && bundledWhisperNeedsCpu(),
     reason: presetIssue ? presetIssue + "Scarlet is using bundled Whisper." : undefined };
 }
 

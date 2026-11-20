@@ -84,6 +84,7 @@ export function getTranscriptionProvider(ctx: Ctx, override?: string, snapshot =
         : (signal?: AbortSignal) => ctx.whisperModel.get(signal ?? AbortSignal.any([policy, ctx.shutdown])));
       provider = new WhisperCppProvider({
         binary: runtime.binary, model, crisperScript: runtime.script,
+        noGpu: runtime.noGpu,
         beforeRun: runtime.script ? () => {
           // The audio lane or decoding may have taken minutes since this run captured its model identity.
           if (!hasCrisperWhisper(ctx.paths.root)) throw new Error("The CrisperWhisper installation changed while this recording waited. Retry transcription after setup finishes.");

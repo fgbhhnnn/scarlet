@@ -5,7 +5,7 @@ import { afterEach, expect, it, vi } from "vitest";
 import * as ffmpeg from "../render/ffmpeg.js";
 import { decodedRecording } from "../services/recordingAudio.js";
 import { newId } from "@scarlet/timeline";
-import { bundledWhisperOnGpu, parseWhisperJson, WhisperCppProvider, whisperThreads } from "./whispercpp.js";
+import { bundledWhisperNeedsCpu, bundledWhisperOnGpu, parseWhisperJson, WhisperCppProvider, whisperThreads } from "./whispercpp.js";
 import { seamWindows } from "./seams.js";
 import type { TranscribeResult } from "./index.js";
 
@@ -94,6 +94,23 @@ it("reports whisper-cli's progress lines for a full recording", async () => {
     expect(progress).toEqual([0.05, 1]);
     expect(calls[0]).toEqual(expect.arrayContaining(["-pp", "-t", String(whisperThreads())]));
     expect(calls[1]).not.toContain("-pp");
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+it("disables Metal for the bundled Intel macOS path", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "scarlet-whisper-intel-"));
+  try {
+    const calls: string[][] = [];
+    vi.spyOn(ffmpeg, "run").mockImplementation(async (_bin, args) => {
+      calls.push(args);
+      await writeFile(args[args.indexOf("-of") + 1] + ".json", JSON.stringify({ result: { language: "zh" }, transcription: [] }));
+      return Buffer.alloc(0);
+    });
+    const provider = new WhisperCppProvider({ binary: "whisper-cli", model: "model.bin", noGpu: true });
+    await provider.transcribeWav("a.wav", dir, undefined, "zh");
+    expect(calls[0]).toContain("--no-gpu");
+    expect(bundledWhisperNeedsCpu("darwin", "x64")).toBe(true);
+    expect(bundledWhisperNeedsCpu("darwin", "arm64")).toBe(false);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 

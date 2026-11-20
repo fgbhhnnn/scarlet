@@ -87,6 +87,7 @@ export function taskRoutes(ctx: Ctx) {
         kind: body.kind,
         agent: body.agent,
         model: body.model,
+        providerId: body.providerId ?? project.providerId,
         effort: body.effort,
         fast: body.fast,
         serviceTier: body.serviceTier,

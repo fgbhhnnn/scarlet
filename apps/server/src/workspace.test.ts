@@ -290,7 +290,13 @@ it.each(["missing", "removed"] as const)("imports audio without a transcription 
   await api("PATCH", projectsPath(), { mediaPaused: false });
   await Promise.all([...ctx.pending]);
   expect(ctx.repos.projects.getMedia(media.id)?.status).toBe("ready");
-  expect(ctx.repos.tasks.count()).toBe(0);
+  const transcription = ctx.repos.tasks.select("kind = 'transcribe'");
+  if (state === "removed") {
+    expect(transcription).toHaveLength(1);
+    expect(transcription[0]).toMatchObject({ state: "failed", error: "The selected model file is missing, empty or unreadable." });
+  } else {
+    expect(transcription).toHaveLength(0);
+  }
 });
 
 function transcriptionRows(mediaId: string) {
@@ -1288,7 +1294,7 @@ it("counts only edit threads ready for a decision in both project summaries", as
   await count(1);
 });
 
-it("serves the monitor snapshot with live media status without reading review history", async () => {
+it("serves the monitor snapshot with live media status while an import is preparing", async () => {
   const { ctx } = workspace;
   ctx.repos.projects.putMedia(project.id, { id: "camera", name: "Camera", path: "camera.mov", kind: "video" }, "ingesting");
   const inventory = vi.spyOn(ctx.repos.projects, "listMedia");
@@ -1297,6 +1303,14 @@ it("serves the monitor snapshot with live media status without reading review hi
   expect(result).toMatchObject({ project: { media: [{ id: "camera", status: "ingesting" }] }, timeline: null });
   expect(inventory).toHaveBeenCalledTimes(1);
   expect(summaries).not.toHaveBeenCalled();
+});
+
+it("initializes an empty timeline when the first import is ready", async () => {
+  const { ctx } = workspace;
+  ctx.repos.projects.putMedia(project.id, { id: "camera", name: "Camera", path: "camera.mov", kind: "video" }, "ready");
+  const result = await (await api("GET", projectsPath() + "?view=workspace")).json();
+  expect(result.timeline).toMatchObject({ projectId: project.id });
+  expect(result.project.head).toBe(result.timeline.version);
 });
 
 it("keeps the editor's chosen format when the first imported video finishes later", async () => {
@@ -2078,6 +2092,22 @@ it("plays a native import before hashing and keeps a preview requested during th
     await Promise.all(ctx.pending);
     const finished = ctx.repos.projects.getMedia(media.id)!;
     expect(finished).toMatchObject({ status: "ready", hash: await originalHash(source) });
+    const workspaceSnapshot = await (await api("GET", projectsPath() + "?view=workspace")).json() as {
+      project: Project;
+      timeline: { projectId: string; version: string; tracks: Array<{ id: string; clips: unknown[] }> };
+    };
+    expect(workspaceSnapshot.project.head).toBe(workspaceSnapshot.timeline.version);
+    expect(workspaceSnapshot.timeline.projectId).toBe(project.id);
+    expect(workspaceSnapshot.timeline.tracks.find(track => track.id === "v1")?.clips).toEqual([]);
+    const seeded = await api("POST", projectsPath() + "/changes", {
+      description: "Place the imported video on V1",
+      autoApprove: true,
+      skipRender: true,
+      ops: [{ op: "addClip", trackId: "v1", clip: { id: "imported-clip", kind: "media", mediaId: media.id, sourceIn: 0, sourceOut: 10, timelineIn: 0 } }],
+    });
+    expect(seeded.status).toBe(201);
+    const seededBody = await seeded.json() as { timeline: { tracks: Array<{ id: string; clips: unknown[] }> } };
+    expect(seededBody.timeline.tracks.find(track => track.id === "v1")?.clips).toHaveLength(1);
     expect(await lookup(finished, 0, 1, 180)).toEqual(early);
     // Uploaded recordings can already have their hash but no persisted fingerprint stamp.
     expect(await lookup({ ...finished, fingerprintStamp: undefined }, 0, 1, 180)).toEqual(early);

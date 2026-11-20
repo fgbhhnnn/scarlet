@@ -33,6 +33,16 @@ async function api<T>(method: string, path: string, body?: unknown): Promise<{ s
   return { status: res.status, body: await res.json() as T };
 }
 
+it("inherits a project's provider on new tasks and records a failed stage for recovery", async () => {
+  app.ctx.repos.settings.update({ modelProviders: [{ id: "local", name: "Local", baseUrl: "http://127.0.0.1:9000/v1", model: "qwen", apiKey: "secret" }] });
+  app.ctx.repos.projects.update(project.id, { providerId: "local" });
+  const created = await api<{ task: Task }>("POST", `/projects/${project.id}/tasks`, { kind: "edit", agent: "claude", instruction: "Edit" });
+  expect(created.body.task.providerId).toBe("local");
+  const failed = await api<{ task: Task }>("POST", `/tasks/${created.body.task.id}/complete`, { state: "failed", failedStage: "render" });
+  expect(failed.body.task.context.failedStage).toBe("render");
+  expect(JSON.stringify(failed.body)).not.toContain("secret");
+});
+
 async function readQueue() {
   const path = `/projects/${project.id}`;
   const [tasks, changes] = await Promise.all([api<{ tasks: Task[] }>("GET", `${path}/tasks`), api<{ changes: Change[] }>("GET", `${path}/changes`)]);
@@ -369,6 +379,17 @@ it("uses the last observed work for a lost worker and starts a separate resumed 
     vi.useRealTimers();
     uptime.mockRestore();
   }
+});
+
+it("preserves a failed stage in the resumed prompt and clears it when that stage is retried", async () => {
+  const task = await claimed();
+  await api("POST", `/tasks/${task.id}/complete`, { state: "failed", failedStage: "render", error: "timeout", ifStartedAt: task.startedAt });
+  const failed = app.ctx.repos.tasks.get(task.id)!;
+  expect(failed.context.failedStage).toBe("render");
+  const retry = (await api<{ task: Task }>("POST", `/tasks/${task.id}/retry`, { stage: "render", providerId: "local" })).body.task;
+  expect(retry.context.failedStage).toBeUndefined();
+  expect(retry.providerId).toBe("local");
+  expect((await api<TaskPrompt>("GET", `/tasks/${retry.id}/prompt`)).body.instruction).toContain("Retry only failed stage: render");
 });
 
 it("still hands over the prompt for a revision whose edit can no longer be laid out, and logs what is missing", async () => {

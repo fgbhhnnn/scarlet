@@ -1,4 +1,4 @@
-import { ServerSettings } from "@scarlet/shared";
+import { ServerSettings, type ModelProviderConfig } from "@scarlet/shared";
 import type { Db } from "../db.js";
 import { conflict } from "../errors.js";
 
@@ -76,11 +76,26 @@ export class SettingsRepo {
   update(patch: Record<string, unknown>): ServerSettings {
     this.db.transaction(() => {
       const previous = this.get();
-      const merged = ServerSettings.parse(deepMerge(previous as unknown as Record<string, unknown>, patch));
+      const mergedInput = deepMerge(previous as unknown as Record<string, unknown>, patch);
+      if (Array.isArray(mergedInput.modelProviders)) {
+        const previousProviders = new Map(previous.modelProviders.map(provider => [provider.id, provider]));
+        mergedInput.modelProviders = mergedInput.modelProviders.map((provider) => {
+          if (!provider || typeof provider !== "object") return provider;
+          const item = provider as Record<string, unknown>;
+          const prior = previousProviders.get(String(item.id));
+          return prior && !Object.hasOwn(item, "apiKey") ? { ...item, apiKey: prior.apiKey } : item;
+        });
+      }
+      const merged = ServerSettings.parse(mergedInput);
       // A first save also passes through the policy revision trigger.
       if (this.raw === undefined) this.db.prepare("INSERT INTO settings (id, json) VALUES (1, ?)").run(JSON.stringify(previous));
       this.db.prepare("UPDATE settings SET json = ? WHERE id = 1").run(JSON.stringify(merged));
     }, "immediate")();
     return this.get();
+  }
+
+  /** Resolve a provider without exposing its key to callers. Project overrides are passed by the route. */
+  provider(id: string): ModelProviderConfig | undefined {
+    return this.get().modelProviders.find(provider => provider.id === id);
   }
 }

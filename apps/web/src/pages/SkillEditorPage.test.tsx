@@ -663,7 +663,7 @@ it("draws each request as a project's chat does: its words in a band with where 
     const tooLong = vi.spyOn(Element.prototype, "scrollHeight", "get").mockReturnValue(900);
     view = await open(`/settings/skills/${skill.id}`);
     const words = () => units()[0]!.querySelector<HTMLElement>(".unit-msg > p")!;
-    expect([words().className, words().getAttribute("aria-expanded"), words().title]).toEqual(["said is-clipped", "false", "Show all of it"]);
+    expect([words().className, words().getAttribute("aria-expanded"), words().title]).toEqual(["said is-clipped", "false", "显示全部"]);
     await act(async () => words().click());
     expect([words().className, words().getAttribute("aria-expanded")]).toEqual(["said is-open", "true"]);
     await act(async () => words().click());

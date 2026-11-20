@@ -12,7 +12,7 @@ import { makeShorts, planShorts } from "../services/shorts.js";
 import { createProject, hasInitialTimeline } from "@scarlet/timeline";
 import type { AppEnv } from "../auth.js";
 import type { Ctx } from "../context.js";
-import { resolveTimeline } from "../services/timeline.js";
+import { ensureProjectHead, resolveTimeline } from "../services/timeline.js";
 import { jsonBody, requireProject, requireProjectHeader } from "./util.js";
 import { actorFor, logActivity, quote } from "../services/activity.js";
 import { requestAttempt } from "../services/taskAttempt.js";
@@ -70,8 +70,13 @@ export function projectRoutes(ctx: Ctx) {
     if (view === "workspace") {
       const snapshot = ctx.db.transaction(() => {
         const header = requireProjectHeader(ctx, id);
-        const project = { ...header, media: ctx.repos.projects.listMedia(id) };
-        return { project, timeline: project.head ? resolveTimeline(ctx, project, "head") : null };
+        const media = ctx.repos.projects.listMedia(id);
+        // Keep an import that is still being copied in its preparation state. Once media is readable, initialize
+        // the empty edit version so the workspace can open the timeline and the editor can add tracks.
+        if (!header.head && (media.length === 0 || media.some(asset => asset.status === "ingesting")))
+          return { project: { ...header, media }, timeline: null };
+        const project = header.head ? header : ensureProjectHead(ctx, id);
+        return { project: { ...project, media }, timeline: resolveTimeline(ctx, project, "head") };
       })();
       return c.json(snapshot);
     }

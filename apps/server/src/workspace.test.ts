@@ -1288,7 +1288,7 @@ it("counts only edit threads ready for a decision in both project summaries", as
   await count(1);
 });
 
-it("serves the monitor snapshot with live media status without reading review history", async () => {
+it("serves the monitor snapshot with live media status while an import is preparing", async () => {
   const { ctx } = workspace;
   ctx.repos.projects.putMedia(project.id, { id: "camera", name: "Camera", path: "camera.mov", kind: "video" }, "ingesting");
   const inventory = vi.spyOn(ctx.repos.projects, "listMedia");
@@ -1297,6 +1297,14 @@ it("serves the monitor snapshot with live media status without reading review hi
   expect(result).toMatchObject({ project: { media: [{ id: "camera", status: "ingesting" }] }, timeline: null });
   expect(inventory).toHaveBeenCalledTimes(1);
   expect(summaries).not.toHaveBeenCalled();
+});
+
+it("initializes an empty timeline when the first import is ready", async () => {
+  const { ctx } = workspace;
+  ctx.repos.projects.putMedia(project.id, { id: "camera", name: "Camera", path: "camera.mov", kind: "video" }, "ready");
+  const result = await (await api("GET", projectsPath() + "?view=workspace")).json();
+  expect(result.timeline).toMatchObject({ projectId: project.id });
+  expect(result.project.head).toBe(result.timeline.version);
 });
 
 it("keeps the editor's chosen format when the first imported video finishes later", async () => {

@@ -30,6 +30,7 @@ import { matchesSpeakerStream, savedSpeakerTurns } from "./recordingSpeakers.js"
 import { emissionStore, emissionStorePaths } from "./recordingAudio.js";
 import { prepareSourceProxies, sourcePreviews } from "./sourcePreviews.js";
 import { cloneOrSteadyCopy } from "./steadyCopy.js";
+import { ensureProjectHead } from "./timeline.js";
 
 /**
  * 10 ms a point. The dip between two words said in one breath is often 20-40 ms wide: at 20 ms it averaged into the
@@ -424,6 +425,13 @@ async function ingestInBackground(ctx: Ctx, projectId: string, asset: MediaAsset
     }
     signal.throwIfAborted();
     asset = publish("ready");
+    // A new project starts without a version. Once its first media is readable, create the empty head and notify
+    // the open workspace so its timeline can accept manual tracks and exports without requiring a reload.
+    const project = ctx.repos.projects.header(projectId);
+    if (project && !project.head) {
+      const initialized = ctx.repos.projects.withMedia(ensureProjectHead(ctx, projectId));
+      ctx.bus.publish({ type: "project.updated", projectId, project: initialized });
+    }
     if (asset.kind === "video") prepareSourceProxies(ctx, [asset.id]);
     logActivity(ctx, { projectId, actor: { type: "scarlet", name: "Scarlet" }, type: "media.added", summary: `${quote(asset.name)} was added${asset.duration ? ` (${Math.round(asset.duration)} s)` : ""}`, data: { mediaId: asset.id } });
     if (asset.transcriptId) return;

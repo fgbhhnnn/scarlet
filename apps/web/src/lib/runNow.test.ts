@@ -26,7 +26,7 @@ it("says the latest call on the project as the work it is, with where in the rec
   expect(runNow([tool("dialogue_review_inspect", { changeId: "chg", index: 57 })], undefined, (id, index) => id === "chg" && index === 57 ? 2 : undefined)).toBe("Listening to Cut 2");
   // A call with no words of its own here reads as it does elsewhere; one Scarlet can't name says nothing.
   expect(said(tool("captions_generate"))).toBe("Making captions");
-  expect(said(tool("export_otio"))).toBe("Exporting timeline");
+  expect(said(tool("export_otio"))).toBe("导出时间线");
   expect(said(tool("custom_tool"))).toBeUndefined();
   // The whole video is the video, never the edit. A rule Scarlet picked up is offered in Learnings, not said in the chat.
   expect(said(tool("timeline_transcript"))).toBe("Reading the video’s words");
@@ -51,8 +51,8 @@ it("says when Scarlet starts, thinks, waits or reconnects", () => {
   expect(runNow([tool("project_get"), log("", { kind: "reasoning" })])).toBe("Thinking");
   expect(runNow([log("Reconnecting… 2/5", { kind: "connection" })])).toBe("Reconnecting to the model");
   const waiting = log("Waiting for the transcript", { kind: "media_wait", wait: "transcript", mediaId: "cam" });
-  expect(runNow([waiting])).toBe("Waiting for the transcript");
+  expect(runNow([waiting])).toBe("等待转写稿");
   expect(runNow([tool("transcript_get", { mediaId: "cam" }), waiting, { ...waiting, data: { ...waiting.data, done: true } }])).toBe("Reading the transcript");
-  expect(runNow([waiting, tool("transcript_get", { mediaId: "cam" })])).toBe("Waiting for the transcript");
+  expect(runNow([waiting, tool("transcript_get", { mediaId: "cam" })])).toBe("等待转写稿");
   expect(runNow([{ type: "answer", text: "White" }])).toBe("Reading your answer");
 });

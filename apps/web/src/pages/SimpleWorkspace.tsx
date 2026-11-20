@@ -3697,6 +3697,7 @@ export function SimpleWorkspace() {
   const previewVersion = appliedCut ? beforeCut!.version : callView ? callView.version : pinnedCallVersion ?? draftVersion;
   // The player is on the working cut's own clock: nothing open that plays another version or a clip.
   const onWorkingClock = !source && !draftVersion && !appliedCut && !listening;
+  const emptyWorkingTimeline = !timeline || !timeline.tracks.some(track => track.kind === "video" && track.clips.length > 0);
   const addFirstVideo = useCallback(async () => {
     const first = media.find(asset => asset.kind === "video" && asset.status !== "failed");
     if (!first) throw new Error("请先导入可用的视频素材。");
@@ -4010,7 +4011,7 @@ export function SimpleWorkspace() {
             change={draftVersion && !appliedCut ? viewed : undefined} spot={shownPlace} approval={!!draftVersion && !appliedCut} playChange={reviewPlays}
             active={workspaceActive} onMedia={() => setPanel("media")} joined={joinedPlayer} />
           <ManualTimeline key={current.id} open={manualOpen} projectId={current.id} timeline={timeline ?? undefined} media={media} fps={fps}
-            canEdit={onWorkingClock && !previewVersion || (!current.project.head && !appliedCut && !listening)} onClose={() => setManualOpen(false)} onMedia={() => setPanel("media")}
+            canEdit={onWorkingClock && !previewVersion || (emptyWorkingTimeline && !appliedCut && !previewVersion && !listening)} onClose={() => setManualOpen(false)} onMedia={() => setPanel("media")}
             onAddFirstVideo={async () => { await addFirstVideo(); }} />
           {chosenSource && hasCut && source === chosenSource && <div className="simple-decide" role="region" aria-label="Source preview">
             <span className="simple-decide-text"><small>Source clip</small>{chosenSource.name}</span>

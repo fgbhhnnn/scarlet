@@ -2,7 +2,7 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import type { MediaAsset } from "@scarlet/timeline";
+import { emptyTimeline, type MediaAsset } from "@scarlet/timeline";
 import { ManualTimeline } from "./ManualTimeline";
 
 const manual = vi.hoisted(() => ({ apply: vi.fn(), undo: vi.fn(), redo: vi.fn(), canUndo: false, canRedo: false, busy: false, error: null }));
@@ -23,6 +23,19 @@ afterEach(async () => {
   await act(async () => root.unmount());
   container.remove();
   vi.restoreAllMocks();
+});
+
+it("offers the first video in an initialized empty timeline", async () => {
+  const timeline = emptyTimeline("prj_first");
+  await act(async () => root.render(<ManualTimeline open projectId="prj_first" timeline={timeline} media={[video]} fps={30}
+    canEdit={false} onClose={vi.fn()} onMedia={vi.fn()} />));
+  const button = [...container.querySelectorAll<HTMLButtonElement>("button")].find(button => button.textContent?.includes("将首个视频添加到 V1"));
+  expect(button).toBeDefined();
+  expect(button!.disabled).toBe(true);
+  await act(async () => root.render(<ManualTimeline open projectId="prj_first" timeline={timeline} media={[video]} fps={30}
+    canEdit onClose={vi.fn()} onMedia={vi.fn()} />));
+  const enabled = [...container.querySelectorAll<HTMLButtonElement>("button")].find(button => button.textContent?.includes("将首个视频添加到 V1"));
+  expect(enabled?.disabled).toBe(false);
 });
 
 it("keeps the V1 entry point enabled even when the empty workspace is read-only", async () => {

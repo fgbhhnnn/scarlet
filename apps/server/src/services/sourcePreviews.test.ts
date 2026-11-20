@@ -187,7 +187,7 @@ it("says which video couldn't be cached and why, and shows it as failed", () => 
   makeProxy: async () => { throw new Error("encoder exited with code 1"); },
 }, {}, async engine => {
   const lines: string[] = [];
-  engine.app().ctx.log = line => lines.push(line);
+  engine.app().ctx.log = line => { if (!line.startsWith("[stall]")) lines.push(line); };
   prepareSourceProxies(engine.app().ctx, ["first"], true);
   await engine.settle();
   expect(lines).toEqual([
@@ -204,7 +204,7 @@ it("says which video couldn't be cached and why, and shows it as failed", () => 
 it("logs a GPU that can't be asked about, and a video whose turn to cache couldn't start", async () => {
   await withVideos({ hardwareProxies: async () => { throw new Error("no driver"); } }, { prepareSourceProxies: true }, async engine => {
     const lines: string[] = [];
-    engine.app().ctx.log = line => lines.push(line);
+    engine.app().ctx.log = line => { if (!line.startsWith("[stall]")) lines.push(line); };
     prepareSourceProxies(engine.app().ctx, ["first", "second"]);
     await engine.settle();
     expect(lines).toEqual(["[media] couldn’t check for a GPU to prepare 2 source proxies: Error: no driver"]);
@@ -213,7 +213,7 @@ it("logs a GPU that can't be asked about, and a video whose turn to cache couldn
   await withVideos({}, {}, async engine => {
     const { ctx } = engine.app();
     const lines: string[] = [];
-    ctx.log = line => lines.push(line);
+    ctx.log = line => { if (!line.startsWith("[stall]")) lines.push(line); };
     const proxies = vi.spyOn(ctx.paths, "proxies").mockImplementation(() => { throw new Error("EACCES: permission denied"); });
     prepareSourceProxies(ctx, ["first"], true);
     await engine.settle();

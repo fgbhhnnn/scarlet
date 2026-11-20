@@ -6,7 +6,7 @@
  */
 import { dialogueCommand, AGENT_LABEL, beginRevision, buildThreads, restoredReviewState, threadRevision, threadTimeline, countReviewDecisions, fullRenderContext, taskNeedsTranscripts, taskRecoveryAction, splitAgentTarget, ScarletApiError, SkillSlug, isAsideTask, isProjectEditTask, isSkillEdit, ReviseLearningRequest, queueAdmission, sameRun } from "@scarlet/shared";
 import { appliedCutReview, appliedReviewChange, applyReviewRemovals, makeStagedCutMapper, contentHash, planCutReview, reviewedTimeline } from "@scarlet/timeline";
-import type { ApproveLearningRequest, EditSkillRequest, Learning, MakeShortsRequest, ProposeChangeRequest, RunChoice, UsageGroupBy, UsageResponse, UsageTotals } from "@scarlet/shared";
+import type { ApproveLearningRequest, EditSkillRequest, Learning, MakeShortsRequest, RunChoice, UsageGroupBy, UsageResponse, UsageTotals } from "@scarlet/shared";
 import type {
   AgentHost,
   AgentId,
@@ -15,6 +15,7 @@ import type {
   CreateTaskRequest,
   FullRenderKeys,
   PlaybackCacheStatus,
+  ProposeChangeRequest,
   SourceCacheStatus,
   ProjectSummary,
   Render,

@@ -1079,7 +1079,7 @@ it("shows an export again after a reload or restart, saves it to the destination
   await act(() => resumeExports());
   await show(<ExportSheet hasCut onClose={() => {}} />);
   expect(container.textContent).toContain("正在导出 · 42%");
-  expect(container.querySelector("progress")!.getAttribute("aria-label")).toBe("Export progress for Interview final.mp4");
+  expect(container.querySelector("progress")!.getAttribute("aria-label")).toBe("导出进度：Interview final.mp4");
   expect(container.querySelector("#export-resolution")!.textContent).toMatch(/ × 480$/);
   expect(button("取消导出")).toBeDefined();
   // The engine restarting mid-export is not a failure.
@@ -1311,16 +1311,16 @@ it("saves a Jianying draft and its copied footage through the desktop folder exp
   const render = vi.spyOn(api, "requestRender");
   vi.spyOn(desktop, "discardVideoExport").mockResolvedValue();
   await show(<ExportSheet hasCut onClose={() => {}} />);
-  await click(buttonByText("Advanced export")!);
-  await selectOption(container.querySelector<HTMLButtonElement>("#export-handoff-format")!, "Jianying draft (剪映)");
-  expect(container.textContent).toContain("Save in your Jianying draft library.");
+  await click(buttonByText("高级导出")!);
+  await selectOption(container.querySelector<HTMLButtonElement>("#export-handoff-format")!, "剪映草稿");
+  expect(container.textContent).toContain("保存到剪映草稿库。");
   expect(container.querySelector("#export-range")).toBeNull();
   await click(exportButton()!);
   expect(choose).toHaveBeenCalledExactlyOnceWith(data.project.name);
   expect(handoff).toHaveBeenCalledExactlyOnceWith(PRJ, data.project.head, path, "jianying");
   expect(save).toHaveBeenCalledExactlyOnceWith(17, files);
   expect(render).not.toHaveBeenCalled();
-  expect(buttonByText("Show in folder")).toBeTruthy();
+  expect(buttonByText("在文件夹中显示")).toBeTruthy();
 });
 
 it("exports captions as a sidecar, keeps the range, and does not start a video render", async () => {
@@ -1356,11 +1356,11 @@ it("tells a new project with no cut to add captions when captions are chosen", a
   const timeline = { ...data.timeline!, tracks: data.timeline!.tracks.filter(t => t.kind !== "caption") };
   await act(async () => useProjectStore.setState({ current: { ...data, timeline } }));
   await show(<ExportSheet hasCut={false} onClose={() => {}} />);
-  expect(container.textContent).toContain("There’s no video to export yet.");
+  expect(container.textContent).toContain("还没有可导出的视频。");
   await selectOption(container.querySelector<HTMLButtonElement>("#export-format")!, /字幕 \(\.srt\)/);
   expect(exportButton()!.disabled).toBe(true);
   expect(container.textContent).toContain(NO_CAPTION_TRACK);
-  expect(container.textContent).not.toContain("There’s no video to export yet.");
+  expect(container.textContent).not.toContain("还没有可导出的视频。");
 });
 
 it("disables caption export when the range has no cues", async () => {

@@ -14,7 +14,7 @@ type ExportQuality = RenderRequest["quality"] | "best";
 
 /** The export's quality levels, smallest first. Original quality encodes in software; High uses the computer's video encoder. */
 /** While the loaded timeline is behind the project's head, caption export waits for it. */
-export const LOADING_LATEST_EDIT = "Loading the latest edit before exporting captions…";
+export const LOADING_LATEST_EDIT = "正在加载最新剪辑，然后导出字幕…";
 
 const QUALITY: Record<ExportQuality, { label: string; hint: string }> = {
   preview: { label: zh.export.compressed, hint: "适合分享草稿的较小文件，画面更柔和。" },
@@ -47,9 +47,10 @@ function ExportForm({ current, hasCut, onClose }: { current: ProjectData; hasCut
   const exported = job?.phase === "done" ? job : undefined;
   const exportedCurrentEdit = exported?.context === context;
   // Advanced export: the folder for finishing the edit in another app. Otherwise the video or its captions.
-  const [advanced, setAdvanced] = useState(previous?.format === "folder");
+  const [advanced, setAdvanced] = useState(previous?.format === "folder" || previous?.format === "jianying");
+  const [folderFormat, setFolderFormat] = useState<"folder" | "jianying">(previous?.format === "jianying" ? "jianying" : "folder");
   const [plainFormat, setPlainFormat] = useState<"mp4" | "srt" | "vtt">(previous?.format === "srt" || previous?.format === "vtt" ? previous.format : "mp4");
-  const format: ExportFile["format"] = advanced ? "folder" : plainFormat;
+  const format: ExportFile["format"] = advanced ? folderFormat : plainFormat;
   const captions = format === "srt" || format === "vtt";
   const captionTrackChoices = useMemo(() => (current.timeline?.tracks ?? []).filter(t => t.kind === "caption" && !t.hidden), [current.timeline]);
   const [trackId, setTrackId] = useState(() => previous?.trackId && captionTrackChoices.some(t => t.id === previous.trackId) ? previous.trackId : captionTrackChoices[0]?.id ?? "");
@@ -73,7 +74,7 @@ function ExportForm({ current, hasCut, onClose }: { current: ProjectData; hasCut
   // An export that stopped is explained here, so the menu's mark for it goes once this is open.
   const failed = job?.phase === "failed";
   useEffect(() => { if (failed) exportFailureSeen(current.id); }, [failed, current.id]);
-  const range = format !== "folder" && customRange ? { start: snapToFrame(parseClock(start), fps), end: snapToFrame(parseClock(end), fps) } : undefined;
+  const range = !advanced && customRange ? { start: snapToFrame(parseClock(start), fps), end: snapToFrame(parseClock(end), fps) } : undefined;
   const invalidRange = range && !(range.start >= 0 && range.end > range.start && range.end <= duration);
   const custom = format === "mp4" && (!!range || !!targetHeight || quality !== "delivery");
   const level = QUALITY[quality];
@@ -112,7 +113,7 @@ function ExportForm({ current, hasCut, onClose }: { current: ProjectData; hasCut
     // The file is named once, in the system's Save dialog, which also picks its folder and asks before replacing a
     // file. It opens on the project's name.
     const stem = project.name.replace(/[\\/:*?"<>|]+/g, " ").trim() || "Scarlet";
-    const name = format === "folder" ? stem : `${stem}.${format}`;
+    const name = advanced ? stem : `${stem}.${format}`;
     void exportFile(current, { format, name, video, ...(captions && exportTrackId ? { trackId: exportTrackId } : {}) });
   };
   const switchTo = !busy && !exportedCurrentEdit && <button type="button" className="btn-quiet mr-auto" onClick={() => setAdvanced(!advanced)}>
@@ -130,7 +131,18 @@ function ExportForm({ current, hasCut, onClose }: { current: ProjectData; hasCut
   </>}>
     <form id="export-working-cut" onSubmit={event => { event.preventDefault(); submit(); }}>
       <fieldset disabled={!!busy} className="min-w-0">
-        {advanced ? <HandoffSummary summary={handoff} /> : <div className="grid grid-cols-1 gap-x-3 sm:grid-cols-2">
+        {advanced ? <div className="space-y-3">
+          <Field label={zh.export.format} htmlFor="export-handoff-format">
+            <PreferenceSelect id="export-handoff-format" value={folderFormat} onChange={setFolderFormat}
+              options={[
+                { value: "folder", label: zh.export.editingProject },
+                { value: "jianying", label: zh.export.jianyingDraft },
+              ]} />
+          </Field>
+          {folderFormat === "jianying" ? <p className="text-xs text-muted">
+            {zh.export.jianyingDescription}
+          </p> : <HandoffSummary summary={handoff} />}
+        </div> : <div className="grid grid-cols-1 gap-x-3 sm:grid-cols-2">
           <Field label={zh.export.format} htmlFor="export-format">
             <PreferenceSelect id="export-format" value={plainFormat} onChange={setPlainFormat}
               options={[
@@ -145,8 +157,8 @@ function ExportForm({ current, hasCut, onClose }: { current: ProjectData; hasCut
           </Field>
           {range && <div className="hidden sm:block" />}
           {range && <>
-            <Field label="从" htmlFor="export-start"><input className="field tnum" id="export-start" value={start} onChange={e => setStart(e.target.value)} /></Field>
-            <Field label="到" htmlFor="export-end"><input className="field tnum" id="export-end" value={end} onChange={e => setEnd(e.target.value)} /></Field>
+            <Field label={zh.export.from} htmlFor="export-start"><input className="field tnum" id="export-start" value={start} onChange={e => setStart(e.target.value)} /></Field>
+            <Field label={zh.export.to} htmlFor="export-end"><input className="field tnum" id="export-end" value={end} onChange={e => setEnd(e.target.value)} /></Field>
           </>}
           {captions && captionTrackChoices.length > 1 && <Field label={zh.export.track} htmlFor="export-track">
             <PreferenceSelect id="export-track" value={trackId} onChange={setTrackId}
@@ -158,7 +170,7 @@ function ExportForm({ current, hasCut, onClose }: { current: ProjectData; hasCut
           <div className="mt-4 grid grid-cols-1 gap-x-3 sm:grid-cols-2">
             <Field label={zh.export.resolution} htmlFor="export-resolution">
               <PreferenceSelect id="export-resolution" value={targetHeight} onChange={setTargetHeight} options={[
-                { value: 0, label: `Project · ${width} × ${height}` },
+                { value: 0, label: `${zh.export.projectSize} · ${width} × ${height}` },
                 ...[2160, 1080, 720, 480].filter(h => h < height).map(h => ({ value: h, label: `${Math.round(width * h / height / 2) * 2} × ${h}` })),
               ]} />
             </Field>
@@ -173,12 +185,12 @@ function ExportForm({ current, hasCut, onClose }: { current: ProjectData; hasCut
     {!running && timelineBehind && <p className="mt-3 text-xs text-muted" role="status">{LOADING_LATEST_EDIT}</p>}
     {!running && <InlineError>{noCaptionTrack ? NO_CAPTION_TRACK :
       noCaptionsInRange ? NO_CAPTIONS_IN_RANGE :
-      !hasCut ? "There’s no video to export yet." :
-      invalidRange ? `Enter a range between 0:00 and ${playbackClock(duration)}, at least one frame long.` : sampleOnly ? "The isolated demo saves its included MP4. Custom video settings are available in library projects." : ""}</InlineError>}
+      !hasCut ? zh.export.noVideo :
+      invalidRange ? zh.export.invalidRange(playbackClock(duration)) : sampleOnly ? zh.export.sampleOnly : ""}</InlineError>}
     {busy && <div className="mt-3">
       {busy.phase === "choosing" ? <p className="text-xs text-muted" role="status">{zh.export.chooseLocation}</p> :
-        <ActivityProgress label={`Export progress for ${busy.file.name}`} value={counting ? busy.progress : undefined}>
-          {busy.phase === "saving" ? (busy.file.format === "folder" ? zh.export.saveFolder : zh.export.saveFile) : busy.waiting ? zh.export.waiting : Math.round(busy.progress * 100) >= PICTURE_DONE ? zh.export.finishing
+        <ActivityProgress label={zh.export.exportProgress(busy.file.name)} value={counting ? busy.progress : undefined}>
+          {busy.phase === "saving" ? (busy.file.format === "folder" || busy.file.format === "jianying" ? zh.export.saveFolder : zh.export.saveFile) : busy.waiting ? zh.export.waiting : Math.round(busy.progress * 100) >= PICTURE_DONE ? zh.export.finishing
             : `${zh.export.exporting}${busy.context !== context ? `（${zh.export.earlier}）` : ""}${counting ? ` · ${pct(busy.progress)}` : ""}`}
         </ActivityProgress>}
       {running && <p className="mt-2 text-xs text-muted">{zh.export.background}</p>}
@@ -203,7 +215,7 @@ function HandoffSummary({ summary }: { summary?: { bytes?: number; files: number
     <p className="text-muted">{zh.export.folderSummary}</p>
     <ul className="mt-2 list-disc space-y-1 pl-4">
       <li>{zh.export.timeline}：剪点、轨道、缩放、音量、淡入淡出、标记和图形</li>
-      <li>{zh.export.footage}{summary.files ? <span className="text-muted"> · {summary.files} {summary.files === 1 ? "file" : "files"}{summary.bytes !== undefined ? `, ${fmtBytes(summary.bytes)}` : ""}</span> : null}</li>
+      <li>{zh.export.footage}{summary.files ? <span className="text-muted"> · {summary.files} 个文件{summary.bytes !== undefined ? `，${fmtBytes(summary.bytes)}` : ""}</span> : null}</li>
       {summary.captions && <li>字幕文件（SubRip）</li>}
       <li>{zh.export.readme}</li>
     </ul>

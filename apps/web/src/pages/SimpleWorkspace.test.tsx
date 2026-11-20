@@ -2347,7 +2347,7 @@ it("has no menu on a request for now: Undo these edits and File this thread aren
   appliedEdits();
   await show();
   const turn = turnFor("chg_approved_2");
-  expect(turn.querySelector('[aria-label="More for this thread"], .simple-action-more')).toBeNull();
+  expect(turn.querySelector('[aria-label="更多"], .simple-action-more')).toBeNull();
   // Nothing takes the menu's place at the end of the row either.
   expect(turn.querySelector(".simple-pass-line .req-right")?.textContent).toBe("");
 });
@@ -3888,7 +3888,7 @@ const workingCutMoves = async (start: number, end: number) => {
 const callWords = async () => {
   vi.mocked(api.retakes).mockClear();
   await click(call().querySelector(".edit-card-words")!);
-  if (!call().querySelector('[aria-label="Words this cut removes"]')) return undefined;
+  if (!call().querySelector('[aria-label="这处剪辑移除的文字"]')) return undefined;
   const [, mediaId, start, end] = vi.mocked(api.retakes).mock.lastCall!;
   return { mediaId, start: Math.round(start * 1000) / 1000, end: Math.round(end * 1000) / 1000 };
 };
@@ -4263,7 +4263,7 @@ it("offers Retry transcript on a call's words when the pass's version can't be l
   await click(buttonIn(passage(), "重试加载转写稿")!);
   for (let i = 0; i < 4; i++) await act(async () => {});
   expect(version).toHaveBeenCalledTimes(3);
-  expect([passage().querySelector('[title="The engine is restarting."]'), !!passage().querySelector('[aria-label="Words this cut removes"]')]).toEqual([null, true]);
+  expect([passage().querySelector('[title="The engine is restarting."]'), !!passage().querySelector('[aria-label="这处剪辑移除的文字"]')]).toEqual([null, true]);
   expect(container.querySelector(".simple-timeline-band")).not.toBeNull();
 });
 
@@ -4467,7 +4467,7 @@ it("lists the queue in the order it will run while one call is revised, and says
   useProjectStore.setState({ current: data });
   await show();
   await act(async () => {});
-  const tray = () => container.querySelector<HTMLElement>('[aria-label="Queued requests"]')!;
+  const tray = () => container.querySelector<HTMLElement>('[aria-label="排队中的请求"]')!;
   // The note on the call runs next, though the new edit was asked first: a new edit waits until the calls are made.
   expect(tray().querySelector(".queue-head")?.textContent).toBe("NextCut 2Keep the breath.2 queued");
   // It is about another call than the one Scarlet is on, so it waits for nothing: it is here only until Scarlet picks it up.
@@ -4510,7 +4510,7 @@ it("doesn't say a queued request waits for the calls once they're all made and S
   useProjectStore.setState({ current: data });
   await show();
   await act(async () => {});
-  const tray = container.querySelector<HTMLElement>('[aria-label="Queued requests"]')!;
+  const tray = container.querySelector<HTMLElement>('[aria-label="排队中的请求"]')!;
   expect(tray.textContent).not.toContain("等待你确认剪点");
   expect(tray.getAttribute("title")).toBe("Scarlet 完成当前任务后开始");
   // Nothing of the editor's holds it, so it has no mark to start it before the calls.
@@ -4548,7 +4548,7 @@ it("starts the request the calls hold back from its row in the tray, without the
   });
   await show();
   await act(async () => {});
-  const tray = () => container.querySelector<HTMLElement>('[aria-label="Queued requests"]')!;
+  const tray = () => container.querySelector<HTMLElement>('[aria-label="排队中的请求"]')!;
   // Only the request that is next has the mark: the one behind it waits for that one.
   await click(tray().querySelector(".queue-head")!);
   const marks = () => [...tray().querySelectorAll(".queue-row")].map(r => r.querySelector(".queue-start")?.getAttribute("title"));
@@ -4571,7 +4571,7 @@ it("shows a pass's calls, and the suggestion its run left after them, while they
   const passCard = () => unit().querySelector<HTMLElement>(".simple-pass")!;
   expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("3 项待审阅");
   expect(container.querySelectorAll('.simple-timeline-mark[data-state="check"]').length).toBe(3);
-  const tray = container.querySelector<HTMLElement>('[aria-label="Queued requests"]')!;
+  const tray = container.querySelector<HTMLElement>('[aria-label="排队中的请求"]')!;
   expect(tray.getAttribute("title")).toBe("确认口播粗剪建议后开始");
   // The tray's line says so where Next would be: the request doesn't start until the calls are made.
   expect(tray.querySelector(".queue-head")?.textContent).toBe("Waits for your calls/frame-screen2 queued");
@@ -4630,7 +4630,7 @@ it("leaves a waiting pass its calls and its place above the message box while a 
   expect(callRows().map(r => [r.querySelector(".edit-badge")?.textContent, r.querySelector(".simple-pass-label")?.textContent]))
     .toEqual([["1", "A clean retake."], ["2", "Breath before the price."], ["3", "Repeated aside."]]);
   expect(unit()!.querySelector(".simple-suggest")?.getAttribute("aria-pressed")).toBe("true");
-  expect(container.querySelector('[aria-label="Queued requests"] .queue-head')?.textContent).toBe("Waits for your calls/frame-screen2 queued");
+  expect(container.querySelector('[aria-label="排队中的请求"] .queue-head')?.textContent).toBe("Waits for your calls/frame-screen2 queued");
   // The timeline is the suggestion's while it plays, as it is a call's while that is open: its passage, and no call's dot.
   expect([container.querySelector(".simple-timeline-band") !== null, callDots()]).toEqual([true, 0]);
   // The keys act on what is in the player. ↓ steps to no call and S skips none: no call is on screen.
@@ -5096,7 +5096,7 @@ it("changes a queued revision's words in the message box, holding it from starti
   useProjectStore.setState({ current: data, holdForRewording, rewordTask, cancelTask });
   await show();
   await act(async () => {});
-  const tray = () => container.querySelector<HTMLElement>('[aria-label="Queued requests"]')!;
+  const tray = () => container.querySelector<HTMLElement>('[aria-label="排队中的请求"]')!;
   const pencil = () => tray().querySelector<HTMLButtonElement>(".queue-reword")!;
   // Its row has a pencil beside its ×. It puts the words in the message box, which they have to themselves.
   expect([pencil().getAttribute("title"), pencil().getAttribute("aria-pressed")]).toEqual(["Reword", "false"]);
@@ -5152,7 +5152,7 @@ it("keeps a queued request's new words when holding it fails for another reason,
   await act(async () => {});
   vi.useFakeTimers();
   try {
-    await click(container.querySelector('[aria-label="Queued requests"] .queue-reword')!);
+    await click(container.querySelector('[aria-label="排队中的请求"] .queue-reword')!);
     await act(async () => { await vi.advanceTimersByTimeAsync(0); });
     expect(holdForRewording).toHaveBeenCalledTimes(1);
     // The words stay in the box, and the editor goes on changing them.
@@ -5174,7 +5174,7 @@ it("puts a queued request's words back in the box as they stood when Scarlet qui
   useProjectStore.setState({ current: data, holdForRewording, rewordTask: vi.fn() });
   await show();
   await act(async () => {});
-  await click(container.querySelector('[aria-label="Queued requests"] .queue-reword')!);
+  await click(container.querySelector('[aria-label="排队中的请求"] .queue-reword')!);
   await act(async () => composer.props!.rewording!.onChange("Keep the aside, but trim the breath before it."));
   // Scarlet quits. Opened again, the request is in the box with the new words, and held again so it can't start with the old ones.
   holdForRewording.mockClear();
@@ -5206,7 +5206,7 @@ it("keeps the words being changed for each project's queued request apart, so re
   localStorage.setItem("scarlet.rewording.v1:prj_other", other);
   await show();
   await act(async () => {});
-  await click(container.querySelector('[aria-label="Queued requests"] .queue-reword')!);
+  await click(container.querySelector('[aria-label="排队中的请求"] .queue-reword')!);
   await act(async () => composer.props!.rewording!.onChange("Keep the aside, but trim it."));
   expect(JSON.parse(localStorage.getItem(`scarlet.rewording.v1:${PRJ}`)!)).toMatchObject({ id: "task_queued_revision", text: "Keep the aside, but trim it." });
   expect(localStorage.getItem("scarlet.rewording.v1:prj_other")).toBe(other);
@@ -5230,7 +5230,7 @@ it("offers no way to fold the queue while one of several queued requests has its
   useProjectStore.setState({ current: data, holdForRewording: vi.fn().mockResolvedValue(undefined), rewordTask: vi.fn() });
   await show();
   await act(async () => {});
-  const tray = () => container.querySelector<HTMLElement>('[aria-label="Queued requests"]')!;
+  const tray = () => container.querySelector<HTMLElement>('[aria-label="排队中的请求"]')!;
   const heading = () => tray().querySelector<HTMLElement>(".queue-head")!;
   await click(heading());
   const row = () => [...tray().querySelectorAll<HTMLElement>(".queue-row")].find(r => r.textContent?.includes("Keep the aside."))!;
@@ -5253,7 +5253,7 @@ it("keeps newer wording in the box when an earlier save finishes", async () => {
   const rewordTask = vi.fn(() => new Promise<void>(resolve => { finish = resolve; }));
   useProjectStore.setState({ current: data, holdForRewording: vi.fn().mockResolvedValue(undefined), rewordTask });
   await show();
-  await click(container.querySelector('[aria-label="Queued requests"] .queue-reword')!);
+  await click(container.querySelector('[aria-label="排队中的请求"] .queue-reword')!);
   await act(async () => { void composer.props!.rewording!.onSave("Use the shorter aside."); });
   await act(async () => composer.props!.rewording!.onChange("Keep the breath after it."));
   await act(async () => finish());
@@ -5267,13 +5267,13 @@ it("lets go of a queued request's words when Scarlet began it before they reache
   useProjectStore.setState({ current: data, holdForRewording, rewordTask: vi.fn() });
   await show();
   await act(async () => {});
-  await click(container.querySelector('[aria-label="Queued requests"] .queue-reword')!);
+  await click(container.querySelector('[aria-label="排队中的请求"] .queue-reword')!);
   await act(async () => {});
   expect(composer.props?.rewording).toBeUndefined();
   expect(container.querySelector(".simple-banner")?.textContent).toContain("Scarlet has already started on this request.");
   // A request Scarlet queued itself, such as a redo of a change that no longer fits, has no pencil: only its ×.
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === "task_queued_revision" ? { ...t, createdBy: { type: "scarlet" as const, name: "Scarlet" } } : t) }));
-  const row = container.querySelector('[aria-label="Queued requests"] .queue-row')!;
+  const row = container.querySelector('[aria-label="排队中的请求"] .queue-row')!;
   expect(row.querySelector(".queue-reword")).toBeNull();
   expect(row.querySelector(".queue-text")?.classList.contains("is-rewordable")).toBe(false);
   expect(row.querySelector(".queue-remove")).not.toBeNull();
@@ -5337,7 +5337,7 @@ it("keeps a pass's other calls open while Scarlet revises one of them, and waits
   const under = passRows()[0]!.closest("li")!.querySelector<HTMLElement>(".subunit")!;
   expect([under.getAttribute("data-run"), tagIn(under), wordsOf(under.querySelector(".subunit-msg p"))])
     .toEqual(["task_revise", "剪点 1", "The words don't line up."]);
-  expect(under.querySelector('[aria-label="Scarlet’s work"]')).not.toBeNull();
+  expect(under.querySelector('[aria-label="Scarlet 的工作"]')).not.toBeNull();
   expect(units().map(u => u.dataset.run)).not.toContain("task_revise");
   // Its row's word moves while Scarlet is on it.
   expect([passRows()[0]!.querySelector(".simple-pass-value")?.textContent, passRows()[0]!.querySelector(".simple-pass-value")?.classList.contains("working-text")]).toEqual(["正在修改…", true]);
@@ -5725,7 +5725,7 @@ it("runs one request at a time: what Scarlet is on stays pinned above the messag
   expect(pinned.querySelector(".req-stage, .req-stages")).toBeNull();
   // Queued requests aren't in the chat. They wait in the tray, in running order, and the first is marked Next.
   expect(turns().some(t => t.textContent?.includes("Zoom into the browser window"))).toBe(false);
-  const tray = container.querySelector<HTMLElement>('[aria-label="Queued requests"]')!;
+  const tray = container.querySelector<HTMLElement>('[aria-label="排队中的请求"]')!;
   expect(tray.querySelector(".queue-head")?.textContent).toBe("NextZoom into the browser window during the demo.2 queued");
   expect(tray.getAttribute("title")).toBe("Scarlet 完成当前任务后开始");
   // It opens into every queued request, each with a way to take it out of the queue.
@@ -5736,7 +5736,7 @@ it("runs one request at a time: what Scarlet is on stays pinned above the messag
   // The engine cancels it before it ever started. It never ran, so it leaves the tray without joining the chat as a
   // stopped request with a Resume and a run time.
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === "task_title" ? { ...t, state: "cancelled" as const, hostId: null, finishedAt: new Date().toISOString() } : t) }));
-  expect(container.querySelector('[aria-label="Queued requests"] .queue-row')?.textContent).toBe("NextZoom into the browser window during the demo.");
+  expect(container.querySelector('[aria-label="排队中的请求"] .queue-row')?.textContent).toBe("NextZoom into the browser window during the demo.");
   expect(container.querySelector(".simple-thread")?.textContent).not.toContain("Add a lower third with my name.");
   expect([...container.querySelectorAll(".simple-thread button")].some(b => b.textContent === "恢复")).toBe(false);
   // A request stopped after Scarlet began it is another matter: it stays, with its Resume.
@@ -5907,7 +5907,7 @@ it("plays changed footage while the editor answers the question about that cut",
   expect(boxTag()).toBe("回答");
   expect(useUiStore.getState().agentContext).toBeNull();
   await click(transcriptLink());
-  const words = call().querySelector('[aria-label="Words in the current passage"]')!;
+  const words = call().querySelector('[aria-label="当前片段的文字"]')!;
   expect(words.textContent?.trim()).not.toBe("");
   expect(words.querySelector("del, .edit-passage-cut")).toBeNull();
   // A later trim moves the passage during the question. Answer on the open card plays the new location.
@@ -6762,7 +6762,7 @@ it("marks the menu while a rule waits in Learnings, and lists each with its skil
   await click(buttonIn(rows[0]!, "批准")!);
   // It is saved by the model chosen now, whichever one the request ran on.
   expect(approveLearning).toHaveBeenCalledWith("lrn_a", "skl_dialogue", { agent: "claude", model: "opus" });
-  await click(rows[1]!.querySelector('[aria-label="Decline"]')!);
+  await click(rows[1]!.querySelector('[aria-label="拒绝"]')!);
   expect(declineLearning).toHaveBeenCalledWith("lrn_b");
   // The editor can send a rule to another skill.
   await click(rows[1]!.querySelector('[role="combobox"]')!);
@@ -7079,7 +7079,7 @@ it("pauses project editing from the band beside Stop, keeps the paused request i
   expect(rows.map(row => [row.querySelector(".queue-next")?.textContent, row.querySelector(".queue-text")?.textContent]))
     .toEqual([["Next", "Add a title."]]);
   expect(tray().querySelector(".queue-head")?.textContent).toBe("剪辑已暂停 · 1 项排队中");
-  expect(tray().querySelector(".queue-paused")?.textContent).toBe("Editing paused");
+  expect(tray().querySelector(".queue-paused")?.textContent).toBe("剪辑已暂停");
   expect(tray().querySelector(".queue-editing-action")).toBeNull();
   expect(projectControl().getAttribute("aria-label")).toBe("恢复剪辑");
   expect(unit()?.closest(".simple-pin")).toBeNull();
@@ -8557,7 +8557,7 @@ it("shows a request about one cut as its work while Scarlet is on it, without wh
   // Under its call: the editor's words with Stop after them, and Scarlet's work. Its reply isn't there.
   expect(wordsOf(about().querySelector(".subunit-msg p"))).toBe("Start it later.");
   expect(about().querySelector('.subunit-msg > .unit-actions [aria-label^="停止此剪辑"]')).not.toBeNull();
-  expect(about().querySelector('[aria-label="Scarlet’s work"]')).not.toBeNull();
+  expect(about().querySelector('[aria-label="Scarlet 的工作"]')).not.toBeNull();
   // While Scarlet works on it, one line says what it is doing this moment, as for any request: no stages.
   const doing = () => about().querySelector('.req-now [role="status"]')?.textContent;
   expect(about().querySelector(".req-stage, .req-stages")).toBeNull();
@@ -9100,7 +9100,7 @@ it("keeps a request in the conversation once its question is answered, instead o
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === "task_asking" ? { ...t, state: "queued" as const, question: null, hostId: null } : t) }));
   // It is still the request Scarlet is on: in its place, not a new entry in the tray with a × to remove it.
   expect(pinned()?.textContent).toContain("Make the logo smaller.");
-  expect(container.querySelector('[aria-label="Queued requests"]')).toBeNull();
+  expect(container.querySelector('[aria-label="排队中的请求"]')).toBeNull();
 });
 
 it("keeps a stopped pass's unchecked cuts as calls, and the pass in its place, after one of its cuts is revised", async () => {
@@ -9481,7 +9481,7 @@ it("tags a queued request about an edit at the edit's own time, before and after
     context: { threadId: later.earlier, changeId: "chg_approved_2", editIndex: 2, time: 10, end: 16, message: "Hold the last word." } }] };
   useProjectStore.setState({ current: data });
   await show();
-  const tag = () => container.querySelector('[aria-label="Queued requests"] .queue-target')?.textContent;
+  const tag = () => container.querySelector('[aria-label="排队中的请求"] .queue-target')?.textContent;
   // Until the engine's list is in, the request's own saved list says where the edit is: the tag doesn't read
   // "Edit at 0:10", where the passage starts, and then change.
   expect(tag()).toBe("Edit at 0:11");
@@ -9934,10 +9934,10 @@ it("says in the banner why a queued request couldn't be taken out, until one is"
   const cancelTask = vi.fn().mockRejectedValueOnce(new Error("Scarlet has already started on it.")).mockResolvedValue(undefined);
   useProjectStore.setState({ current: data, cancelTask });
   await show();
-  const remove = () => [...container.querySelectorAll<HTMLElement>('[aria-label="Queued requests"] .queue-row')]
+  const remove = () => [...container.querySelectorAll<HTMLElement>('[aria-label="排队中的请求"] .queue-row')]
     .find(r => r.textContent?.includes("Add a lower third with my name."))!.querySelector<HTMLButtonElement>(".queue-remove")!;
   const banner = () => container.querySelector('.simple-banner[role="status"]')?.textContent;
-  if (!container.querySelector('[aria-label="Queued requests"] .queue-list, [aria-label="Queued requests"] .queue-row')) await click(container.querySelector(".queue-head")!);
+  if (!container.querySelector('[aria-label="排队中的请求"] .queue-list, [aria-label="排队中的请求"] .queue-row')) await click(container.querySelector(".queue-head")!);
   expect(banner()).toBeUndefined();
   await click(remove());
   expect(cancelTask).toHaveBeenCalledWith("task_waiting", true);
@@ -9957,8 +9957,8 @@ it("takes the banner about a queued request away once that request moves on, wit
   useProjectStore.setState({ current: data, cancelTask });
   await show();
   const banner = () => container.querySelector('.simple-banner[role="status"]')?.textContent;
-  if (!container.querySelector('[aria-label="Queued requests"] .queue-list, [aria-label="Queued requests"] .queue-row')) await click(container.querySelector(".queue-head")!);
-  await click([...container.querySelectorAll<HTMLElement>('[aria-label="Queued requests"] .queue-row')]
+  if (!container.querySelector('[aria-label="排队中的请求"] .queue-list, [aria-label="排队中的请求"] .queue-row')) await click(container.querySelector(".queue-head")!);
+  await click([...container.querySelectorAll<HTMLElement>('[aria-label="排队中的请求"] .queue-row')]
     .find(r => r.textContent?.includes("Add a lower third with my name."))!.querySelector<HTMLButtonElement>(".queue-remove")!);
   expect(banner()).toBe("Scarlet has already started on it.");
   // Scarlet did start it, then finished: the tray is empty, and the line about it has nothing left to say.
@@ -10084,7 +10084,7 @@ const sendsBack = (changeId: string, redo: ProjectData["tasks"][number]) => vi.s
   change: { ...useProjectStore.getState().current!.changes.find(c => c.id === changeId)!, state: "revising", revisionFrom: { state: "ready", taskId: redo.id },
     error: "Sent back: it overlaps with a change approved since (around 5.0 s)" } }) as never);
 /** The queue's lines, each as what it says before the request's words, its tag and the words. */
-const queueLines = () => [...container.querySelectorAll('[aria-label="Queued requests"] .queue-row, [aria-label="Queued requests"] .queue-head')]
+const queueLines = () => [...container.querySelectorAll('[aria-label="排队中的请求"] .queue-row, [aria-label="排队中的请求"] .queue-head')]
   .map(row => [...row.querySelectorAll(".queue-next, .queue-target, .queue-text")].map(part => part.textContent));
 
 it("says in a suggestion's request why the video moved on from it, queues the redo under the request's words, and runs it under the request's heading", async () => {
@@ -10299,7 +10299,7 @@ it("keeps a redo the engine holds in the tray, which says what it waits for, and
   await act(async () => {});
   // The engine holds the redo until the pass's calls are made. The tray says so on its line, where Next would be, and
   // the request's block doesn't say it is being redone, or that it waits to start: Scarlet isn't on it.
-  const tray = () => container.querySelector<HTMLElement>('[aria-label="Queued requests"]')!;
+  const tray = () => container.querySelector<HTMLElement>('[aria-label="排队中的请求"]')!;
   expect(queueLines()).toEqual([["等待你确认剪点", "剪辑建议", "Zoom in on the demo."]]);
   expect(tray().querySelector(".queue-next")?.classList.contains("is-waiting")).toBe(true);
   expect([...unit().querySelectorAll(".req-say")].map(p => p.textContent).at(-1)).toBe(REDO_WAITS);
@@ -10526,7 +10526,7 @@ it("draws a revision of one applied edit under that edit's row, at work, and und
   expect(owner().querySelector(".simple-edits")?.getAttribute("aria-label")).toBe("待确认的剪辑");
   expect(sub().parentElement?.classList.contains("simple-pass")).toBe(true);
   expect([tagIn(sub()), wordsOf(sub().querySelector(".subunit-msg p"))]).toEqual(["Edit at 0:00", "Make the captions bigger."]);
-  expect(sub().querySelector('[aria-label="Scarlet’s work"] .working-text')).not.toBeNull();
+  expect(sub().querySelector('[aria-label="Scarlet 的工作"] .working-text')).not.toBeNull();
   // Its Stop is its own heading's last word, and the request that holds it has none: Scarlet isn't on that one.
   expect(sub().querySelector('.subunit-msg > .unit-actions [aria-label^="停止此剪辑"]')).not.toBeNull();
   expect(owner().querySelector(":scope > .unit-msg > .unit-stop")).toBeNull();
@@ -11461,7 +11461,7 @@ it("names a queued request about an edit the same way with the timeline on its r
   useProjectStore.setState({ current: data });
   await show();
   await act(async () => {});
-  const tag = () => container.querySelector('[aria-label="Queued requests"] .queue-target')?.textContent;
+  const tag = () => container.querySelector('[aria-label="排队中的请求"] .queue-target')?.textContent;
   // With the edit open, its request has the timeline, and the tag reads as the edit's row does.
   await click(editRows("chg_approved_2")[2]!);
   await act(async () => {});
@@ -11718,7 +11718,7 @@ it("keeps the queue's tray open when the message box is aimed somewhere else", a
   useProjectStore.setState({ current: data });
   await show();
   await act(async () => {});
-  const tray = () => container.querySelector<HTMLElement>('[aria-label="Queued requests"]')!;
+  const tray = () => container.querySelector<HTMLElement>('[aria-label="排队中的请求"]')!;
   await click(tray().querySelector(".queue-head")!);
   expect(tray().querySelectorAll(".queue-row").length).toBe(2);
   // Opening a call aims the box at it, which builds the box and the tray on it again. The tray the editor opened stays open.
@@ -12159,7 +12159,7 @@ it("offers Make shorts in the ⋯ menu after Export, and makes them from a form 
   const dialog = container.ownerDocument.querySelector('dialog[open]')!;
   expect(dialog.querySelector("h2")?.textContent).toBe("制作短视频");
   expect([...dialog.querySelectorAll("label")].map(l => l.textContent)).toEqual(["How many", "Shape", "Length", "Captions"]);
-  expect([...dialog.querySelectorAll('[role="combobox"]')].map(b => b.textContent)).toEqual(["Up to 3", "Vertical · 9:16", "Under 60 s each", "On"]);
+  expect([...dialog.querySelectorAll('[role="combobox"]')].map(b => b.textContent)).toEqual(["最多 3 条", "竖屏 · 9:16", "每条不超过 60 秒", "开启"]);
   expect(dialog.textContent).toContain("Makes a new project for each short, starting from this video’s finished edit. This video isn’t changed.");
   await click(buttonIn(dialog, "制作短视频")!);
   expect(made).toHaveBeenCalledWith(PRJ, { count: 3, aspect: "9:16", maxSeconds: 60, captions: true, agent: "claude", model: "opus" });

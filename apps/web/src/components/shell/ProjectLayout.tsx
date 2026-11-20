@@ -16,6 +16,7 @@ import { BootSplash, startup } from "./BootSplash";
 import { DesktopAgents } from "./DesktopSettings";
 import { ModelSettings } from "./ModelSettings";
 import { ProjectSettingsDrawer } from "./ProjectSettingsDrawer";
+import { zh } from "../../lib/zh";
 
 const SkillCreator = lazy(async () => ({ default: (await import("../../pages/SkillEditorPage")).SkillEditorPage }));
 
@@ -45,11 +46,11 @@ function TrashedProjectView({ project }: { project: TrashedProject }) {
   }
 
   return (
-    <EmptyState icon="trash" title="This project is in Trash" body={`Restore “${project.name}” to open it here.`}
+    <EmptyState icon="trash" title={zh.project.inTrash} body={zh.project.restoreTrash(project.name)}
       action={<>
-        <Link className="btn-quiet" to="/">All projects</Link>
+        <Link className="btn-quiet" to="/">{zh.common.allProjects}</Link>
         <button className="btn-primary" disabled={restoring} onClick={restore}>
-          {restoring ? "Restoring…" : "Restore project"}
+          {restoring ? "正在恢复…" : zh.project.restore}
         </button>
         <InlineError>{error}</InlineError>
       </>}
@@ -158,15 +159,15 @@ export function ProjectLayout() {
       <Outlet key={id} />
       {/* Keep the project mounted so the draft, its target and any queued request being reworded stay in place. */}
       {creatingSkill && <Suspense fallback={null}>
-        <DialogSurface aria-label="Create a skill" onDismiss={backToEdit}
+        <DialogSurface aria-label={zh.shell.createSkill} onDismiss={backToEdit}
           className="studio-dialog fixed inset-0 m-auto flex h-[80dvh] max-h-full w-[min(820px,95%)] flex-col overflow-hidden card text-fg shadow-2xl backdrop:bg-black/60">
           <SkillCreator onReturnToEdit={backToEdit} />
         </DialogSurface>
       </Suspense>}
       <NotePopover />
       <ProjectSettingsDrawer onDeleted={() => navigate("/")} />
-      <Modal open={!!setup} onClose={closeSetup} title={setup === "models" ? "Choose models" : "Sign in"} width={560}
-        footer={<button className="btn-primary" onClick={closeSetup}>Back to project</button>}>
+      <Modal open={!!setup} onClose={closeSetup} title={setup === "models" ? zh.shell.chooseModels : zh.shell.signIn} width={560}
+        footer={<button className="btn-primary" onClick={closeSetup}>{zh.shell.backToProject}</button>}>
         {setup === "models" ? <ModelSettings onSignIn={() => useUiStore.getState().setAgentSetupOpen(true)} /> : <DesktopAgents onConnected={closeSetup} />}
       </Modal>
     </div>

@@ -40,10 +40,10 @@ it("restores a trashed project from a deep link and opens the original destinati
       <Route path="/p/:id" element={<ProjectLayout />}><Route path="media" element={<Destination />} /></Route>
     </Routes></MemoryRouter>));
     await act(async () => vi.waitFor(() => expect(useProjectStore.getState().trashedProject?.id).toBe(project.id)));
-    expect(container.textContent).toContain("This project is in Trash");
+    expect(container.textContent).toContain("项目在废纸篓中");
     expect(container.textContent).toContain(project.name);
     const button = container.querySelector("button")!;
-    expect(button.textContent).toBe("Restore project");
+    expect(button.textContent).toBe("恢复项目");
     await act(async () => button.click());
     expect(container.querySelector('[role="alert"]')?.textContent).toContain("Engine disconnected");
     await act(async () => button.click());

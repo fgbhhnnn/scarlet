@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useId, useRef, useState, type ComponentPropsWithoutRef, type ReactNode } from "react";
 import { errorMessage } from "../../lib/client";
 import { initials } from "../../lib/format";
+import { zh } from "../../lib/zh";
 
 export function Spinner({ className = "" }: { className?: string }) {
   return (
@@ -12,7 +13,7 @@ export function Spinner({ className = "" }: { className?: string }) {
   );
 }
 
-export function Loading({ label = "Loading…" }: { label?: string }) {
+export function Loading({ label = zh.common.loading }: { label?: string }) {
   return (
     <div className="flex items-center justify-center gap-2 py-16 text-muted">
       <Spinner /> <span>{label}</span>
@@ -31,14 +32,14 @@ export function EmptyState({ title, body, action, icon = "film" }: { title: stri
   );
 }
 
-export function ErrorState({ title = "Something went wrong", body, onRetry }: { title?: string; body?: string; onRetry?: () => void }) {
+export function ErrorState({ title = zh.common.somethingWrong, body, onRetry }: { title?: string; body?: string; onRetry?: () => void }) {
   return (
     <div role="alert" className="m-4 rounded-lg border border-bad/40 bg-bad/5 p-4">
       <div className="text-bad font-medium">{title}</div>
       {body && <div className="text-muted mt-1 break-words">{body}</div>}
       {onRetry && (
         <button className="btn-ghost mt-3" onClick={onRetry}>
-          Retry
+          {zh.common.retry}
         </button>
       )}
     </div>
@@ -175,7 +176,7 @@ export function ConfirmDialog({ open, onClose, onConfirm, title, body, confirmLa
       footer={
         <>
           <button className="btn-ghost" onClick={onClose} disabled={busy}>
-            Cancel
+            取消
           </button>
           <button
             className={danger ? "btn-danger" : "btn-primary"}

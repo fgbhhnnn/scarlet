@@ -4,6 +4,10 @@ What changed in Scarlet, newest first, in the words an editor would use. Scarlet
 
 Add one line under today's date for each change an editor would notice. Leave out changes to tests, builds and tooling.
 
+## November 20, 2026
+
+- Start a Chinese dialogue rough cut from the project toolbar and review the suggested cuts in the workspace.
+
 ## November 19, 2026
 
 - Scarlet can now check whether a recording's lips keep time with its sound and, when they're off, move the picture to match while every cut stays where you heard it.

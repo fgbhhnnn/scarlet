@@ -31,6 +31,7 @@ import { callToPrepare, editToPrepare, usePrepareReviewCuts, type PreparedCut, t
 import { CutMark, EditPassage } from "../components/review/CutTranscript";
 import { useReviewTimeline } from "../components/review/useReviewTimeline";
 import { ReviewActions } from "../components/review/ReviewActions";
+import { AutoRoughCut } from "../components/review/AutoRoughCut";
 import { BeforeToggle } from "../components/review/BeforeToggle";
 import { ignorePageShortcut, isEditableTarget, useHotkeys } from "../lib/hotkeys";
 import { RequestMetrics, RunBundle, runEnded, Said } from "../components/review/RunBundle";
@@ -3893,6 +3894,7 @@ export function SimpleWorkspace() {
                 same mark. While videos cache, the ring is on the Media button. */}
             <div className="simple-tools">
               <MediaButton importing={importing} importFailed={importFailed} onOpen={() => setPanel("media")} />
+              <AutoRoughCut key={current.id} importing={importing} onQueued={() => { follow.current = true; }} />
               <ExportButton onOpen={() => setPanel("export")} />
               <button type="button" className="btn-quiet" aria-haspopup="dialog" onClick={() => setPanel("history")}>History</button>
               <Dropdown label="More" align="right" width={240} description={menuSays || undefined}

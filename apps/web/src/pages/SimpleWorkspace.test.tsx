@@ -1855,7 +1855,7 @@ it("keeps the message box aimed at an edit while Scarlet works in that request, 
   await act(async () => {});
   await click(buttonIn(editPanel()!, "修改")!);
   const target = () => container.querySelector(".simple-target")?.textContent;
-  expect(target()).toContain("Revising “captions” at 0:00");
+  expect(target()).toContain("正在修改“captions” at 0:00");
   await act(async () => useUiStore.getState().setAgentDraft("Make the captions smaller"));
   // Scarlet picks this request's run up again as a new attempt while the editor is still typing. The box stays aimed
   // at the edit, with what was typed.
@@ -1864,17 +1864,17 @@ it("keeps the message box aimed at an edit while Scarlet works in that request, 
     finishedAt: undefined, summary: null, changeIds: [], question: null, context: { changeId: "chg_approved_2", message: "Carry on" } }] };
   await act(async () => useProjectStore.setState({ current: data }));
   expect(threadWith("chg_approved_2").tasks.map(t => t.id)).toContain("task_resumed");
-  expect(target()).toContain("Revising “captions” at 0:00");
+  expect(target()).toContain("正在修改“captions” at 0:00");
   expect(useUiStore.getState().agentDraft).toBe("Make the captions smaller");
   // The same when Scarlet asks a question in that request.
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === "task_resumed" ? { ...t, state: "waiting_for_user" as const,
     question: "Smaller by how much?" } : t) }));
   expect(threadWith("chg_approved_2").question?.id).toBe("task_resumed");
-  expect(target()).toContain("Revising “captions” at 0:00");
+  expect(target()).toContain("正在修改“captions” at 0:00");
   expect(useUiStore.getState().agentDraft).toBe("Make the captions smaller");
   // Once the message is sent, the box follows what's open again: the edit still is, so it stays aimed at it.
   await act(async () => { useUiStore.getState().setAgentDraft(""); composer.props!.onSent!(); });
-  expect(target()).toContain("Revising “captions” at 0:00");
+  expect(target()).toContain("正在修改“captions” at 0:00");
   // Closing the edit leaves the question Scarlet asked first as what the next message answers.
   await press("Escape");
   expect(target()).toContain("正在回答");
@@ -1899,7 +1899,7 @@ it("keeps the box on Answer when a revision sent before it lands", async () => {
   await act(async () => {});
   await click(buttonIn(editPanel()!, "修改")!);
   const target = () => container.querySelector(".simple-target")?.textContent;
-  expect(target()).toContain("Revising “captions” at 0:00");
+  expect(target()).toContain("正在修改“captions” at 0:00");
   // The revision is on its way when the editor turns to Scarlet's question in the same request.
   const landed = composer.props!.onSent!;
   await click(buttonIn(turnFor("chg_approved_2"), "回答")!);
@@ -1910,7 +1910,7 @@ it("keeps the box on Answer when a revision sent before it lands", async () => {
   expect(target()).toContain("正在回答");
   // The answer itself, sent from there, lets the box follow the chat again: the edit that's still open.
   await act(async () => composer.props!.onSent!());
-  expect(target()).toContain("Revising “captions” at 0:00");
+  expect(target()).toContain("正在修改“captions” at 0:00");
 });
 
 it("answers Scarlet's question with the next message when nothing is open, until the tag is taken off the box", async () => {
@@ -1995,7 +1995,7 @@ it("stops aiming the message box at a request that is no longer in the project",
   await click(turnFor("chg_approved_2").querySelectorAll(".simple-edits .simple-edit")[1]!);
   await act(async () => {});
   await click(buttonIn(editPanel()!, "修改")!);
-  expect(container.querySelector(".simple-target")?.textContent).toContain("Revising “captions” at 0:00");
+  expect(container.querySelector(".simple-target")?.textContent).toContain("正在修改“captions” at 0:00");
   const gone = threadWith("chg_approved_2");
   expect(useUiStore.getState().draftOwner).toBe(JSON.stringify([PRJ, gone.id]));
   await event(d => ({ ...d, changes: d.changes.filter(c => !gone.changes.includes(c)), tasks: d.tasks.filter(t => !gone.tasks.includes(t)) }));
@@ -2015,14 +2015,14 @@ it("leaves the message box where it is now aimed when an earlier message lands",
   await act(async () => {});
   await click(buttonIn(editPanel()!, "修改")!);
   const target = () => container.querySelector(".simple-target")?.textContent;
-  expect(target()).toContain("Revising “captions” at 0:00");
+  expect(target()).toContain("正在修改“captions” at 0:00");
   // That message is on its way when the editor aims the box at a call of the pass.
   const landed = composer.props!.onSent!;
   await reviewCalls();
   await press("r");
-  expect(target()).toContain("Revising the cut at 3:50");
+  expect(target()).toContain("正在修改3:50 处的剪点");
   await act(async () => landed());
-  expect(target()).toContain("Revising the cut at 3:50");
+  expect(target()).toContain("正在修改3:50 处的剪点");
   expect(useUiStore.getState().agentContext).toMatchObject({ changeId: "chg_ready", cutIndex: 1 });
 });
 
@@ -3516,7 +3516,7 @@ it("keeps the call on screen on its cut when the pass saves its next part", asyn
   expect(openHead()!.querySelector(".edit-passage")).not.toBeNull();
   // Revise, Skip and Approve still mean that cut, in the proposal that's waiting now.
   await press("r");
-  expect(container.querySelector(".simple-target")?.textContent).toContain("Revising the cut at 0:11");
+  expect(container.querySelector(".simple-target")?.textContent).toContain("正在修改0:11 处的剪点");
   expect(useUiStore.getState().agentContext).toMatchObject({ changeId: "chg_ready_part2", cutIndex: 3, time: 11, end: 12 });
   await press("s");
   expect(save).toHaveBeenLastCalledWith("chg_ready_part2", expect.objectContaining({ choices: [{ index: 3, choice: "keep" }] }));
@@ -3821,7 +3821,7 @@ it("follows the call's cut, and a revision aimed at it, when the next part's con
   await act(async () => {});
   await openCall("Repeated aside.");
   await press("r");
-  expect(container.querySelector(".simple-target")?.textContent).toContain("Revising the cut at 0:11");
+  expect(container.querySelector(".simple-target")?.textContent).toContain("正在修改0:11 处的剪点");
   const aimedBefore = useUiStore.getState().agentContext;
   const listens = listen.mock.calls.length;
   // The next part applies a 1.5 s cut ahead of the call and another after it. On the new version the staged cuts
@@ -3838,7 +3838,7 @@ it("follows the call's cut, and a revision aimed at it, when the next part's con
   // The editor didn't choose it again: it is taken up where it is, and stays paused if they paused it.
   expect(listen).toHaveBeenLastCalledWith({ start: 7.5, end: 13.5, skips: [{ start: 9.5, end: 10.5, removed: true }] }, expect.any(Number), true);
   // The message box is still aimed at that cut, where it is now.
-  expect(container.querySelector(".simple-target")?.textContent).toContain("Revising the cut at 0:09");
+  expect(container.querySelector(".simple-target")?.textContent).toContain("正在修改0:09 处的剪点");
   expect(useUiStore.getState().agentContext).toMatchObject({ changeId: "chg_ready_part2", version: "ver_part2", cutIndex: 2, time: 9.5, end: 10.5 });
   // A message that was already on its way with the target as it was still clears it when it lands.
   const box = useUiStore.getState();
@@ -3998,7 +3998,7 @@ it("marks, shades and plays a waiting call where its footage sits once the worki
   // A revision is aimed as before, at the cut as it is staged on the pass's version. The line over the box names the
   // cut as the label on the video and its dot do.
   await press("r");
-  expect(container.querySelector(".simple-target")?.textContent).toContain("Revising the cut at 0:10");
+  expect(container.querySelector(".simple-target")?.textContent).toContain("正在修改0:10 处的剪点");
   expect(useUiStore.getState().agentContext).toMatchObject({ changeId: "chg_ready", cutIndex: 2, version: staged, time: 11, end: 12 });
 });
 
@@ -4057,7 +4057,7 @@ it("keeps an open call's listen on its footage when the working cut moves under 
   // The editor is a second and a half into the listen, and has aimed a revision at the cut.
   await act(async () => usePlayerStore.getState().setTime(10.5));
   await press("r");
-  expect(container.querySelector(".simple-target")?.textContent).toContain("Revising the cut at 0:11");
+  expect(container.querySelector(".simple-target")?.textContent).toContain("正在修改0:11 处的剪点");
   const listens = listen.mock.calls.length;
   // The head moves first. Until the new working cut arrives the call is where it was.
   await event(d => ({ ...d, project: { ...d.project, head: "ver_moved" } }));
@@ -4072,7 +4072,7 @@ it("keeps an open call's listen on its footage when the working cut moves under 
   expect(usePlayerStore.getState().time).toBe(9.5);
   expect(onVideo()).toBe("正在显示 0:10 处的剪点 · 3 / 3 · 剪辑后");
   // The line over the box follows the cut as well, though the box was aimed before it moved.
-  expect(container.querySelector(".simple-target")?.textContent).toContain("Revising the cut at 0:10");
+  expect(container.querySelector(".simple-target")?.textContent).toContain("正在修改0:10 处的剪点");
 });
 
 it("leaves the playhead where the editor scrubbed it, away from an open call's listen, when the working cut moves", async () => {
@@ -4354,7 +4354,7 @@ it("leaves a revision aimed at an applied pass's cut where it is when the reques
   await openCall("Repeated aside.");
   await press("r");
   const target = () => container.querySelector(".simple-target")?.textContent;
-  expect(target()).toContain("Revising the cut at 0:11");
+  expect(target()).toContain("正在修改0:11 处的剪点");
   // The editor is partway through the note.
   await act(async () => useUiStore.getState().setAgentDraft("Start it"));
   // The pass is applied with the editor's calls. Its list doesn't say which staged cuts came out, so nothing says
@@ -4372,7 +4372,7 @@ it("leaves a revision aimed at an applied pass's cut where it is when the reques
   });
   await act(async () => {});
   expect(turnFor("chg_second_pass").querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 项待审阅");
-  expect(target()).toContain("Revising the cut at 0:11");
+  expect(target()).toContain("正在修改0:11 处的剪点");
   expect(useUiStore.getState().agentContext).toMatchObject({ changeId: "chg_ready", cutIndex: 2, time: 11, end: 12 });
 });
 
@@ -4428,7 +4428,7 @@ it("doesn't move a revision aimed at an applied pass's cut onto another request'
   await act(async () => {});
   await openCall("Repeated aside.");
   await press("r");
-  expect(container.querySelector(".simple-target")?.textContent).toContain("Revising the cut at 0:11");
+  expect(container.querySelector(".simple-target")?.textContent).toContain("正在修改0:11 处的剪点");
   await act(async () => useUiStore.getState().setAgentDraft("Start it"));
   await event(d => ({ ...d, changes: d.changes.map(c => c.id === "chg_ready" ? { ...c, state: "approved" as const, appliedVersion: c.toVersion } : c),
     tasks: d.tasks.map(t => t.id === "task_done" ? { ...t, state: "done" as const, finishedAt: new Date().toISOString() } : t) }));
@@ -4743,8 +4743,8 @@ it("shows Scarlet on two calls at once: each row has its own actions, alongside 
   expect([...container.querySelectorAll(".subunit .unit-pause-edit")].map(b => b.getAttribute("aria-label"))).toEqual(["暂停剪辑", "暂停剪辑"]);
   // The pass's heading says how many Scarlet is on, beside what still needs the editor.
   const word = block().querySelector(".unit-msg .unit-word")!;
-  expect(word.textContent).toBe("Working on 2 at once");
-  expect(word.getAttribute("title")).toBe("Scarlet is working on 2 cuts or edits at the same time.");
+  expect(word.textContent).toBe("同时处理 2 项");
+  expect(word.getAttribute("title")).toBe("Scarlet 正在同时处理 2 个剪点或剪辑。");
   expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 项待审阅");
   // Each call has its own menu under its row.
   const working = [...passCard().querySelectorAll(".simple-pass-value.working-text")];
@@ -4757,7 +4757,7 @@ it("shows Scarlet on two calls at once: each row has its own actions, alongside 
   // With one left at work the heading says nothing more than the row does.
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === "task_aside" ? { ...t, state: "cancelled" as const, finishedAt: new Date().toISOString() } : t) }));
   await act(async () => {});
-  expect([...block().querySelectorAll(".unit-msg .unit-word")].map(el => el.textContent)).not.toContain("Working on 2 at once");
+  expect([...block().querySelectorAll(".unit-msg .unit-word")].map(el => el.textContent)).not.toContain("同时处理 2 项");
 });
 
 it("keeps a call Revising… when it comes back revised while a second note on it still waits", async () => {
@@ -4933,16 +4933,16 @@ it("moves a second thought still in the box onto the revised cut, whichever kind
   await openCall("A clean retake.");
   await act(async () => usePlayerStore.getState().setTime(1));
   await press("r");
-  expect(container.querySelector(".simple-target")?.textContent).toContain("Revising the cut at 0:02");
+  expect(container.querySelector(".simple-target")?.textContent).toContain("正在修改0:02 处的剪点");
   // The second thought is being written when the first note's revision comes back.
   await act(async () => useUiStore.getState().setAgentDraft("And"));
   await event(d => ({ ...d, tasks: [...d.tasks, callRequest("task_note1", 0, { kind: "edit" as const })] }));
   await passEnds("chg_ready", STAGED, "task_note1");
   await revisedCut("task_note1", "chg_ready", 0, { start: 1.5, end: 3 }, "Starts in the pause.");
-  expect(container.querySelector(".simple-target")?.textContent).toContain("Revising the cut at 0:02");
+  expect(container.querySelector(".simple-target")?.textContent).toContain("正在修改0:02 处的剪点");
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === "task_note1" ? { ...t, state: "done" as const } : t) }));
   expect(useUiStore.getState().agentContext).toMatchObject({ changeId: "chg_revised", cutIndex: 0, time: 1.5, end: 3 });
-  expect(container.querySelector(".simple-target")?.textContent).toContain("Revising the cut at 0:01");
+  expect(container.querySelector(".simple-target")?.textContent).toContain("正在修改0:01 处的剪点");
   // The revised cut starts earlier on the same working cut. No footage moved, so the playhead stays where it was.
   expect(usePlayerStore.getState().time).toBe(1);
 });
@@ -5884,7 +5884,7 @@ it("revises the one call that's playing, and says so", async () => {
   await act(async () => {});
   await reviewCalls();
   await press("r");
-  expect(container.querySelector(".simple-target")?.textContent).toContain("Revising the cut at 3:50");
+  expect(container.querySelector(".simple-target")?.textContent).toContain("正在修改3:50 处的剪点");
   expect(useUiStore.getState().agentContext).toMatchObject({ changeId: "chg_ready", cutIndex: 1, time: 230, end: 233 });
 });
 
@@ -6059,7 +6059,7 @@ it("revises just the applied edit that's showing, even with a pass waiting, and 
   expect(audition).toHaveBeenLastCalledWith({ start: 8, end: 14.4, skips: [] }, expect.any(Number));
 
   await click(buttonIn(bar, "修改")!);
-  expect(container.querySelector(".simple-target")?.textContent).toContain("Revising “Keep the image test” at 0:10");
+  expect(container.querySelector(".simple-target")?.textContent).toContain("正在修改“Keep the image test” at 0:10");
   expect(useUiStore.getState().agentContext).toMatchObject({ changeId: "chg_approved_2" });
 
   // The pass that's waiting is still counted on its card in the chat.
@@ -6173,7 +6173,6 @@ it("keeps the first-video V1 entry enabled in a fresh manual timeline", async ()
   expect(addFirst!.disabled).toBe(false);
 });
 
-/** The Transcript from the menu, once its pane and the words have loaded. */
 it.each([true, false])("adds the first ready video to an initialized V1 with audio and captions (timeline loaded: %s)", async loaded => {
   const video = { ...data.media[0]!, status: "ready" as const, previewMode: "on-demand" as const };
   const preparing = { ...video, id: "med_preparing", status: "ingesting" as const };
@@ -7696,7 +7695,7 @@ it("opens a call that's with Scarlet: its card says so, and its revision is at w
   expect(unit.querySelector(".req")?.getAttribute("data-state")).toBe("working");
   expect(transcriptLink().getAttribute("aria-label")).toBe("显示转写稿");
   // The message box is on that cut, so a second note goes to it.
-  expect(container.querySelector(".simple-target")?.textContent).toContain("Revising the cut at 3:50");
+  expect(container.querySelector(".simple-target")?.textContent).toContain("正在修改3:50 处的剪点");
   expect(boxTag()).toBe("剪点 1");
   // A and S do nothing on it: the decision waits for the new version.
   const save = vi.mocked(api.saveCutChoices);
@@ -7739,13 +7738,13 @@ it("leaves a message being written aimed where it was, and offers nothing above 
   await click(edits()[1]!);
   await act(async () => {});
   // The box is on the edit that's open, and its tag says so. The line that names it is for screen readers.
-  expect(aimLine()).toBe("Revising “captions” at 0:00");
+  expect(aimLine()).toBe("正在修改“captions” at 0:00");
   expect(boxTag()).toBe("Edit at 0:00");
   await act(async () => useUiStore.getState().setAgentDraft("Make the captions smaller"));
   // Esc closes the edit, but the message is still about the captions: its tag stays, and nothing offers to move it.
   await press("Escape");
   expect(editPanel()).toBeNull();
-  expect(aimLine()).toBe("Revising “captions” at 0:00");
+  expect(aimLine()).toBe("正在修改“captions” at 0:00");
   expect(boxTag()).toBe("Edit at 0:00");
   expect(container.querySelector(".simple-target button")).toBeNull();
   expect(useUiStore.getState().agentContext).toMatchObject({ changeId: "chg_approved_2", editIndex: 1 });
@@ -7848,7 +7847,7 @@ it("leaves a spoken message where it was said: the tag's × and words typed and 
   expect(editPanel()).toBeNull();
   expect([boxTag(), useUiStore.getState().draftOwner]).toEqual(["Edit at 0:00", onEdit]);
   // The tag's × can't take the box elsewhere: building the box again would drop the recording.
-  expect(aimLine()).toBe("Revising “captions” at 0:00");
+  expect(aimLine()).toBe("正在修改“captions” at 0:00");
   await act(async () => composer.props!.onClearTarget!());
   expect([boxTag(), useUiStore.getState().draftOwner]).toEqual(["Edit at 0:00", onEdit]);
   // Words typed and sent while it records don't free the box: the recording is still in it.
@@ -7870,7 +7869,7 @@ it("takes the box off a suggestion when its card closes after Revise, as off a c
   // Revise (R) aims the box at the suggestion on the card. That is what's open, so the line naming it is for screen readers.
   await press("r");
   expect([boxTag(), useUiStore.getState().agentContext]).toMatchObject(["Whole edit", { changeId: "chg_ready", label: "剪辑建议" }]);
-  expect(aimLine()).toBe("Revising this suggestion");
+  expect(aimLine()).toBe("正在修改此建议");
   // Esc closes the card, and the empty box goes back to Scarlet's question.
   await press("Escape");
   expect(container.querySelector('[aria-label="剪辑建议"]')).toBeNull();
@@ -7883,7 +7882,7 @@ it("takes the box off a suggestion when its card closes after Revise, as off a c
   await press("Escape");
   expect(container.querySelector('[aria-label="剪辑建议"]')).toBeNull();
   expect([boxTag(), useUiStore.getState().agentContext]).toMatchObject(["Whole edit", { changeId: "chg_ready", label: "剪辑建议" }]);
-  expect(aimLine()).toBe("Revising this suggestion");
+  expect(aimLine()).toBe("正在修改此建议");
 });
 
 it("lets a box that holds only a space follow the edit that opens, as an empty box does", async () => {
@@ -7901,7 +7900,7 @@ it("lets a box that holds only a space follow the edit that opens, as an empty b
   // The box is on the edit that's open now: its tag says so, and no line offers to move anything.
   expect(boxTag()).toBe("Edit at 0:11");
   expect(useUiStore.getState().agentContext).toMatchObject({ changeId: "chg_approved_2", editIndex: 2 });
-  expect(aimLine()).toBe("Revising “wrap” at 0:11");
+  expect(aimLine()).toBe("正在修改“wrap” at 0:11");
 });
 
 it("keeps the message box on an edit that's opened again while it's open", async () => {
@@ -7911,7 +7910,7 @@ it("keeps the message box on an edit that's opened again while it's open", async
   await click(need());
   await act(async () => {});
   const aimed = aimLine();
-  expect(aimed).toContain("Revising “wrap”");
+  expect(aimed).toContain("正在修改“wrap”");
   expect(boxTag()).toBe("Edit at 0:11");
   // Its own row pressed again, as a press on its dot on the timeline is: the edit stays open and the box stays on it.
   await click(turnFor("chg_approved_2").querySelector('.simple-edit[aria-current="true"]')!);
@@ -7941,7 +7940,7 @@ it("brings a message kept for a request back aimed as it was, not at what's open
   await click(edits()[2]!);
   await act(async () => {});
   expect(boxNow()).toMatchObject(["Make the captions smaller", { changeId: "chg_approved_2", editIndex: 1 }, JSON.stringify([PRJ, threadWith("chg_approved_2").id])]);
-  expect(aimLine()).toBe("Revising “captions”");
+  expect(aimLine()).toBe("正在修改“captions”");
 });
 
 it("says Queued on the card of a cut sent back until Scarlet starts on it, and steps through it with the arrows", async () => {
@@ -9058,7 +9057,7 @@ it("writes a time past the first hour with its hour, over the player as on the l
   expect(container.querySelector(".simple-on-video")?.textContent).toBe("正在显示 1:02:07 处的剪点 · 1 / 1 · 剪辑后");
   // The call goes by its number in the box; the line that names the aim says where it is.
   expect(boxTag()).toBe("剪点 1");
-  expect(container.querySelector(".simple-target")?.textContent).toContain("Revising the cut at 1:02:07");
+  expect(container.querySelector(".simple-target")?.textContent).toContain("正在修改1:02:07 处的剪点");
 });
 
 it("opens Media for a project that was just made without footage, and draws no banner when caching is paused", async () => {
@@ -9402,7 +9401,7 @@ it("aims words chosen in the transcript with a call open at that call when they'
   expect(boxTag()).toBe("剪点 1");
   expect(useUiStore.getState().agentContext).toMatchObject({ changeId: "chg_ready", cutIndex: 0, version: data.project.head, time: expect.closeTo(2.3, 1), end: expect.closeTo(2.5, 1), label: "“I”" });
   expect(useUiStore.getState().agentDraft).toBe("Keep this word");
-  expect(aimLine()).toBe("Revising the cut at 0:02");
+  expect(aimLine()).toBe("正在修改0:02 处的剪点");
   // "is", at 14.2 s, is in no cut: the words start a new edit, as they do with nothing open, and the message comes along.
   await askAboutWord(30);
   expect(boxTag()).toBeUndefined();

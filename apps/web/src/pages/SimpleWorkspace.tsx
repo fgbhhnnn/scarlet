@@ -1194,7 +1194,7 @@ function Turn({ projectId, thread, actions, pinned, pinHost, list: passList, rep
     const atOnce = actions.atOnce ?? 0;
     const among = !inside && atOnce > 1 && [run, ...(run === owner ? runs.filter(r => nested.has(r.root)) : [])]
       .some(r => aboutOne(r) && isWorking(r.task.state));
-    const standing = stands ?? (among ? <span className="unit-word" title={`Scarlet is working on ${atOnce} cuts or edits at the same time.`}>Working on {atOnce} at once</span> : null);
+    const standing = stands ?? (among ? <span className="unit-word" title={zh.workspace.atOnceHint(atOnce)}>{zh.workspace.atOnce(atOnce)}</span> : null);
     const stop = runIsActive(task) && !(waitingToStart(task) && run.root === task.id) ? () => attempt(run.root, cancelTask(task.id)) : undefined;
     // A request that edits the video has its controls at the band's right for as long as Scarlet has it: Pause, which
     // holds all editing in the project, then Resume once it is paused, which picks the paused work up first; and Stop,
@@ -3624,10 +3624,10 @@ export function SimpleWorkspace() {
   // A call's tag is only its number ("Cut 3"), so the box's tag line says where that cut is.
   const aimTime = boxTag && aimedCall && aimed && cutName(aimed) === boxTag ? (placeCut(aimedCall) ?? aimedCall).start : undefined;
   const aimLabel = !replyThread ? zh.workspace.startNewEdit
-    : aimedCall && (targetLabel || aimedAtItem) ? `Revising the cut at ${clockLabel((placeCut(aimedCall) ?? aimedCall).start)}`
-    : targetLabel ? `Revising ${targetLabel}`
+    : aimedCall && (targetLabel || aimedAtItem) ? zh.workspace.revisingTarget(zh.workspace.cutAt(clockLabel((placeCut(aimedCall) ?? aimedCall).start)))
+    : targetLabel ? zh.workspace.revisingTarget(targetLabel)
     // A message that came back with its aim names it from the aim itself: a cut by where it is, an edit by its name.
-    : aimedAtItem ? `Revising ${aimed!.cutIndex !== undefined ? `the cut at ${clockLabel(aimed!.time)}` : aimed!.label ? `“${aimed!.label}”` : zh.workspace.thisEdit}`
+    : aimedAtItem ? zh.workspace.revisingTarget(aimed!.cutIndex !== undefined ? zh.workspace.cutAt(clockLabel(aimed!.time)) : aimed!.label ? `“${aimed!.label}”` : zh.workspace.thisEdit)
     : `${replyThread.question ? zh.workspace.answering : zh.workspace.replyingTo} “${replyThread.title}”`;
   /**
    * What a queued request is waiting for. Held by the pass whose calls are all made, it waits on Scarlet and not the
@@ -4095,5 +4095,5 @@ function MarkedFrameOnRequest({ projectId, task }: { projectId: string; task: Ta
   if (!drawn) return null;
   const count = drawn.marks.length;
   return <img className="unit-marked-frame" src={markedFrameUrl(projectId, drawn.attachmentId)} alt=""
-    title={`Marked frame ${clockLabel(drawn.time)} · ${count === 1 ? "1 mark" : `${count} marks`}`} />;
+    title={zh.workspace.markedFrame(clockLabel(drawn.time), count)} />;
 }

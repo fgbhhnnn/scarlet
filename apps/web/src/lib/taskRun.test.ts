@@ -34,7 +34,7 @@ it("turns a run's events into short updates and one line per finished step", () 
     { kind: "note", at: at(4), text: "I’m using the dialogue-pass workflow to review the full recording." },
     { kind: "step", at: at(5), verb: "读取", detail: "项目" },
     { kind: "note", at: at(9), text: "I’m placing the full recording on the empty timeline." },
-    { kind: "step", at: at(46), verb: "Placed", detail: "the full recording at 0:00 so its picture and dialogue can be edited together", edit: true },
+    { kind: "step", at: at(46), verb: "已将完整录音放在", detail: "0:00，以便同时编辑画面和对白", edit: true },
     { kind: "step", at: at(47), verb: "扫描", detail: "全部 57:47 的对白", pending: false, background: true },
     { kind: "step", at: at(60), verb: "查看", detail: "画面（5 处）" },
     { kind: "step", at: at(64), verb: "检查", detail: "声音" },
@@ -85,9 +85,9 @@ it("says where each step looked, and drops repeats of the same call", () => {
       tool(9, "transcript_search", { mediaId: "cam", query: "DeepSeek" }),
     ];
     expect(runItems({ ...task, state: "running" }, events, []).map(i => i.kind === "step" ? `${i.verb} ${i.detail}` : i.text)).toEqual([
-      "读取转写稿，范围 0:00–57:47",
-      "查看画面（5 处），范围 0:24–54:50",
-      "搜索“DeepSeek”对应的转写稿",
+      "读取 转写稿，范围 0:00–57:47",
+      "查看 画面（5 处），范围 0:24–54:50",
+      "搜索 “DeepSeek”对应的转写稿",
     ]);
     const few = runItems({ ...task, state: "running" }, events.slice(1, 4), []);
     expect(few).toEqual([{ kind: "step", at: at(2), verb: "查看", detail: "画面，位于 0:24、1:33 和 3:05" }]);
@@ -108,7 +108,7 @@ it("shows a wait for the transcript as one row instead of every call that checks
     ]);
     const done = [...events, wait(370, true), tool(371, "transcript_get", read)];
     expect(runItems(running, done, []).map(i => i.kind === "step" && `${i.verb} ${i.detail}`)).toEqual([
-      "已等待 6:00，转写稿", "查看画面，位于 0:24 和 1:33", "读取转写稿，范围 0:00–57:47",
+      "已等待 6:00，转写稿", "查看 画面，位于 0:24 和 1:33", "读取 转写稿，范围 0:00–57:47",
     ]);
     // The wait ran alongside the other steps, so it takes no time of its own in the list.
     expect(runLines(running, done, runItems(running, done, []), Date.parse(at(400))).map(l => l.took)).toEqual([undefined, 341_000, 29_000]);
@@ -163,11 +163,11 @@ it("sums up a run in a few words", () => {
   expect(removing(59.4)).toBe("建议移除 59 s，共 1 个剪点");
   expect(removing(59.6)).toBe("建议移除 1:00，共 1 个剪点");
   expect(removing(65.7)).toBe("建议移除 1:06，共 1 个剪点");
-  expect(runSummary(task, assembly)).toBe("Placed the full recording at 0:00…");
+  expect(runSummary(task, assembly)).toBe("已将完整录音放在 0:00，以便同时编辑画面和对白");
   expect(runSummary(task, { ...assembly, timelineEdits: [{ label: "Synchronized camera and screen", range: { start: 0, end: 1 } }] } as Change))
     .toBe("Synchronized camera and screen");
   expect(runSummary({ ...task, state: "failed" } as Task)).toBe("未能完成");
-  expect(runSummary({ ...task, state: "failed" } as Task, assembly)).toBe("Placed the full recording at 0:00…");
+  expect(runSummary({ ...task, state: "failed" } as Task, assembly)).toBe("已将完整录音放在 0:00，以便同时编辑画面和对白");
   const zoom = { ...assembly, description: "From 0:03 to 56:41, a fixed 14% zoom enlarges the app windows and trims the taskbar.",
     timelineEdits: [{ label: "the screen demonstrations", range: { start: 3, end: 3401 } }] } as Change;
   expect(runSummary(task, zoom)).toBe("A fixed 14% zoom enlarges the app…");

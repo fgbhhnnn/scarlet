@@ -20,13 +20,14 @@ function clipName(clip: Clip, media: ReadonlyMap<string, MediaAsset>) {
   return clip.label || media.get(clip.mediaId)?.name || "素材";
 }
 
-export function ManualTimeline({ open, projectId, timeline, media, fps, canEdit, onClose, onMedia, onAddFirstVideo }: {
+export function ManualTimeline({ open, projectId, timeline, media, fps, canEdit, allowFirstVideo = false, onClose, onMedia, onAddFirstVideo }: {
   open: boolean;
   projectId: string;
   timeline?: Timeline;
   media: MediaAsset[];
   fps: number;
   canEdit: boolean;
+  allowFirstVideo?: boolean;
   onClose(): void;
   onMedia(): void;
   onAddFirstVideo?(): Promise<void>;
@@ -56,7 +57,7 @@ export function ManualTimeline({ open, projectId, timeline, media, fps, canEdit,
   const firstVideo = visualAssets.find(asset => asset.kind === "video");
   const canAddFirstVideo = !!v1 && v1.clips.length === 0 && !!firstVideo &&
     (firstVideo.duration ?? 0) >= 1 / fps;
-  const canUseFirstVideoAction = canEdit || !!onAddFirstVideo;
+  const canUseFirstVideoAction = allowFirstVideo && (canEdit || !!onAddFirstVideo);
   const disabled = !timeline || !canEdit || busy;
   const start = selected?.timelineIn ?? 0;
   const end = selected ? clipEnd(selected) : 0;
@@ -166,7 +167,7 @@ export function ManualTimeline({ open, projectId, timeline, media, fps, canEdit,
     {!canEdit && timeline && <p role="status">回到当前成片的预览后即可编辑。</p>}
     {!timeline && <>
       <p role="status">导入素材后即可编辑时间线。</p>
-      <button type="button" className={toolClass} disabled={!onAddFirstVideo || addingFirstVideo}
+      <button type="button" className={toolClass} disabled={!onAddFirstVideo || !allowFirstVideo || addingFirstVideo}
         onClick={() => void addFirstVideo()}>
         {addingFirstVideo ? "正在添加…" : "将首个视频添加到 V1"}
       </button>

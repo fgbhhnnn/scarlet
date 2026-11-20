@@ -189,14 +189,14 @@ export function runItems(task: Task, events: readonly TaskEvent[], changes: read
         // The read that found the work unfinished becomes the waiting row, from when it started.
         const read = reads.get(key);
         const item = read && Date.parse(at) - Date.parse(read.at) <= 60_000 ? read : { kind: "step" as const, at, verb: "", detail: "" };
-        Object.assign(item, { verb: "Waiting", detail: `for ${name}`, background: true });
+        Object.assign(item, { verb: "等待", detail: name, background: true });
         reads.delete(key);
         waits.set(key, item);
         if (item !== read) items.push(item);
       } else if (row) {
         waits.delete(key);
         const took = Math.max(0, Date.parse(at) - Date.parse(row.at));
-        Object.assign(row, failed ? { verb: "Couldn’t", detail: `prepare ${name}` } : { verb: "Waited", detail: `${lengthLabel(took / 1000)} for ${name}` });
+        Object.assign(row, failed ? { verb: "无法", detail: `准备${name}` } : { verb: "已等待", detail: `${lengthLabel(took / 1000)}，${name}` });
         // The next read of the same thing is the real one.
         for (const k of seen) if (k.includes(JSON.stringify(mediaId))) seen.delete(k);
       }
@@ -209,7 +209,7 @@ export function runItems(task: Task, events: readonly TaskEvent[], changes: read
         const key = JSON.stringify([page.mediaId, page.end]);
         let scan = scans.get(key);
         if (!scan) {
-          scan = { item: { kind: "step", at, verb: "Scanned", detail: "dialogue", pending: true, background: true }, start: page.from, ranges: [], end: page.end };
+          scan = { item: { kind: "step", at, verb: "扫描", detail: "对白", pending: true, background: true }, start: page.from, ranges: [], end: page.end };
           scans.set(key, scan);
           items.push(scan.item);
           finishGroup();
@@ -221,8 +221,8 @@ export function runItems(task: Task, events: readonly TaskEvent[], changes: read
         const done = total > 0 && seconds >= total - 0.5;
         // An unfinished scan is the live row while the run works.
         Object.assign(scan.item, done
-          ? { verb: "Scanned", detail: `all ${clock(total)} of dialogue`, pending: false }
-          : { verb: "Scanned", detail: `${clock(seconds)} of ${clock(total)} of dialogue`, pending: true });
+          ? { verb: "扫描", detail: `全部 ${clock(total)} 的对白`, pending: false }
+          : { verb: "扫描", detail: `${clock(seconds)} / ${clock(total)} 的对白`, pending: true });
         continue;
       }
       if (typeof event.data.reviewCounter === "string") continue;
@@ -289,17 +289,17 @@ function firstWords(text: string, words = 7) {
 
 /** A few words for the folded run: what it did, not how. */
 export function runSummary(task: Task, change?: Change): string {
-  if (task.state === "failed" && !change) return "Couldn’t finish";
+  if (task.state === "failed" && !change) return "未能完成";
   if (change) {
     const cuts = change.cutReasons ?? [];
     if (cuts.length) {
       const removed = cuts.reduce((sum, c) => sum + Math.max(0, c.end - c.start), 0);
-      const verb = change.state === "approved" ? "Removed" : "Suggested";
-      return `${verb} ${lengthLabel(removed)} in ${plural(cuts.length, "cut")}`;
+      const verb = change.state === "approved" ? "已移除" : "建议移除";
+      return `${verb} ${lengthLabel(removed)}，共 ${cuts.length} 个剪点`;
     }
     // Several named edits are listed under the reply, so the run line only counts them.
     const named = change.timelineEdits?.length ?? 0;
-    if (named > 1) return `${change.state === "approved" ? "Made" : "Suggested"} ${plural(named, "edit")}`;
+    if (named > 1) return `${change.state === "approved" ? "已完成" : "建议"} ${named} 项剪辑`;
     const label = change.timelineEdits?.[0]?.label;
     // Edit labels are sometimes fragments ("the screen demonstrations"). Use them only when they read as a title.
     return label && label.length <= 48 && /^\p{Lu}/u.test(label) ? label : firstWords(change.description);
@@ -307,7 +307,7 @@ export function runSummary(task: Task, change?: Change): string {
   // Only what the chat would show as Scarlet's words: a reply that was commands, or the request said back, says
   // nothing here either.
   const said = editConfirmation(taskChatText(task), requestText(task));
-  return said ? firstWords(said) : "Done";
+  return said ? firstWords(said) : "完成";
 }
 
 /**
@@ -384,12 +384,13 @@ export type RunLine = { kind: RunItem["kind"]; text: string; took?: number; live
 export function runLines(task: Task, events: readonly TaskEvent[], items: readonly RunItem[], now: number): RunLine[] {
   // Each line also keeps how it reads while it's still going, for the live last line.
   const lines: Array<RunLine & { start?: number; parts?: string[]; doing?: string[] }> = [];
-  const join = (parts: string[]) => parts.length === 2 ? parts.join(" and ") : `${parts.slice(0, -1).join(", ")} and ${parts.at(-1)}`;
+  const join = (parts: string[]) => parts.length === 2 ? parts.join("，") : `${parts.slice(0, -1).join("、")} 和 ${parts.at(-1)}`;
   const lower = (text: string) => text.charAt(0).toLowerCase() + text.slice(1);
+  const stepText = (verb: string, detail: string) => `${verb}${/[\u4e00-\u9fff]$/.test(verb) ? "" : " "}${detail}`;
   for (const item of items) {
     if (item.kind === "note") { lines.push({ kind: "note", text: item.text }); continue; }
-    const text = `${item.verb} ${item.detail}`;
-    const doing = `${(!item.edit && ongoing.get(item.verb)) || item.verb} ${item.detail}`;
+    const text = stepText(item.verb, item.detail);
+    const doing = stepText((!item.edit && ongoing.get(item.verb)) || item.verb, item.detail);
     if (item.background) { lines.push({ kind: "step", text }); continue; }
     const start = Date.parse(item.at) || 0;
     const previous = lines.at(-1);

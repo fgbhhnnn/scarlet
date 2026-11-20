@@ -64,12 +64,12 @@ it("keeps the cut player out of agent progress updates", async () => {
 it("asks for footage in an empty project, and points at Media when nothing there can play yet", async () => {
   open({ media: [] });
   await show();
-  expect(container.textContent).toContain("添加素材即可开始剪辑");
+  expect(container.textContent).toContain("添加素材后开始编辑");
   await act(async () => button("添加素材")!.click());
   expect(onMedia).toHaveBeenCalledTimes(1);
   await act(async () => open());
   await show();
-  expect(container.textContent).toContain("暂无可播放的素材");
+  expect(container.textContent).toContain("暂无可播放素材");
   expect(button("查看素材")).toBeDefined();
   expect(video()).toBeNull();
 });

@@ -23,6 +23,7 @@ import { commandSkillIds, enabledSkills, useSkillsStore } from "../../stores/ski
 import { editTargetAt, markedRangeOf, pointOf, playheadPoints, useUiStore, withMarkedRange, type AgentContext } from "../../stores/ui";
 import { Icon, Spinner, InlineError } from "../ui/primitives";
 import { zhAgent } from "../../lib/zh-agent";
+import { workspace } from "../../lib/zhWorkspace";
 import { AgentChip, useAgentAvailability } from "./AgentChip";
 import { SkillCommandInput } from "./SkillCommandInput";
 import { MicButton } from "./MicButton";
@@ -76,6 +77,8 @@ interface ComposerProps {
   selectedEdit?: AgentContext; onClearSelectedEdit?(): void; thread?: Thread; onCreated?(task: Task): void; onSent?(): void; modelPicker?: boolean }
 
 function ComposerBox({ project, thread, onCreated, onSent, selectedEdit, onClearSelectedEdit, modelPicker = true, tray, targetTag, targetIsPoint, onClearTarget, onRestoreTarget, rewording, messageClock, pausedAt, aimTime }: ComposerProps & { project: Project }) {
+  const answerTag = targetTag === workspace.answer || targetTag === "Answer";
+  const replyTag = targetTag === workspace.reply || targetTag === "Reply";
   const media = useProjectStore(s => s.current?.media);
   const createTask = useProjectStore((s) => s.createTask);
   const createNote = useProjectStore((s) => s.createNote);
@@ -240,7 +243,7 @@ function ComposerBox({ project, thread, onCreated, onSent, selectedEdit, onClear
   };
   /** A revision sent is one ⌘Z can take back, named as its tag read when it went. */
   function recordRevision(task: Task) {
-    const name = targetTag && targetTag !== "Reply" && targetTag !== "Answer" ? targetTag : undefined;
+    const name = !replyTag && !answerTag ? targetTag : undefined;
     recordUndo({ kind: "revision", projectId: project.id, taskId: task.id, ...(name && { name }) });
   }
   /** The frame the editor stopped on, for a message to a cut or an edit. */
@@ -375,14 +378,14 @@ function ComposerBox({ project, thread, onCreated, onSent, selectedEdit, onClear
   }, [value, firstTime, inputClock, typedPoint, sameClock, rewording, replying, aimsByText, setContext]);
   const tagWords = targetTag && `${targetTag.charAt(0).toLowerCase()}${targetTag.slice(1)}`;
   // What the tag's message does, for its hover note: a cut or an edit is revised, a question answered, an edit replied to.
-  const tagAct = !targetTag ? undefined : question && targetTag === "Answer" ? "回答 Scarlet 的问题"
-    : thread && targetTag === "Reply" ? "回复此剪辑" : `修改${tagWords === "whole edit" ? "整个剪辑" : ` ${tagWords}`}`;
+  const tagAct = !targetTag ? undefined : question && answerTag ? "回答 Scarlet 的问题"
+    : thread && replyTag ? "回复此剪辑" : `修改${tagWords === "whole edit" ? "整个剪辑" : ` ${tagWords}`}`;
   const tag = rewording ? undefined : targetTag;
   // A stretch marked on the timeline's ruler rides with the message, beside the tag of the cut or edit it is aimed at.
   const marked = rewording ? undefined : markedRangeOf(context);
   const markedWords = marked ? clockRange(marked.start, marked.end) : "";
   // "Answer" and "Reply" name who the message goes to. The target label shows the place it is about.
-  const wordTag = tag === "Answer" || tag === "Reply" ? tag : undefined;
+  const wordTag = !tag ? undefined : answerTag ? workspace.answer : replyTag ? workspace.reply : undefined;
   const placeTag = wordTag ? undefined : tag;
   const takeOffTarget = () => {
     if (onClearTarget) onClearTarget(); else setContext("whole");
@@ -474,7 +477,7 @@ function ComposerBox({ project, thread, onCreated, onSent, selectedEdit, onClear
         <label htmlFor={inputId} className="composer-destination sr-only">{rewording ? "正在修改排队中的请求" : <>{mode}{editTitle && ` ${editTitle}`}</>}</label>
         <div className="composer-row">
           {wordTag && <span className="composer-tag" title={tagAct}>
-            <span className="composer-tag-name">{wordTag === "Answer" ? "回答" : "回复"}</span>
+            <span className="composer-tag-name">{wordTag}</span>
             {/* A spoken message stays where it was said until it is out: aiming the box elsewhere would drop it. */}
             <button type="button" className="composer-tag-clear" disabled={recording || heard}
               aria-label={`开始新的剪辑，取消${tagAct}`}

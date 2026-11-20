@@ -89,7 +89,7 @@ it("refreshes the open picker and shares one discovery with Settings while prese
   expect(refreshPicker.disabled).toBe(false);
   expect(refreshSettings.disabled).toBe(false);
   expect(picker.querySelector('[aria-label="Codex · gpt-6.2-sol"]')).toBeTruthy();
-  expect(picker.querySelector('[aria-label="Codex · studio-model · Custom"]')).toBeTruthy();
+  expect(picker.querySelector('[aria-label="Codex · studio-model · 自定义"]')).toBeTruthy();
   expect(picker.querySelector('[aria-label="Codex · gpt-6-astra"]')).toBeNull();
   expect(picker.querySelector('[aria-label="Codex · gpt-6-luna"]')).toBeNull();
   expect(picker.querySelector('[aria-label="收藏 Codex · gpt-6.1-sol"]')?.getAttribute("aria-pressed")).toBe("true");
@@ -157,7 +157,7 @@ it("shows the model name and effort dial and returns focus after keyboard naviga
     await act(() => trigger.click());
     expect(document.activeElement?.getAttribute("aria-label")).toBe("搜索模型");
     await press("ArrowDown");
-    expect(document.activeElement?.getAttribute("aria-label")).toBe("Codex · Aurora Alpha · Custom");
+    expect(document.activeElement?.getAttribute("aria-label")).toBe("Codex · Aurora Alpha · 自定义");
     const effortButtons = [...container.querySelectorAll<HTMLButtonElement>('[aria-label="推理强度"] [role="radio"]')];
     const high = effortButtons.find(button => button.textContent === "高")!;
     effortButtons.find(button => button.textContent === "中")!.focus();

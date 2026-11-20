@@ -1067,7 +1067,7 @@ it("names and clears the cut beside the draft", async () => {
   expect(useUiStore.getState().agentDraft).toBe("Keep the laugh");
   expect(document.activeElement).toBe(aimField());
   expect(aimCard()).toBeNull();
-  await show({ targetTag: "Reply", thread: buildThreads(current)[0] });
+  await show({ targetTag: "回复", thread: buildThreads(current)[0] });
   expect([aimName(), container.querySelector(".composer-tag-name")?.textContent]).toEqual([null, "回复"]);
 });
 
@@ -1178,7 +1178,7 @@ it("keeps a picked moment, and a whole-video choice, through a time typed in the
 it("answers Scarlet's question with a stretch marked on the ruler beside it, still tagged Answer", async () => {
   const asking = buildThreads(current).find(t => t.question)!;
   await act(async () => useUiStore.getState().setAgentContext({ time: 42, end: 51.5, clipIds: [], markedRange: { start: 42, end: 51.5 } }));
-  await show({ thread: asking, targetTag: "Answer" });
+  await show({ thread: asking, targetTag: "回答" });
   expect(container.querySelector(".composer-tag-name")?.textContent).toBe("回答");
   await type("Yes, this part");
   await submit();

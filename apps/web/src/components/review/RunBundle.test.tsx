@@ -50,10 +50,10 @@ function openProject(taskUsage?: ProjectData["taskUsage"]) {
 
 it("labels token counts at a glance and breaks them down without cost", () => {
   expect([1, 850, 999, 1000, 48_234, 312_400, 999_400, 999_600, 1_234_567].map(tokenLabel)).toEqual([
-    "1 token", "850 tokens", "999 tokens", "1K tokens", "48.2K tokens", "312K tokens", "999K tokens", "1M tokens", "1.2M tokens",
+    "1 个令牌", "850 个令牌", "999 个令牌", "1K 个令牌", "48.2K 个令牌", "312K 个令牌", "999K 个令牌", "1M 个令牌", "1.2M 个令牌",
   ]);
   expect(tokenBreakdown(totals({ runs: 2, cacheWriteTokens: 5 }))).toBe(
-    `${(1200).toLocaleString()} input · ${(3000).toLocaleString()} output · ${(44_000).toLocaleString()} cache read · 5 cache write · 2 runs`);
+    `${(1200).toLocaleString()} 输入 · ${(3000).toLocaleString()} 输出 · ${(44_000).toLocaleString()} 读取缓存 · 5 写入缓存 · 2 次运行`);
 });
 
 it("shows tokens in the chat until the editor turns them off", () => {
@@ -66,7 +66,7 @@ it("shows tokens in the chat until the editor turns them off", () => {
   expect(view.host.querySelector(".run-tokens")).toBeNull();
 
   act(() => useUiStore.getState().setShowRunTokens(true));
-  expect(view.host.querySelector(".run-tokens")?.textContent).toBe("48.2K tokens");
+  expect(view.host.querySelector(".run-tokens")?.textContent).toBe("48.2K 个令牌");
   act(() => useUiStore.getState().setShowRunTokens(false));
   expect(view.host.querySelector(".run-tokens")).toBeNull();
   view.unmount();
@@ -91,7 +91,7 @@ it("adds no row that repeats what Scarlet's own words already say, unless it ope
   view.rerender(<RunBundle task={{ ...task, state: "cancelled" }} events={[]} changes={[]} say={reply} told />);
   expect([view.host.querySelector(".req-state")?.textContent, !!view.host.querySelector(".req-result")]).toEqual(["已停止", false]);
   view.rerender(<RunBundle task={{ ...task, state: "cancelled", summary: null }} events={[]} changes={[]} />);
-  expect([view.host.querySelector(".req-state")?.textContent, view.host.querySelector(".req-result")?.textContent]).toEqual(["已停止", "Nothing saved"]);
+  expect([view.host.querySelector(".req-state")?.textContent, view.host.querySelector(".req-result")?.textContent]).toEqual(["已停止", "没有保存任何内容"]);
   // Words that don't say the result, such as an answered question, leave the row in place.
   view.rerender(<RunBundle task={task} events={[]} changes={[]} say={reply} />);
   expect(view.host.querySelector(".run-summary")?.textContent).toBe("Tightened the intro");
@@ -112,8 +112,8 @@ it("adds the request's tokens to its finished run line, and updates live", () =>
   }));
   const tokens = view.host.querySelector(".run-tokens");
   const usd = new Intl.NumberFormat(undefined, { style: "currency", currency: "USD" });
-  expect(tokens?.textContent).toBe("48.2K tokens");
-  expect(tokens?.getAttribute("aria-label")).toContain("cache read");
+  expect(tokens?.textContent).toBe("48.2K 个令牌");
+  expect(tokens?.getAttribute("aria-label")).toContain("读取缓存");
   expect(tokens?.getAttribute("aria-label")).not.toContain("2 runs");
   // Hovering or focusing the count opens every part of it under the count; it closes again when the pointer leaves.
   act(() => (tokens as HTMLElement).focus());
@@ -126,7 +126,7 @@ it("adds the request's tokens to its finished run line, and updates live", () =>
 
   // Another project's report never lands here.
   act(() => useProjectStore.getState().applyEvent({ type: "task.usage", projectId: "prj_2", taskId: task.id, usage: totals({ totalTokens: 1 }) }));
-  expect(view.host.querySelector(".run-tokens")?.textContent).toBe("48.2K tokens");
+  expect(view.host.querySelector(".run-tokens")?.textContent).toBe("48.2K 个令牌");
   view.unmount();
 });
 
@@ -134,8 +134,8 @@ it("shows tokens so far while waiting for an answer, and after a stop", () => {
   useUiStore.getState().setShowRunTokens(true);
   openProject({ [task.id]: totals({ totalTokens: 900 }) });
   const asking = render(<RunBundle task={{ ...task, state: "waiting_for_user", finishedAt: undefined }} events={[]} changes={[]} />);
-  expect(asking.host.textContent).toContain("等待你的回答");
-  expect(asking.host.querySelector(".run-tokens")?.textContent).toBe("900 tokens");
+  expect(asking.host.textContent).toContain("需要你的回答");
+  expect(asking.host.querySelector(".run-tokens")?.textContent).toBe("900 个令牌");
   asking.unmount();
   host?.remove();
 
@@ -146,7 +146,7 @@ it("shows tokens so far while waiting for an answer, and after a stop", () => {
 
   const stopped = render(<RunBundle task={{ ...task, state: "cancelled" }} events={[]} changes={[]} />);
   expect(stopped.host.querySelector(".req-state")?.textContent).toBe("已停止");
-  expect(stopped.host.querySelector(".run-tokens")?.textContent).toBe("900 tokens");
+  expect(stopped.host.querySelector(".run-tokens")?.textContent).toBe("900 个令牌");
   stopped.unmount();
 });
 
@@ -163,8 +163,8 @@ it("lists tokens by project, provider and model in Settings", async () => {
   const view = render(<UsageSettings />);
   await act(async () => { await new Promise(r => setTimeout(r, 0)); });
   const text = view.host.textContent ?? "";
-  expect(text).toContain("1.3M 词元");
-  expect(text).toContain("。 自 ");
+  expect(text).toContain("1.3M 个令牌");
+  expect(text).toContain("。自 ");
   expect(text).toContain("Interview");
   expect(text).toContain("已删除的项目");
   expect(text).toContain("Claude Code");
@@ -173,7 +173,7 @@ it("lists tokens by project, provider and model in Settings", async () => {
   expect(text).not.toMatch(/\$|cost/i);
 
   // The switch reflects the editor's choice and remembers it.
-  const toggle = view.host.querySelector<HTMLButtonElement>('[role="switch"][aria-label="在对话中显示词元用量"]')!;
+  const toggle = view.host.querySelector<HTMLButtonElement>('[role="switch"][aria-label="在聊天中显示令牌"]')!;
   expect(toggle.getAttribute("aria-checked")).toBe("false");
   act(() => toggle.click());
   expect(toggle.getAttribute("aria-checked")).toBe("true");
@@ -212,7 +212,7 @@ it("says what Scarlet is doing this moment on one line under its opening sentenc
   const opened = [{ type: "log" as const, at: at(0), text: "Starting the editing agent." }, said(AIM, 2)];
   // Before its first call, the opening sentence is above and isn't said again on the line.
   const view = render(<RunBundle task={running} events={opened} changes={[]} banded />);
-  expect([lead(view.host), now(view.host)]).toEqual([AIM, "Working on your edit"]);
+  expect([lead(view.host), now(view.host)]).toEqual([AIM, "正在处理剪辑"]);
   // The line is the latest call, in plain words, with a turning ring before it. Nothing else is under the sentence:
   // no stages, no plan, no percent, no list of what was done.
   const reading = [...opened, tool("project_get", 3), tool("audio_sync", 5), tool("dialogue_scan", 20, { mediaId: "med_1", from: 754 })];
@@ -245,7 +245,7 @@ it("says what Scarlet is doing this moment on one line under its opening sentenc
   expect(view.host.querySelector(".run-stop")).toBeNull();
   view.unmount();
   const bare = render(<RunBundle task={running} events={reading} changes={[]} onStop={() => {}} />);
-  expect(bare.host.querySelector(".req-now .run-stop")?.textContent).toBe("Stop");
+  expect(bare.host.querySelector(".req-now .run-stop")?.textContent).toBe("停止");
   // A run not yet started says so; done, the sentence and the line go.
   bare.rerender(<RunBundle task={{ ...running, state: "claimed" }} events={[]} changes={[]} onStop={() => {}} />);
   expect(now(bare.host)).toBe("Getting started");
@@ -253,10 +253,10 @@ it("says what Scarlet is doing this moment on one line under its opening sentenc
   const again: Task = { ...running, id: "tsk_again", resumeRootId: running.id };
   for (const state of ["claimed", "running"] as const) {
     bare.rerender(<RunBundle task={{ ...again, state }} events={[]} changes={[]} onStop={() => {}} />);
-    expect(now(bare.host)).toBe("Picking up where it left off");
+    expect(now(bare.host)).toBe("正在从上次中断处继续");
   }
   bare.rerender(<RunBundle task={again} events={[{ type: "log", at: at(1), text: "Claude Code session started", data: { kind: "init" } }]} changes={[]} onStop={() => {}} />);
-  expect(now(bare.host)).toBe("Picking up where it left off");
+  expect(now(bare.host)).toBe("正在从上次中断处继续");
   bare.rerender(<RunBundle task={again} events={reading} changes={[]} onStop={() => {}} />);
   expect(now(bare.host)).toBe("Reading the dialogue at 12:34");
   bare.rerender(<RunBundle task={{ ...task, summary: "Cut the dialogue." }} events={spoken} changes={[]} banded />);
@@ -273,7 +273,7 @@ it("says how far the transcripts it waits on are, and keeps file progress in Med
   const project = { ...createProject("Interview"), id: running.projectId };
   useProjectStore.setState({ current: { id: project.id, project, timeline: null, media: [asset], changes: [], notes: [], renders: [],
     tasks: [running, transcribing], taskEvents: {} } });
-  const wait: TaskEvent = { type: "log", at: "2026-11-05T10:00:10.000Z", text: "Waiting for the transcript",
+  const wait: TaskEvent = { type: "log", at: "2026-11-05T10:00:10.000Z", text: "等待转写稿",
     data: { kind: "media_wait", wait: "transcript", mediaId: asset.id } };
   const answer: TaskEvent = { type: "answer", at: "2026-11-05T10:00:40.000Z", text: "Keep the intro" };
   const run = (events: TaskEvent[]) => <>
@@ -288,7 +288,7 @@ it("says how far the transcripts it waits on are, and keeps file progress in Med
     act(() => vi.advanceTimersByTime(30_000));
     view.rerender(run([wait, answer]));
     const media = view.host.querySelector("[data-media]");
-    expect(media?.querySelector('[role="status"]')?.getAttribute("aria-label")).toBe("interview.mp4：转写中 · 10%");
+    expect(media?.querySelector('[role="status"]')?.getAttribute("aria-label")).toBe("interview.mp4: 正在转写 · 10%");
     expect(media?.querySelector("progress")?.value).toBe(0.1);
     expect(activity()).toBe("Reading your answer");
 
@@ -297,7 +297,7 @@ it("says how far the transcripts it waits on are, and keeps file progress in Med
     expect(activity()).toBe("Transcribing the recordings · 30%");
     // Waiting its turn behind other audio work, there is no figure yet.
     act(() => useProjectStore.setState(s => ({ current: { ...s.current!, tasks: [running, { ...transcribing, progress: { stage: "queued", fraction: 0 } }] } })));
-    expect(activity()).toBe("Waiting for the transcript");
+    expect(activity()).toBe("等待转写稿");
     const ready: TaskEvent = { ...wait, at: "2026-11-05T10:00:50.000Z", text: "Ready: the transcript",
       data: { ...wait.data, done: true } };
     view.rerender(run([wait, answer, ready]));
@@ -319,20 +319,20 @@ it("says a run that ended without its transcripts is paused, and offers to finis
   const view = render(<RunBundle task={paused} events={[]} changes={[]} onResume={onResume} onWaitForTranscripts={onWait} />);
   const line = () => [view.host.querySelector(".run-summary")?.textContent, view.host.querySelector(".run-wait")?.textContent];
   // How far along it is, as a percent: no guess at how long is left.
-  expect(line()).toEqual(["已暂停 · 等待 转写稿", "Transcript 18%Finish when ready"]);
+  expect(line()).toEqual(["Paused · needs transcript", "转写稿18%准备好后完成"]);
   act(() => view.host.querySelector<HTMLButtonElement>(".run-wait button")!.click());
   expect(onWait).toHaveBeenCalledWith(true);
   view.unmount();
 
-  // Under a heading that says Paused, a run that saved nothing has that one row: none says "Nothing saved" under it.
+  // Under a heading that says Paused, a run that saved nothing has that one row: none says "没有保存任何内容" under it.
   const banded = render(<RunBundle task={paused} events={[]} changes={[]} banded onResume={onResume} onWaitForTranscripts={onWait} />);
-  expect([...banded.host.querySelectorAll(".req-row")].map(row => row.textContent)).toEqual(["Transcript 18%Finish when ready"]);
+  expect([...banded.host.querySelectorAll(".req-row")].map(row => row.textContent)).toEqual(["转写稿18%准备好后完成"]);
   banded.unmount();
-  // The tokens the run used, when those show, are in the heading: they don't end its row or bring back one that says "Nothing saved".
+  // The tokens the run used, when those show, are in the heading: they don't end its row or bring back one that says "没有保存任何内容".
   act(() => useUiStore.getState().setShowRunTokens(true));
   act(() => useProjectStore.setState(s => ({ current: { ...s.current!, taskUsage: { [paused.id]: totals() } } })));
   const counted = render(<RunBundle task={paused} events={[]} changes={[]} banded onResume={onResume} onWaitForTranscripts={onWait} />);
-  expect([...counted.host.querySelectorAll(".req-row")].map(row => row.textContent)).toEqual(["Transcript 18%Finish when ready"]);
+  expect([...counted.host.querySelectorAll(".req-row")].map(row => row.textContent)).toEqual(["转写稿18%准备好后完成"]);
   counted.unmount();
   // With no heading, they end its one row.
   const unheaded = render(<RunBundle task={paused} events={[]} changes={[]} onResume={onResume} onWaitForTranscripts={onWait} />);
@@ -344,7 +344,7 @@ it("says a run that ended without its transcripts is paused, and offers to finis
   // its Media row. The engine starts it when the run is asked to finish once it's ready.
   project([paused, { ...transcribing, state: "failed", error: "Transcription failed.", progress: undefined }]);
   const stopped = render(<RunBundle task={paused} events={[]} changes={[]} banded onResume={onResume} onWaitForTranscripts={onWait} />);
-  expect([...stopped.host.querySelectorAll(".req-row")].map(row => row.textContent)).toEqual(["Transcript stoppedRetry"]);
+  expect([...stopped.host.querySelectorAll(".req-row")].map(row => row.textContent)).toEqual(["转写稿已停止重试"]);
   onWait.mockClear();
   act(() => stopped.host.querySelector<HTMLButtonElement>(".run-wait button")!.click());
   expect(onWait).toHaveBeenCalledWith(true);
@@ -352,14 +352,14 @@ it("says a run that ended without its transcripts is paused, and offers to finis
   // No transcript was ever started for it: the same action, named as Media names it.
   project([paused]);
   const none = render(<RunBundle task={paused} events={[]} changes={[]} banded onResume={onResume} onWaitForTranscripts={onWait} />);
-  expect(none.host.querySelector(".run-wait")?.textContent).toBe("No transcriptTranscribe");
+  expect(none.host.querySelector(".run-wait")?.textContent).toBe("没有转写稿转写");
   none.unmount();
 
   // Asked to finish: it says so, and the editor can stop waiting.
   const armed = { ...paused, continueWhenReady: true };
   project([armed, transcribing]);
   const waiting = render(<RunBundle task={armed} events={[]} changes={[]} onResume={onResume} onWaitForTranscripts={onWait} />);
-  expect(waiting.host.querySelector(".run-wait")?.textContent).toBe("Finishes when ready · 18%Don’t wait");
+  expect(waiting.host.querySelector(".run-wait")?.textContent).toBe("准备好后完成 · 18%不再等待");
   act(() => waiting.host.querySelector<HTMLButtonElement>(".run-wait button")!.click());
   expect(onWait).toHaveBeenLastCalledWith(false);
   waiting.unmount();
@@ -367,7 +367,7 @@ it("says a run that ended without its transcripts is paused, and offers to finis
   // Its transcript saved: finish now.
   project([paused, { ...transcribing, state: "done", progress: undefined }], "tr_cam");
   const ready = render(<RunBundle task={paused} events={[]} changes={[]} onResume={onResume} onWaitForTranscripts={onWait} />);
-  expect(ready.host.querySelector(".run-wait")?.textContent).toBe("Transcript readyFinish edit");
+  expect(ready.host.querySelector(".run-wait")?.textContent).toBe("转写稿已就绪完成剪辑");
   act(() => ready.host.querySelector<HTMLButtonElement>(".run-wait button")!.click());
   expect(onResume).toHaveBeenCalledOnce();
   ready.unmount();
@@ -377,7 +377,7 @@ it("says a run that ended without its transcripts is paused, and offers to finis
   act(() => useProjectStore.setState({ current: { id: "prj_1", tasks: [two], taskEvents: {},
     media: [{ id: "cam", duration: 3300, transcriptId: "tr_cam" }, { id: "mic", duration: 3300, transcriptId: "tr_mic" }] } as unknown as ProjectData }));
   const both = render(<RunBundle task={two} events={[]} changes={[]} onResume={onResume} onWaitForTranscripts={onWait} />);
-  expect(both.host.querySelector(".run-wait")?.textContent).toBe("Transcripts readyFinish edit");
+  expect(both.host.querySelector(".run-wait")?.textContent).toBe("转写稿已就绪完成剪辑");
   both.unmount();
 
   // Once resumed, the earlier run reads as an ordinary finished one.
@@ -432,7 +432,7 @@ it("leaves a question under a heading to the heading, opens the steps before it 
   view.unmount();
   // With no heading the line says it needs an answer and opens the steps before the question.
   const bare = render(<RunBundle task={asking} events={asked} changes={[]} say={question} />);
-  expect(bare.host.querySelector(".req-status [role=status]")?.textContent).toBe("等待你的回答");
+  expect(bare.host.querySelector(".req-status [role=status]")?.textContent).toBe("需要你的回答");
   expect(rows(bare.host)).toEqual([]);
   openDetails(bare.host);
   expect(rows(bare.host)).toEqual(["One.", "Two.", "Three."]);
@@ -446,7 +446,7 @@ it("leaves a question's tokens to its heading, and has a row for them with no he
   expect(asking.host.querySelector(".run-tokens")).toBeNull();
   asking.unmount();
   const bare = render(<RunBundle task={{ ...task, state: "waiting_for_user", finishedAt: undefined }} events={[]} changes={[]} />);
-  expect(bare.host.querySelector(".req-status .req-right > .run-tokens")?.textContent).toBe("900 tokens");
+  expect(bare.host.querySelector(".req-status .req-right > .run-tokens")?.textContent).toBe("900 个令牌");
   bare.unmount();
 });
 
@@ -457,7 +457,7 @@ it("leaves a finished request's tokens to its heading, and has them on its row w
   expect(banded.host.querySelector(".run-tokens")).toBeNull();
   banded.unmount();
   const bare = render(<RunBundle task={task} events={[]} changes={[]} />);
-  expect(bare.host.querySelector(".req-result .req-right > .run-tokens")?.textContent).toBe("48.2K tokens");
+  expect(bare.host.querySelector(".req-result .req-right > .run-tokens")?.textContent).toBe("48.2K 个令牌");
   bare.unmount();
   useUiStore.getState().setShowRunTokens(false);
 });
@@ -482,15 +482,15 @@ it("ticks active time, updates reported tokens, and carries both metrics across 
     type: "task.usage", projectId: task.projectId, taskId, usage,
   }));
   report(task.id, totals());
-  expect(tokens()?.textContent).toBe("6s · 48.2K tokens");
-  expect(tokens()?.getAttribute("aria-label")).toContain("Model: opus, Thinking effort: High");
-  expect(tokens()?.getAttribute("aria-label")).toContain("Estimated API cost: Unavailable");
+  expect(tokens()?.textContent).toBe("6s · 48.2K 个令牌");
+  expect(tokens()?.getAttribute("aria-label")).toContain("模型：opus，推理强度：High");
+  expect(tokens()?.getAttribute("aria-label")).toContain("预计费用：不可用");
   const more = totals({ totalTokens: 1_310_000, cacheReadTokens: 1_305_800, models: ["claude-opus-5-5"], estimatedApiCostUsd: 0.33 });
   report(task.id, more);
-  expect([tokens()?.textContent, tokens()?.dataset.breakdown]).toEqual(["6s · 1.3M tokens", tokenBreakdown({ ...more, runs: undefined })]);
+  expect([tokens()?.textContent, tokens()?.dataset.breakdown]).toEqual(["6s · 1.3M 个令牌", tokenBreakdown({ ...more, runs: undefined })]);
   act(() => tokens()!.click());
   expect([...document.querySelectorAll(".tokens-tip > span")].slice(0, 3).map(row => row.textContent))
-    .toEqual(["处理时长6s", "ModelClaude Opus 5.5", "Thinking effortHigh"]);
+    .toEqual(["运行时间6s", "模型Claude Opus 5.5", "推理强度High"]);
   act(() => document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
   expect(document.querySelector(".tokens-tip")).toBeNull();
 
@@ -509,17 +509,17 @@ it("ticks active time, updates reported tokens, and carries both metrics across 
   report(resumed.id, resumedUsage);
   view.rerender(<RequestMetrics attempts={[previous, resumed]} events={{}} />);
   act(() => vi.advanceTimersByTime(3000));
-  expect(tokens()?.textContent).toBe("12s · 1.4M tokens");
+  expect(tokens()?.textContent).toBe("12s · 1.4M 个令牌");
   const usd = new Intl.NumberFormat(undefined, { style: "currency", currency: "USD" });
-  expect(tokens()?.getAttribute("aria-label")).toContain(`Models: Claude Opus 5.5, Claude Fable 5.2, Thinking effort: High, Provider default, Estimated API cost: ${usd.format(0.48)}`);
+  expect(tokens()?.getAttribute("aria-label")).toContain(`模型：Claude Opus 5.5, Claude Fable 5.2，推理强度：High, 服务商默认，预计费用：${usd.format(0.48)}`);
   report(resumed.id, { ...resumedUsage, models: ["unpriced-model"], estimatedApiCostUsd: null });
-  expect(tokens()?.getAttribute("aria-label")).toContain("Estimated API cost: Unavailable");
-  expect(tokens()?.getAttribute("aria-description")).toBe("API pricing is unavailable for some or all of the reported usage.");
+  expect(tokens()?.getAttribute("aria-label")).toContain("预计费用：不可用");
+  expect(tokens()?.getAttribute("aria-description")).toBe("部分或全部用量暂无 API 价格。");
   report(resumed.id, { ...resumedUsage, models: ["gpt-9-sol"], estimatedApiCostUsd: null, unpricedModels: ["gpt-9-sol at Fast speed"] });
-  expect(tokens()?.getAttribute("aria-description")).toBe("No price for gpt-9-sol at Fast speed yet.");
+  expect(tokens()?.getAttribute("aria-description")).toBe("暂无 gpt-9-sol at Fast speed 的价格。");
   view.rerender(<RequestMetrics attempts={[previous, { ...resumed, state: "done", workedMs: 3000, finishedAt: new Date().toISOString() }]} events={{}} />);
   act(() => vi.advanceTimersByTime(10_000));
-  expect(tokens()?.textContent).toBe("12s · 1.4M tokens");
+  expect(tokens()?.textContent).toBe("12s · 1.4M 个令牌");
   act(() => useUiStore.getState().setShowRunTokens(false));
   expect(tokens()).toBeNull();
   expect(time()).toBe("12s");
@@ -535,7 +535,7 @@ it("leaves the word for how a run ended to its heading when the block has one, w
   expect(view.host.querySelector(".req-state, .req-status")).toBeNull();
   // What the run saved is one line, and its one action follows on that line.
   expect([...view.host.querySelector(".req")!.children].map(row => row.className)).toEqual(["req-row req-result"]);
-  expect(view.host.querySelector(".req-result")!.textContent).toBe("Nothing savedResume");
+  expect(view.host.querySelector(".req-result")!.textContent).toBe("没有保存任何内容Resume");
   act(() => view.host.querySelector<HTMLButtonElement>(".req-result > .req-recover")!.click());
   expect(resume).toHaveBeenCalledTimes(1);
   // Under Scarlet's own words, which can run to several lines, the action has the line after them.
@@ -549,7 +549,7 @@ it("leaves the word for how a run ended to its heading when the block has one, w
   expect([view.host.querySelector(".req-status .req-state")?.textContent, view.host.querySelector(".req-status .req-right")?.textContent]).toEqual(["已停止", "Resume"]);
   expect(view.host.querySelector(".req-act")).toBeNull();
   // A run that finished has no word, and one that failed says so.
-  expect([runEnded(task), runEnded({ ...task, state: "failed" })]).toEqual([undefined, "无法完成"]);
+  expect([runEnded(task), runEnded({ ...task, state: "failed" })]).toEqual([undefined, "未能完成"]);
   view.unmount();
 });
 
@@ -562,8 +562,8 @@ it("says Done for a finished request whose closing words were commands or its ow
     return text;
   };
   // Nothing of such a reply is shown as Scarlet's words, so the request's one row doesn't start with them either.
-  expect(row("Ran `pnpm test` && checked the JSON output.")).toBe("Done");
-  expect(row("Tighten the intro.")).toBe("Done");
+  expect(row("Ran `pnpm test` && checked the JSON output.")).toBe("完成");
+  expect(row("Tighten the intro.")).toBe("完成");
   // The words that are Scarlet's own still say what the request came to.
   expect(row("Ran `git status`. Both pauses are under a second, so I left them in.")).toBe("Both pauses are under a second…");
   expect(row("Tightened the intro.")).toBe("Tightened the intro");
@@ -575,7 +575,7 @@ it("says what a stopped run saved in words, and opens the timeline from them onl
   const resume = { label: "Resume", run: () => {} };
   // Nothing saved: one row of words with the action after them, though the request is about a cut that could be opened.
   const view = render(<RunBundle task={stopped} events={[]} changes={[]} banded recovery={resume} onOpen={() => {}} />);
-  expect([...view.host.querySelectorAll(".req-row")].map(row => [row.className, row.textContent])).toEqual([["req-row req-result", "Nothing savedResume"]]);
+  expect([...view.host.querySelectorAll(".req-row")].map(row => [row.className, row.textContent])).toEqual([["req-row req-result", "没有保存任何内容Resume"]]);
   expect(view.host.querySelector("button.req-summary")).toBeNull();
   // With an edit saved before it stopped, the row is the way to that edit, and the action has the line after it.
   const made = { id: "chg_1", state: "approved", description: "Trimmed the pause before the answer.", cutReasons: [], ranges: [] } as unknown as Parameters<typeof RunBundle>[0]["finalChange"];
@@ -601,5 +601,5 @@ it("names a pass's final check for what it is, and says what it is doing now, no
   const view = render(<RunBundle task={again} events={events} changes={[]} banded />);
   expect(view.host.querySelector(".req-lead")?.textContent).toBe("Final check of the finished cut");
   expect(view.host.textContent).not.toContain(FIRST);
-  expect(view.host.querySelector(".req-now [role=status]")?.textContent).toBe("Checking the finished dialogue for repeats");
+  expect(view.host.querySelector(".req-now [role=status]")?.textContent).toBe("检查成片对白中的重复");
 });

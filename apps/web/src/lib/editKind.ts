@@ -66,6 +66,6 @@ export function editFocus(edit: ThreadEdit, duration: number): ProgressFocus | u
   if (edit.at !== undefined) return focusAround({ start: edit.at, end: edit.at }, duration, word ?? (edit.marker ? undefined : workspace.kind.cut),
     edit.marker ? { tone: "kept" } : undefined);
   const restored = edit.kind === "restore";
-  return focusAround(edit.range, duration, restored ? `Added · ${lengthLabel(edit.range.end - edit.range.start)}` : word,
+  return focusAround(edit.range, duration, restored ? `${workspace.kind.added} · ${lengthLabel(edit.range.end - edit.range.start)}` : word,
     { tone: restored ? "added" : "kept" });
 }

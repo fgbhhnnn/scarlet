@@ -5,6 +5,7 @@ import { usePlayerStore } from "../../stores/player";
 import { usePictureMarksStore, type MarkedFrame } from "../../stores/pictureMarks";
 import { Icon } from "../ui/primitives";
 import { zh } from "../../lib/zh";
+import { zhReview } from "../../lib/zhReview";
 
 /** True when a freehand mark loops close to where it started, so clicking inside the loop also grabs it. */
 function isClosedDraw(mark: PictureMark): boolean {
@@ -74,15 +75,15 @@ interface MarkToolTip {
 }
 
 const TOOLS: { tool: PictureMarkKind; label: string; key: string; description: string; icon: "pencil" | "box" | "point" }[] = [
-  { tool: "draw", label: "画笔", key: "D", description: "在视频上自由绘制，突出标记并用于下一条消息。", icon: "pencil" },
-  { tool: "box", label: "框选", key: "B", description: "在视频上拖出区域，用于下一条消息。", icon: "box" },
-  { tool: "point", label: "标点", key: "P", description: "在视频中的具体位置放置标记，用于下一条消息。", icon: "point" },
+  { tool: "draw", ...zhReview.marks.draw, key: "D", icon: "pencil" },
+  { tool: "box", ...zhReview.marks.box, key: "B", icon: "box" },
+  { tool: "point", ...zhReview.marks.point, key: "P", icon: "point" },
 ];
 
 const UNDO_KEY = typeof navigator !== "undefined" && navigator.userAgent.includes("Macintosh") ? "⌘Z" : "Ctrl+Z";
 const ACTIONS: Record<"undo" | "clear", MarkToolTip> = {
-  undo: { id: "undo", label: zh.ui.player.undo, key: UNDO_KEY, description: "移除这一帧的最后一个标记。" },
-  clear: { id: "clear", label: zh.ui.player.clearMarks, description: "移除这一帧的所有标记。" },
+  undo: { id: "undo", ...zhReview.marks.undo, key: UNDO_KEY },
+  clear: { id: "clear", ...zhReview.marks.clear },
 };
 
 /** How far apart, in fractions of the frame, the points kept along a line drawn by hand are. */

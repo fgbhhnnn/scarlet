@@ -51,12 +51,12 @@ const show = (original: Before, passage = original.range ?? { start: 0, end: 0 }
 
 it("says Before is opening until the earlier version is in, and offers to ask again when it couldn't be read", async () => {
   await show(before({}));
-  expect(container.querySelector('[role="status"]')?.textContent).toBe("Opening Before…");
+  expect(container.querySelector('[role="status"]')?.textContent).toBe("正在打开剪辑前的版本…");
   expect(container.querySelector("button, video")).toBeNull();
   const retry = vi.fn();
   await show(before({ error: "The engine is restarting.", retry }));
   const again = container.querySelector("button")!;
-  expect(again.textContent).toBe("Retry Before");
+  expect(again.textContent).toBe("重新打开剪辑前的版本");
   await act(async () => again.click());
   expect(retry).toHaveBeenCalledTimes(1);
   expect(requestRender).not.toHaveBeenCalled();

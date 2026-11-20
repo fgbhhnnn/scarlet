@@ -369,6 +369,13 @@ pub fn can_run_bare(env: &std::collections::HashMap<String, String>) -> bool {
 }
 
 /// Build the exact command line (pure, for tests and for reporting).
+///
+/// The runner intentionally does not use Claude Code's historical `--restricted`
+/// switch. It is absent from current Claude Code releases, while these explicit
+/// controls provide the same narrower execution surface across supported
+/// versions. Scarlet supplies only its strict MCP config, exposes no built-in
+/// tools, allows only Scarlet MCP tools, disables slash commands, keeps the
+/// permission mode at `dontAsk`, and requires the sandbox on non-Windows hosts.
 #[allow(clippy::too_many_arguments)]
 pub fn build_claude_command(model: Option<&str>, effort: Option<&str>, service_tier: Option<&str>, system_prompt: &str, instruction: &str, resume_session: Option<&str>, bare: bool, plan: bool, mcp: &McpSpec, bin: &str, tmp_dir: &Path) -> RunnerCommand {
     let mcp_config_path = tmp_dir.join("mcp.json");
@@ -385,7 +392,6 @@ pub fn build_claude_command(model: Option<&str>, effort: Option<&str>, service_t
             "--mcp-config",
             &mcp_config_path.to_string_lossy(),
             "--strict-mcp-config",
-            "--restricted",
             "--disable-slash-commands",
             "--tools",
             // No built-in tools, or only Claude Code's own to-do list when the engine asks for the agent's plan.
@@ -591,7 +597,9 @@ mod tests {
         assert!(cmd.args.windows(2).any(|a| a == ["--tools", ""]));
         assert!(cmd.args.windows(2).any(|a| a == ["--allowedTools", "mcp__scarlet__*"]));
         assert!(cmd.args.windows(2).any(|a| a == ["--permission-mode", "dontAsk"]));
-        assert!(cmd.args.iter().any(|a| a == "--restricted"));
+        assert!(cmd.args.iter().any(|a| a == "--strict-mcp-config"));
+        assert!(cmd.args.iter().any(|a| a == "--disable-slash-commands"));
+        assert!(!cmd.args.iter().any(|a| a == "--restricted"));
         let option = "--settings={}";
         let hostile = build_claude_command(None, None, None, "SYS", option, None, false, false, &mcp, "claude", Path::new("/tmp/t"));
         assert_eq!(hostile.stdin.as_deref(), Some(option));

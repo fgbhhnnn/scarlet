@@ -4,6 +4,10 @@ What changed in Scarlet, newest first, in the words an editor would use. Scarlet
 
 Add one line under today's date for each change an editor would notice. Leave out changes to tests, builds and tooling.
 
+## November 21, 2026
+
+- Local transcription can run on older Windows x64 processors that lack AVX2.
+
 ## November 20, 2026
 
 - Advanced export can save a Jianying (剪映) draft with the current edit and a copy of the footage.

@@ -4,7 +4,8 @@
 // Linux x64: a baseline CPU build and a Haswell build the engine selects on compatible CPUs.
 // Windows: the CPU build every PC can run, and a Vulkan build in binaries/whisper-gpu/ that the engine tries first.
 // Vulkan runs on any recent NVIDIA, AMD or Intel GPU and needs only the driver's loader at run time. Building it
-// needs the Vulkan SDK (VULKAN_SDK with Include, Lib/vulkan-1.lib and Bin/glslc.exe); GitHub's workflow installs it.
+// needs the Vulkan SDK (headers, loader import library, glslc and SPIRV-Headers CMake config).
+// GitHub's workflow installs it.
 //
 // GitHub builds the released installers, so there the Vulkan build is required. Anywhere else (a developer's PC, or
 // the Windows main launcher, which also sets CI) a missing SDK or a failed Vulkan build costs only the GPU: this
@@ -26,7 +27,14 @@ if (!target || (process.env.TAURI_ENV_TARGET_TRIPLE && process.env.TAURI_ENV_TAR
 const windows = process.platform === "win32";
 const linux = process.platform === "linux";
 const platformFlags = {
-  win32: ["-A", "x64", "-DCMAKE_POLICY_DEFAULT_CMP0091=NEW", "-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded"],
+  win32: [
+    "-A", "x64", "-DCMAKE_POLICY_DEFAULT_CMP0091=NEW", "-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded",
+    // Both executables link ggml-cpu. NATIVE=OFF alone can leave these extensions enabled.
+    // MSVC's AVX2 option also enables ggml's FMA and F16C kernels. Leave MSVC at its x64 SSE2 default.
+    "-DGGML_SSE42=OFF", "-DGGML_AVX=OFF", "-DGGML_AVX2=OFF", "-DGGML_BMI2=OFF",
+    // The shared CLI audio decoder can compile AVX2 intrinsics based on the MSVC version alone.
+    "-DCMAKE_CXX_FLAGS_INIT=/DMA_NO_AVX2",
+  ],
   darwin: ["-DCMAKE_OSX_DEPLOYMENT_TARGET=13.0", "-DGGML_METAL_EMBED_LIBRARY=ON"],
   linux: [],
 }[process.platform];

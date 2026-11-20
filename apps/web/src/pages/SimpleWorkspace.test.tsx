@@ -6157,6 +6157,22 @@ it("opens Media, Export and History from the header and keeps project tools in t
   expect(document.querySelector("dialog[open]")?.textContent).toContain("History");
 });
 
+it("keeps the first-video V1 entry enabled in a fresh manual timeline", async () => {
+  const fresh = { ...data.project, head: null };
+  data = { ...data, project: fresh, timeline: null, changes: [], tasks: [], notes: [] };
+  useProjectStore.setState({ current: data });
+  useShownCutStore.setState({ projectId: PRJ, head: null, timeline: null });
+
+  await showFolded();
+  await openMenu();
+  await click(menuItem("手动剪辑"));
+
+  const timeline = container.querySelector('[aria-label="手动剪辑"]')!;
+  const addFirst = buttonIn(timeline, "将首个视频添加到 V1");
+  expect(addFirst).toBeDefined();
+  expect(addFirst!.disabled).toBe(false);
+});
+
 /** The Transcript from the menu, once its pane and the words have loaded. */
 const openTranscript = async () => {
   vi.spyOn(api, "transcript").mockImplementation(async mediaId => buildDb().transcripts[mediaId]!);

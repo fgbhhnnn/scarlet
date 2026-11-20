@@ -75,7 +75,7 @@ const streams = () => {
 it("opens the stream on the first play, from where the editor is, and says a section is on its way", async () => {
   const { open, opened } = streams();
   await show();
-  expect(video().getAttribute("aria-label")).toBe("The current edit");
+  expect(video().getAttribute("aria-label")).toBe("当前成片");
   // Nothing is asked of the engine until the editor plays.
   expect(open).not.toHaveBeenCalled();
   expect([waiting(), button()]).toEqual([false, null]);
@@ -136,7 +136,7 @@ it("says why a stream that couldn't open didn't, logs it as a failure, and opens
   await show();
   await act(async () => player.play());
   expect(alert()).toBe("This device cannot play segmented previews.");
-  expect(button()?.textContent?.trim()).toBe("Retry playback");
+  expect(button()?.textContent?.trim()).toBe("重试播放");
   // The stream never existed to log its own failure, so the player does: once, at a level a search for failures finds.
   expect(streamLines()).toEqual([["warn", `stream open-failed version=${project.head} sections=${open.mock.calls[0]![1].length} error="Error: This device cannot play segmented previews."`]]);
   // Retry is play: it asks for a stream again.
@@ -154,7 +154,7 @@ it("says why a stream that failed part-way did, without logging what the stream 
   await act(async () => player.play());
   await act(async () => opened[0]!.fail(new Error("Couldn’t load the preview file.")));
   expect(alert()).toBe("Couldn’t load the preview file.");
-  expect(button()?.textContent?.trim()).toBe("Retry playback");
+  expect(button()?.textContent?.trim()).toBe("重试播放");
   expect(streamLines()).toEqual([]);
   await act(async () => button()!.click());
   expect(opened).toHaveLength(2);
@@ -165,7 +165,7 @@ it("starts a proposed draft by itself, from its top, wherever the editor was in 
   const { opened } = streams();
   usePlayerStore.setState({ time: 7 });
   await show(true);
-  expect(video().getAttribute("aria-label")).toBe("Proposed draft");
+  expect(video().getAttribute("aria-label")).toBe("建议草稿");
   expect(onStart).toHaveBeenCalledTimes(1);
   expect(opened.map(o => o.start)).toEqual([0]);
   expect(waiting()).toBe(true);

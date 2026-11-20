@@ -48,16 +48,16 @@ const button = () => { const play = container.querySelector(".monitor-playback >
 
 it("turns the play button once a seek has taken longer than a blink, and stops when the frame is in", async () => {
   await show();
-  expect(button()).toEqual(["Play", "icon"]);
+  expect(button()).toEqual(["播放", "icon"]);
   await fire("seeking");
   await after(179);
-  expect([said(), ...button()]).toEqual([undefined, "Play", "icon"]);
+  expect([said(), ...button()]).toEqual([undefined, "播放", "icon"]);
   await after(1);
   // The spinner is in the play button, in place of its icon: nothing is drawn over the picture, where the button would cover it.
-  expect([said(), ...button()]).toEqual(["Loading this moment…", "Play", "spinner"]);
+  expect([said(), ...button()]).toEqual(["正在加载当前画面…", "播放", "spinner"]);
   expect([...container.querySelectorAll('[role="status"]')].every(status => status.closest(".monitor-playback"))).toBe(true);
   await fire("seeked");
-  expect([said(), ...button()]).toEqual([undefined, "Play", "icon"]);
+  expect([said(), ...button()]).toEqual([undefined, "播放", "icon"]);
   // A seek that lands inside the wait is never mentioned.
   await fire("waiting");
   await after(100);
@@ -75,10 +75,10 @@ it("follows the video that is on screen: not one that is hidden, and not another
   await show({ second: true });
   await fire("waiting");
   await after(180);
-  expect(said()).toBe("Loading this moment…");
+  expect(said()).toBe("正在加载当前画面…");
   // Another video finishing a seek of its own doesn't clear this one's wait.
   await fire("seeked", "other", true);
-  expect(said()).toBe("Loading this moment…");
+  expect(said()).toBe("正在加载当前画面…");
   // The waiting video goes out of sight: there is nothing on screen to wait for.
   await show({ second: true, hidden: true });
   await act(async () => {});
@@ -94,15 +94,15 @@ it("turns the play button while a player says it is preparing a section, once th
   await show({ marked: true });
   await act(async () => {});
   await after(179);
-  expect(button()).toEqual(["Play", "icon"]);
+  expect(button()).toEqual(["播放", "icon"]);
   await after(1);
-  expect([said(), ...button()]).toEqual(["Loading this moment…", "Play", "spinner"]);
+  expect([said(), ...button()]).toEqual(["正在加载当前画面…", "播放", "spinner"]);
   // Media events don't end it: the player says when its section is in.
   await fire("playing");
-  expect(button()).toEqual(["Play", "spinner"]);
+  expect(button()).toEqual(["播放", "spinner"]);
   await show();
   await act(async () => {});
-  expect([said(), ...button()]).toEqual([undefined, "Play", "icon"]);
+  expect([said(), ...button()]).toEqual([undefined, "播放", "icon"]);
   // A section that comes in within the blink is never shown, and neither is one a hidden player prepares.
   await show({ marked: true });
   await act(async () => {});
@@ -110,14 +110,14 @@ it("turns the play button while a player says it is preparing a section, once th
   await show();
   await act(async () => {});
   await after(500);
-  expect(button()).toEqual(["Play", "icon"]);
+  expect(button()).toEqual(["播放", "icon"]);
   await show({ marked: true, hidden: true });
   await act(async () => {});
   await after(500);
-  expect(button()).toEqual(["Play", "icon"]);
+  expect(button()).toEqual(["播放", "icon"]);
   // A player already preparing when the monitor goes up counts from then.
   await act(async () => root.render(null));
   await show({ marked: true });
   await after(180);
-  expect(button()).toEqual(["Play", "spinner"]);
+  expect(button()).toEqual(["播放", "spinner"]);
 });

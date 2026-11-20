@@ -2,6 +2,7 @@ import type { StorageProject } from "@scarlet/shared";
 import { api, IS_DESKTOP } from "./client";
 import { desktop, type StorageSize } from "./desktop";
 import { fmtBytes } from "./format";
+import { zhSettings } from "./zhSettings";
 
 export type MeasuredProject = Omit<StorageProject, "segments"> & StorageSize;
 export interface StorageScan { projects: MeasuredProject[]; at: number }
@@ -12,7 +13,7 @@ let owner: typeof api | undefined;
 /** What a permanent delete gives back, for its confirmation. Empty when nothing was measured. */
 export function freedSpace(sizes: Pick<StorageSize, "bytes" | "estimated">[]): string {
   const bytes = sizes.reduce((sum, s) => sum + s.bytes, 0);
-  return bytes ? (sizes.some(s => s.estimated) ? "about " : "") + fmtBytes(bytes) : "";
+  return bytes ? (sizes.some(s => s.estimated) ? zhSettings.storage.approximately : "") + fmtBytes(bytes) : "";
 }
 
 export function lastStorageScan() { return owner === api ? current : undefined; }

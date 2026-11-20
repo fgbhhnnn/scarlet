@@ -34,7 +34,7 @@ const opens = (duration: number) => act(async () => {
   Object.defineProperty(video(), "duration", { configurable: true, value: duration });
   video().dispatchEvent(new Event("loadedmetadata"));
 });
-const retry = () => [...container.querySelectorAll("button")].find(b => b.textContent === "Retry cached video");
+const retry = () => [...container.querySelectorAll("button")].find(b => b.textContent === "重试播放缓存视频");
 
 it("offers to load the saved file again when it can't be read, and does", async () => {
   await show();

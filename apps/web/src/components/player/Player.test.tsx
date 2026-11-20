@@ -64,24 +64,24 @@ it("keeps the cut player out of agent progress updates", async () => {
 it("asks for footage in an empty project, and points at Media when nothing there can play yet", async () => {
   open({ media: [] });
   await show();
-  expect(container.textContent).toContain("Add footage to start editing");
-  await act(async () => button("Add footage")!.click());
+  expect(container.textContent).toContain("添加素材即可开始剪辑");
+  await act(async () => button("添加素材")!.click());
   expect(onMedia).toHaveBeenCalledTimes(1);
   await act(async () => open());
   await show();
-  expect(container.textContent).toContain("No playable footage yet");
-  expect(button("View media")).toBeDefined();
+  expect(container.textContent).toContain("暂无可播放的素材");
+  expect(button("查看素材")).toBeDefined();
   expect(video()).toBeNull();
 });
 
 it("says a clip's preview is being prepared, and why it couldn't be when that failed", async () => {
   await show({ source: prepared({ status: "ingesting", preparation: undefined }) });
-  expect(container.textContent).toContain("Preparing a compatible preview…");
+  expect(container.textContent).toContain("正在准备兼容的预览…");
   expect(video()).toBeNull();
   await show({ source: prepared({ status: "failed", error: "This file has no video stream." }) });
   expect(container.textContent).toBe("This file has no video stream.");
   await show({ source: prepared({ status: "failed", error: undefined }) });
-  expect(container.textContent).toBe("The preview couldn’t be prepared.");
+  expect(container.textContent).toBe("无法准备预览。");
 });
 
 it("plays a clip's prepared preview from where the editor was, and offers to try again when it can't be played", async () => {
@@ -95,9 +95,9 @@ it("plays a clip's prepared preview from where the editor was, and offers to try
   expect([video()!.currentTime, video()!.playbackRate]).toEqual([20, 2]);
   await act(async () => { video()!.dispatchEvent(new Event("error")); });
   expect(video()).toBeNull();
-  expect(container.textContent).toContain("Couldn’t play this video.");
+  expect(container.textContent).toContain("无法播放此视频。");
   expect(onRejectOriginal).not.toHaveBeenCalled();
-  await act(async () => button("Retry")!.click());
+  await act(async () => button("重试")!.click());
   expect(video()?.getAttribute("src")).toBe(api.mediaFileUrl(clip.id, true));
 });
 
@@ -112,9 +112,9 @@ it("starts on a clip's original file when the browser can play it, and hands ove
   // Where it had got to is kept, and the page is told so it can fall back to the prepared preview.
   expect(onRejectOriginal).toHaveBeenCalledWith(clip.id);
   expect(usePlayerStore.getState().time).toBe(8);
-  expect(container.textContent).not.toContain("Couldn’t play this video.");
+  expect(container.textContent).not.toContain("无法播放此视频。");
   await show({ source: original, rejectedOriginal: clip.id });
-  expect(container.textContent).toContain("Preparing a compatible preview…");
+  expect(container.textContent).toContain("正在准备兼容的预览…");
 });
 
 it("plays a long clip section by section, and the edit as a stream until its file is saved", async () => {
@@ -126,7 +126,7 @@ it("plays a long clip section by section, and the edit as a stream until its fil
   const stream = vi.spyOn(cutStream, "openCutStream").mockImplementation(el => ({ seek() {}, finishSeek() {}, async bufferThrough() {}, sourceTime: () => el.currentTime, dispose() {} }));
   vi.spyOn(HTMLMediaElement.prototype, "play").mockImplementation(() => new Promise(() => {}));
   await show({ cut: true });
-  expect(video()?.getAttribute("aria-label")).toBe("The current edit");
+  expect(video()?.getAttribute("aria-label")).toBe("当前成片");
   expect(video()?.hasAttribute("src")).toBe(false);
   expect(useProjectStore.getState().refreshFullRenders).toHaveBeenCalled();
   expect(stream).not.toHaveBeenCalled();

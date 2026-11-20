@@ -29,7 +29,7 @@ it("says what a delete gives back, as about so much when any of it was estimated
   expect(freedSpace([])).toBe("");
   expect(freedSpace([size(0)])).toBe("");
   expect(freedSpace([size(1024), size(1024)])).toBe("2 KB");
-  expect(freedSpace([size(1024 ** 2), size(1024 ** 2, true)])).toBe("about 2.0 MB");
+  expect(freedSpace([size(1024 ** 2), size(1024 ** 2, true)])).toBe("约 2.0 MB");
 });
 
 it("measures every project the engine lists and remembers the result", async () => {

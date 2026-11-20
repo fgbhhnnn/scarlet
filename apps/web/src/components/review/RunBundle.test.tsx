@@ -8,7 +8,7 @@ import { api } from "../../lib/client";
 import { tokenBreakdown, tokenLabel } from "../../lib/format";
 import { useProjectStore, type ProjectData } from "../../stores/project";
 import { useUiStore } from "../../stores/ui";
-import type { MediaAsset } from "@scarlet/timeline";
+import { createProject, type MediaAsset } from "@scarlet/timeline";
 import { TranscriptLine } from "../media/TranscriptionAction";
 import { UsageSettings } from "../shell/UsageSettings";
 import { RequestMetrics, RunBundle, runEnded } from "./RunBundle";
@@ -89,9 +89,9 @@ it("adds no row that repeats what Scarlet's own words already say, unless it ope
   // A run that stopped early says so, and Scarlet's words stand for what it left: no cut-off copy of them under it.
   // With no words from Scarlet, the row says what the run saved.
   view.rerender(<RunBundle task={{ ...task, state: "cancelled" }} events={[]} changes={[]} say={reply} told />);
-  expect([view.host.querySelector(".req-state")?.textContent, !!view.host.querySelector(".req-result")]).toEqual(["Stopped", false]);
+  expect([view.host.querySelector(".req-state")?.textContent, !!view.host.querySelector(".req-result")]).toEqual(["已停止", false]);
   view.rerender(<RunBundle task={{ ...task, state: "cancelled", summary: null }} events={[]} changes={[]} />);
-  expect([view.host.querySelector(".req-state")?.textContent, view.host.querySelector(".req-result")?.textContent]).toEqual(["Stopped", "Nothing saved"]);
+  expect([view.host.querySelector(".req-state")?.textContent, view.host.querySelector(".req-result")?.textContent]).toEqual(["已停止", "Nothing saved"]);
   // Words that don't say the result, such as an answered question, leave the row in place.
   view.rerender(<RunBundle task={task} events={[]} changes={[]} say={reply} />);
   expect(view.host.querySelector(".run-summary")?.textContent).toBe("Tightened the intro");
@@ -118,8 +118,8 @@ it("adds the request's tokens to its finished run line, and updates live", () =>
   // Hovering or focusing the count opens every part of it under the count; it closes again when the pointer leaves.
   act(() => (tokens as HTMLElement).focus());
   expect([...document.querySelectorAll(".tokens-tip > span")].map(row => row.textContent)).toEqual([
-    `Input${(1200).toLocaleString()}`, `Output${(3000).toLocaleString()}`, `Cache read${(44_000).toLocaleString()}`,
-    `Total${(48_200).toLocaleString()}`, `Est Cost<${usd.format(0.01)}`]);
+    `输入${(1200).toLocaleString()}`, `输出${(3000).toLocaleString()}`, `读取缓存${(44_000).toLocaleString()}`,
+    `总计${(48_200).toLocaleString()}`, `预计费用<${usd.format(0.01)}`]);
   act(() => (tokens as HTMLElement).blur());
   expect(document.querySelector(".tokens-tip")).toBeNull();
   expect(view.host.textContent).not.toMatch(/\$|cost/i);
@@ -134,7 +134,7 @@ it("shows tokens so far while waiting for an answer, and after a stop", () => {
   useUiStore.getState().setShowRunTokens(true);
   openProject({ [task.id]: totals({ totalTokens: 900 }) });
   const asking = render(<RunBundle task={{ ...task, state: "waiting_for_user", finishedAt: undefined }} events={[]} changes={[]} />);
-  expect(asking.host.textContent).toContain("Needs your answer");
+  expect(asking.host.textContent).toContain("等待你的回答");
   expect(asking.host.querySelector(".run-tokens")?.textContent).toBe("900 tokens");
   asking.unmount();
   host?.remove();
@@ -145,7 +145,7 @@ it("shows tokens so far while waiting for an answer, and after a stop", () => {
   host?.remove();
 
   const stopped = render(<RunBundle task={{ ...task, state: "cancelled" }} events={[]} changes={[]} />);
-  expect(stopped.host.querySelector(".req-state")?.textContent).toBe("Stopped");
+  expect(stopped.host.querySelector(".req-state")?.textContent).toBe("已停止");
   expect(stopped.host.querySelector(".run-tokens")?.textContent).toBe("900 tokens");
   stopped.unmount();
 });
@@ -163,17 +163,17 @@ it("lists tokens by project, provider and model in Settings", async () => {
   const view = render(<UsageSettings />);
   await act(async () => { await new Promise(r => setTimeout(r, 0)); });
   const text = view.host.textContent ?? "";
-  expect(text).toContain("1.3M tokens");
-  expect(text).toContain(". 3 runs since ");
+  expect(text).toContain("1.3M 词元");
+  expect(text).toContain("。 自 ");
   expect(text).toContain("Interview");
-  expect(text).toContain("Deleted project");
+  expect(text).toContain("已删除的项目");
   expect(text).toContain("Claude Code");
-  expect(text).toContain("Default model");
+  expect(text).toContain("默认模型");
   expect(text).not.toMatch(/agent/i);
   expect(text).not.toMatch(/\$|cost/i);
 
   // The switch reflects the editor's choice and remembers it.
-  const toggle = view.host.querySelector<HTMLButtonElement>('[role="switch"][aria-label="Show tokens in the chat"]')!;
+  const toggle = view.host.querySelector<HTMLButtonElement>('[role="switch"][aria-label="在对话中显示词元用量"]')!;
   expect(toggle.getAttribute("aria-checked")).toBe("false");
   act(() => toggle.click());
   expect(toggle.getAttribute("aria-checked")).toBe("true");
@@ -270,8 +270,9 @@ it("says how far the transcripts it waits on are, and keeps file progress in Med
   const asset = { id: "cam", name: "interview.mp4", duration: 3380, status: "ready" } as MediaAsset;
   const transcribing: Task = { ...running, id: "tsk_cam", kind: "transcribe", agent: "api", context: { mediaId: asset.id },
     progress: { stage: "transcribing", fraction: 0.1, remainingSeconds: 3858, words: { fraction: 0.30, remainingSeconds: 1000 } } };
-  useProjectStore.setState({ current: { project: { id: "prj_1" }, tasks: [running, transcribing], media: [asset],
-    taskEvents: {} } as ProjectData });
+  const project = { ...createProject("Interview"), id: running.projectId };
+  useProjectStore.setState({ current: { id: project.id, project, timeline: null, media: [asset], changes: [], notes: [], renders: [],
+    tasks: [running, transcribing], taskEvents: {} } });
   const wait: TaskEvent = { type: "log", at: "2026-11-05T10:00:10.000Z", text: "Waiting for the transcript",
     data: { kind: "media_wait", wait: "transcript", mediaId: asset.id } };
   const answer: TaskEvent = { type: "answer", at: "2026-11-05T10:00:40.000Z", text: "Keep the intro" };
@@ -280,25 +281,30 @@ it("says how far the transcripts it waits on are, and keeps file progress in Med
     <RunBundle task={running} events={events} changes={[]} />
   </>;
   const view = render(run([wait]));
-  const activity = () => view.host.querySelector(".req-now [role=status]")?.textContent;
-  // While the run waits on the transcript, the line says so with how far along it is: the words the run reads.
-  expect(activity()).toBe("Transcribing the recordings · 30%");
-  act(() => vi.advanceTimersByTime(30_000));
-  view.rerender(run([wait, answer]));
-  expect(view.host.querySelector("[data-media]")?.textContent).toBe("Transcribing10%");
-  expect(activity()).toBe("Reading your answer");
+  try {
+    const activity = () => view.host.querySelector(".req-now [role=status]")?.textContent;
+    // While the run waits on the transcript, the line says so with how far along it is: the words the run reads.
+    expect(activity()).toBe("Transcribing the recordings · 30%");
+    act(() => vi.advanceTimersByTime(30_000));
+    view.rerender(run([wait, answer]));
+    const media = view.host.querySelector("[data-media]");
+    expect(media?.querySelector('[role="status"]')?.getAttribute("aria-label")).toBe("interview.mp4：转写中 · 10%");
+    expect(media?.querySelector("progress")?.value).toBe(0.1);
+    expect(activity()).toBe("Reading your answer");
 
-  // A fresh transcript request can block the edit again.
-  view.rerender(run([wait, answer, { ...wait, at: "2026-11-05T10:00:45.000Z" }]));
-  expect(activity()).toBe("Transcribing the recordings · 30%");
-  // Waiting its turn behind other audio work, there is no figure yet.
-  act(() => useProjectStore.setState(s => ({ current: { ...s.current!, tasks: [running, { ...transcribing, progress: { stage: "queued", fraction: 0 } }] } })));
-  expect(activity()).toBe("Waiting for the transcript");
-  const ready: TaskEvent = { ...wait, at: "2026-11-05T10:00:50.000Z", text: "Ready: the transcript",
-    data: { ...wait.data, done: true } };
-  view.rerender(run([wait, answer, ready]));
-  expect(activity()).toBe("Reading your answer");
-  view.unmount();
+    // A fresh transcript request can block the edit again.
+    view.rerender(run([wait, answer, { ...wait, at: "2026-11-05T10:00:45.000Z" }]));
+    expect(activity()).toBe("Transcribing the recordings · 30%");
+    // Waiting its turn behind other audio work, there is no figure yet.
+    act(() => useProjectStore.setState(s => ({ current: { ...s.current!, tasks: [running, { ...transcribing, progress: { stage: "queued", fraction: 0 } }] } })));
+    expect(activity()).toBe("Waiting for the transcript");
+    const ready: TaskEvent = { ...wait, at: "2026-11-05T10:00:50.000Z", text: "Ready: the transcript",
+      data: { ...wait.data, done: true } };
+    view.rerender(run([wait, answer, ready]));
+    expect(activity()).toBe("Reading your answer");
+  } finally {
+    view.unmount();
+  }
 });
 
 it("says a run that ended without its transcripts is paused, and offers to finish it once they're ready", () => {
@@ -313,7 +319,7 @@ it("says a run that ended without its transcripts is paused, and offers to finis
   const view = render(<RunBundle task={paused} events={[]} changes={[]} onResume={onResume} onWaitForTranscripts={onWait} />);
   const line = () => [view.host.querySelector(".run-summary")?.textContent, view.host.querySelector(".run-wait")?.textContent];
   // How far along it is, as a percent: no guess at how long is left.
-  expect(line()).toEqual(["Paused · needs transcript", "Transcript 18%Finish when ready"]);
+  expect(line()).toEqual(["已暂停 · 等待 转写稿", "Transcript 18%Finish when ready"]);
   act(() => view.host.querySelector<HTMLButtonElement>(".run-wait button")!.click());
   expect(onWait).toHaveBeenCalledWith(true);
   view.unmount();
@@ -426,7 +432,7 @@ it("leaves a question under a heading to the heading, opens the steps before it 
   view.unmount();
   // With no heading the line says it needs an answer and opens the steps before the question.
   const bare = render(<RunBundle task={asking} events={asked} changes={[]} say={question} />);
-  expect(bare.host.querySelector(".req-status [role=status]")?.textContent).toBe("Needs your answer");
+  expect(bare.host.querySelector(".req-status [role=status]")?.textContent).toBe("等待你的回答");
   expect(rows(bare.host)).toEqual([]);
   openDetails(bare.host);
   expect(rows(bare.host)).toEqual(["One.", "Two.", "Three."]);
@@ -484,7 +490,7 @@ it("ticks active time, updates reported tokens, and carries both metrics across 
   expect([tokens()?.textContent, tokens()?.dataset.breakdown]).toEqual(["6s · 1.3M tokens", tokenBreakdown({ ...more, runs: undefined })]);
   act(() => tokens()!.click());
   expect([...document.querySelectorAll(".tokens-tip > span")].slice(0, 3).map(row => row.textContent))
-    .toEqual(["Active time6s", "ModelClaude Opus 5.5", "Thinking effortHigh"]);
+    .toEqual(["处理时长6s", "ModelClaude Opus 5.5", "Thinking effortHigh"]);
   act(() => document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
   expect(document.querySelector(".tokens-tip")).toBeNull();
 
@@ -525,7 +531,7 @@ it("leaves the word for how a run ended to its heading when the block has one, w
   const resume = vi.fn();
   const stopped: Task = { ...task, state: "cancelled" };
   const view = render(<RunBundle task={stopped} events={[]} changes={[]} recovery={{ label: "Resume", run: resume }} banded />);
-  expect(runEnded(stopped)).toBe("Stopped");
+  expect(runEnded(stopped)).toBe("已停止");
   expect(view.host.querySelector(".req-state, .req-status")).toBeNull();
   // What the run saved is one line, and its one action follows on that line.
   expect([...view.host.querySelector(".req")!.children].map(row => row.className)).toEqual(["req-row req-result"]);
@@ -540,10 +546,10 @@ it("leaves the word for how a run ended to its heading when the block has one, w
   expect(resume).toHaveBeenCalledTimes(2);
   // With no heading to say it, the row says it, with the action beside it.
   view.rerender(<RunBundle task={stopped} events={[]} changes={[]} recovery={{ label: "Resume", run: resume }} />);
-  expect([view.host.querySelector(".req-status .req-state")?.textContent, view.host.querySelector(".req-status .req-right")?.textContent]).toEqual(["Stopped", "Resume"]);
+  expect([view.host.querySelector(".req-status .req-state")?.textContent, view.host.querySelector(".req-status .req-right")?.textContent]).toEqual(["已停止", "Resume"]);
   expect(view.host.querySelector(".req-act")).toBeNull();
   // A run that finished has no word, and one that failed says so.
-  expect([runEnded(task), runEnded({ ...task, state: "failed" })]).toEqual([undefined, "Couldn’t finish"]);
+  expect([runEnded(task), runEnded({ ...task, state: "failed" })]).toEqual([undefined, "无法完成"]);
   view.unmount();
 });
 

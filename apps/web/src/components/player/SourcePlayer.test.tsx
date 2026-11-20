@@ -55,7 +55,7 @@ it("says a section is being prepared, and offers to try again when one can't be"
   await says("failed");
   expect(waiting()).toBe(false);
   const retry = container.querySelector("button")!;
-  expect(retry.textContent).toBe("Retry this section");
+  expect(retry.textContent).toBe("重试播放此片段");
   // Trying again is pressing play: the playback asks for the section once more.
   await act(async () => retry.click());
   expect(play).toHaveBeenCalledTimes(1);

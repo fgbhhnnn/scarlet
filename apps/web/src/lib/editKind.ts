@@ -1,9 +1,10 @@
 import { REVISED_CHECK, type EditKind, type ThreadEdit } from "@scarlet/shared";
 import { focusAround, type ProgressFocus } from "../components/player/SimpleProgress";
 import { lengthLabel } from "./format";
+import { workspace } from "./zhWorkspace";
 
 const WORDS: Partial<Record<EditKind, string>> = {
-  cut: "Cut", restore: "Added", audio: "Audio", zoom: "Zoom", reframe: "Reframe", text: "Text", overlay: "Overlay", graphic: "Graphic", speed: "Speed", transition: "Transition",
+  cut: workspace.kind.cut, restore: workspace.kind.added, audio: workspace.kind.audio, zoom: workspace.kind.zoom, reframe: workspace.kind.reframe, text: workspace.kind.text, overlay: workspace.kind.overlay, graphic: workspace.kind.graphic, speed: workspace.kind.speed, transition: workspace.kind.transition,
 };
 
 /** One word for what an edit did, the same in the list, on the timeline and on the card. None for an assembly or a mix. */
@@ -16,7 +17,7 @@ export function editKindWord(edit: Pick<ThreadEdit, "kind">): string | undefined
  * editor, or "Edit" for an assembly or a mix of several things.
  */
 export function editRowWord(edit: Pick<ThreadEdit, "kind" | "marker">): string {
-  return editKindWord(edit) ?? (edit.marker ? "To do" : "Edit");
+  return editKindWord(edit) ?? (edit.marker ? workspace.kind.todo : workspace.kind.edit);
 }
 
 /** The card shows why Scarlet made the edit and what to check. */
@@ -62,7 +63,7 @@ function said(sentence: string | undefined, words: string) {
 export function editFocus(edit: ThreadEdit, duration: number): ProgressFocus | undefined {
   const word = editKindWord(edit);
   // A marker at a point took nothing out, so it isn't drawn or named as a cut.
-  if (edit.at !== undefined) return focusAround({ start: edit.at, end: edit.at }, duration, word ?? (edit.marker ? undefined : "Cut"),
+  if (edit.at !== undefined) return focusAround({ start: edit.at, end: edit.at }, duration, word ?? (edit.marker ? undefined : workspace.kind.cut),
     edit.marker ? { tone: "kept" } : undefined);
   const restored = edit.kind === "restore";
   return focusAround(edit.range, duration, restored ? `Added · ${lengthLabel(edit.range.end - edit.range.start)}` : word,

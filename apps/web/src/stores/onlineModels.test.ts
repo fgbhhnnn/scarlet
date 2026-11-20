@@ -35,7 +35,7 @@ it("offers Claude's default settings when it advertises just its default", () =>
   expect(choices).toHaveLength(1);
   expect(choices[0]).toMatchObject({ key: "claude:", agent: "claude", model: undefined, label: "Default", profiles: [options] });
   const secondHost = { ...host, id: "other-default", agents: [{ ...host.agents[0]!, modelLabels: { "": "Default (Opus)" } }] };
-  expect(modelChoices(onlineAgents([host, secondHost]))[0]?.label).toBe("Provider default");
+  expect(modelChoices(onlineAgents([host, secondHost]))[0]?.label).toBe("提供方默认");
 });
 
 it("uses named Claude models across hosts and offers no default from offline or signed-out hosts", () => {
@@ -53,7 +53,7 @@ it("respects the host's model override when resolving the default's label and ca
     { id: "claude", installed: true, loggedIn: true, model: "sonnet", models: [],
       modelLabels: { "": "Default (recommended)" }, modelOptions: { "": { efforts: [{ id: "high" }], speeds: [] } } },
   ] };
-  expect(modelChoices(onlineAgents([host]))[0]).toMatchObject({ model: undefined, label: "Provider default", profiles: [] });
+  expect(modelChoices(onlineAgents([host]))[0]).toMatchObject({ model: undefined, label: "提供方默认", profiles: [] });
 });
 
 it("marks models from this install's own lists as Custom, for the CLI they belong to", () => {
@@ -64,7 +64,7 @@ it("marks models from this install's own lists as Custom, for the CLI they belon
   ] }];
   expect(modelChoices(onlineAgents(hosts)).map(m => m.label)).toEqual(["Local Test", "gpt-6.1-sol", "Sonnet 5.5", "local-test"]);
   expect(modelChoices(onlineAgents(hosts, ["local-test", "unavailable"])).map(m => [m.agent, m.model, m.label])).toEqual([
-    ["codex", "local-test", "Local Test · Custom"], ["codex", "gpt-6.1-sol", "gpt-6.1-sol"], ["claude", "sonnet", "Sonnet 5.5"], ["claude", "local-test", "local-test"],
+    ["codex", "local-test", "Local Test · 自定义"], ["codex", "gpt-6.1-sol", "gpt-6.1-sol"], ["claude", "sonnet", "Sonnet 5.5"], ["claude", "local-test", "local-test"],
   ]);
-  expect(modelChoices(onlineAgents(hosts, [], ["local-test"])).filter(m => m.agent === "claude").map(m => m.label)).toEqual(["Sonnet 5.5", "local-test · Custom"]);
+  expect(modelChoices(onlineAgents(hosts, [], ["local-test"])).filter(m => m.agent === "claude").map(m => m.label)).toEqual(["Sonnet 5.5", "local-test · 自定义"]);
 });

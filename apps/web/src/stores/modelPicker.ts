@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { AgentId, ModelOptions } from "@scarlet/shared";
 import type { OnlineAgent } from "./hosts";
+import { zhModels } from "../lib/zhModels";
 
 export interface ModelChoice {
   key: string;
@@ -20,7 +21,7 @@ export function modelChoices(agents: OnlineAgent[]): ModelChoice[] {
     return models.map((model) => {
       // A request without a model can reach hosts with different local defaults.
       const info = model === undefined && agent.hostNames.length > 1 ? undefined : agent.modelLabels[model ?? ""];
-      const name = info?.name ?? model ?? "Provider default";
+      const name = info?.name ?? model ?? zhModels.providerDefault;
       const profiles = agent.modelOptions[model ?? ""] ?? [];
       const defaultEffort = profiles[0]?.defaultEffort;
       return {
@@ -28,7 +29,7 @@ export function modelChoices(agents: OnlineAgent[]): ModelChoice[] {
         agent: agent.id,
         model,
         name,
-        label: info?.custom ? `${name} · Custom` : name,
+        label: info?.custom ? zhModels.customModel(name) : name,
         defaultEffort: profiles.every(p => p?.defaultEffort === defaultEffort) ? defaultEffort : undefined,
         profiles: profiles.filter(p => p !== undefined),
       };

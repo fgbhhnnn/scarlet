@@ -20,7 +20,7 @@ jobs:
     timeout-minutes: 90
     env:
       TARGET: x86_64-unknown-linux-gnu
-      SCARLET_RELEASE_CHANNEL: linux-preview
+      SCARLET_RELEASE_CHANNEL: ${{ github.repository == 'Forward-Future/scarlet' && 'linux-preview' || '' }}
       CARGO_INCREMENTAL: 0
       CARGO_PROFILE_TEST_DEBUG: 0
     steps:

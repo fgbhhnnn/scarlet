@@ -46,9 +46,10 @@ function ExportForm({ current, hasCut, onClose }: { current: ProjectData; hasCut
   const exported = job?.phase === "done" ? job : undefined;
   const exportedCurrentEdit = exported?.context === context;
   // Advanced export: the folder for finishing the edit in another app. Otherwise the video or its captions.
-  const [advanced, setAdvanced] = useState(previous?.format === "folder");
+  const [advanced, setAdvanced] = useState(previous?.format === "folder" || previous?.format === "jianying");
+  const [folderFormat, setFolderFormat] = useState<"folder" | "jianying">(previous?.format === "jianying" ? "jianying" : "folder");
   const [plainFormat, setPlainFormat] = useState<"mp4" | "srt" | "vtt">(previous?.format === "srt" || previous?.format === "vtt" ? previous.format : "mp4");
-  const format: ExportFile["format"] = advanced ? "folder" : plainFormat;
+  const format: ExportFile["format"] = advanced ? folderFormat : plainFormat;
   const captions = format === "srt" || format === "vtt";
   const captionTrackChoices = useMemo(() => (current.timeline?.tracks ?? []).filter(t => t.kind === "caption" && !t.hidden), [current.timeline]);
   const [trackId, setTrackId] = useState(() => previous?.trackId && captionTrackChoices.some(t => t.id === previous.trackId) ? previous.trackId : captionTrackChoices[0]?.id ?? "");
@@ -72,7 +73,7 @@ function ExportForm({ current, hasCut, onClose }: { current: ProjectData; hasCut
   // An export that stopped is explained here, so the menu's mark for it goes once this is open.
   const failed = job?.phase === "failed";
   useEffect(() => { if (failed) exportFailureSeen(current.id); }, [failed, current.id]);
-  const range = format !== "folder" && customRange ? { start: snapToFrame(parseClock(start), fps), end: snapToFrame(parseClock(end), fps) } : undefined;
+  const range = !advanced && customRange ? { start: snapToFrame(parseClock(start), fps), end: snapToFrame(parseClock(end), fps) } : undefined;
   const invalidRange = range && !(range.start >= 0 && range.end > range.start && range.end <= duration);
   const custom = format === "mp4" && (!!range || !!targetHeight || quality !== "delivery");
   const level = QUALITY[quality];
@@ -111,7 +112,7 @@ function ExportForm({ current, hasCut, onClose }: { current: ProjectData; hasCut
     // The file is named once, in the system's Save dialog, which also picks its folder and asks before replacing a
     // file. It opens on the project's name.
     const stem = project.name.replace(/[\\/:*?"<>|]+/g, " ").trim() || "Scarlet";
-    const name = format === "folder" ? stem : `${stem}.${format}`;
+    const name = advanced ? stem : `${stem}.${format}`;
     void exportFile(current, { format, name, video, ...(captions && exportTrackId ? { trackId: exportTrackId } : {}) });
   };
   const switchTo = !busy && !exportedCurrentEdit && <button type="button" className="btn-quiet mr-auto" onClick={() => setAdvanced(!advanced)}>
@@ -129,7 +130,18 @@ function ExportForm({ current, hasCut, onClose }: { current: ProjectData; hasCut
   </>}>
     <form id="export-working-cut" onSubmit={event => { event.preventDefault(); submit(); }}>
       <fieldset disabled={!!busy} className="min-w-0">
-        {advanced ? <HandoffSummary summary={handoff} /> : <div className="grid grid-cols-1 gap-x-3 sm:grid-cols-2">
+        {advanced ? <div className="space-y-3">
+          <Field label="Format" htmlFor="export-handoff-format">
+            <PreferenceSelect id="export-handoff-format" value={folderFormat} onChange={setFolderFormat}
+              options={[
+                { value: "folder", label: "Editing project (.fcpxml and .otio)" },
+                { value: "jianying", label: "Jianying draft (剪映)" },
+              ]} />
+          </Field>
+          {folderFormat === "jianying" ? <p className="text-xs text-muted">
+            Save in your Jianying draft library. The draft folder holds the cuts, audio, captions and a copy of the footage.
+          </p> : <HandoffSummary summary={handoff} />}
+        </div> : <div className="grid grid-cols-1 gap-x-3 sm:grid-cols-2">
           <Field label="Format" htmlFor="export-format">
             <PreferenceSelect id="export-format" value={plainFormat} onChange={setPlainFormat}
               options={[
@@ -177,7 +189,7 @@ function ExportForm({ current, hasCut, onClose }: { current: ProjectData; hasCut
     {busy && <div className="mt-3">
       {busy.phase === "choosing" ? <p className="text-xs text-muted" role="status">Choose a location…</p> :
         <ActivityProgress label={`Export progress for ${busy.file.name}`} value={counting ? busy.progress : undefined}>
-          {busy.phase === "saving" ? (busy.file.format === "folder" ? "Saving the folder…" : "Saving file…") : busy.waiting ? "Waiting to start" : Math.round(busy.progress * 100) >= PICTURE_DONE ? "Finishing…"
+          {busy.phase === "saving" ? (busy.file.format === "folder" || busy.file.format === "jianying" ? "Saving the folder…" : "Saving file…") : busy.waiting ? "Waiting to start" : Math.round(busy.progress * 100) >= PICTURE_DONE ? "Finishing…"
             : `Exporting${busy.context !== context ? " an earlier version" : ""}${counting ? ` · ${pct(busy.progress)}` : ""}`}
         </ActivityProgress>}
       {running && <p className="mt-2 text-xs text-muted">Your export continues in the background while you edit.</p>}

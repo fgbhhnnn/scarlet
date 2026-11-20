@@ -5,7 +5,7 @@
  * tasks stream log lines, a change becomes ready, uploads finish ingesting.
  */
 import { dialogueCommand, AGENT_LABEL, beginRevision, buildThreads, restoredReviewState, threadRevision, threadTimeline, countReviewDecisions, fullRenderContext, taskNeedsTranscripts, taskRecoveryAction, splitAgentTarget, ScarletApiError, SkillSlug, isAsideTask, isProjectEditTask, isSkillEdit, ReviseLearningRequest, queueAdmission, sameRun } from "@scarlet/shared";
-import { appliedCutReview, appliedReviewChange, applyReviewRemovals, makeStagedCutMapper, contentHash, planCutReview, reviewedTimeline } from "@scarlet/timeline";
+import { appliedCutReview, appliedReviewChange, applyReviewRemovals, buildJianyingDraft, makeStagedCutMapper, contentHash, planCutReview, reviewedTimeline } from "@scarlet/timeline";
 import type { ApproveLearningRequest, EditSkillRequest, Learning, MakeShortsRequest, RunChoice, UsageGroupBy, UsageResponse, UsageTotals } from "@scarlet/shared";
 import type {
   AgentHost,
@@ -32,7 +32,7 @@ import type {
 } from "@scarlet/shared";
 import type { Author, Change, MediaAsset, Note, Project, Timeline, TimelineDiff, TimeRange, Transcript } from "@scarlet/timeline";
 import { CaptionExportError, captionExportHttpStatus, captionExportRange, toCaptions, planRevert, toOtio, toFcpxml, usedMedia, handoffFileNames, handoffLosses, handoffReadMe, timelineToSrt, captionTracks, exactRate, type HandoffSource, applyOps, canApproveSpots, clipEnd, withHandles, describeDiff, diffTimelines, emptyTimeline, formatTimecode, newId, planApply, timelineDuration, ASPECT_PRESETS, TimelineOp } from "@scarlet/timeline";
-import type { ActivityEntry, ApproveResponse, HandoffFile, HandoffResponse, TrashedProject } from "@scarlet/shared";
+import type { ActivityEntry, ApproveResponse, HandoffFile, HandoffFormat, HandoffResponse, TrashedProject } from "@scarlet/shared";
 import type { ScarletApi } from "../api";
 import { buildDb, mc, SAMPLE_TRANSCRIPTION_MODEL, type MockDb } from "./fixtures";
 import sampleWaveform from "./sample-waveform.json";
@@ -618,7 +618,7 @@ export class MockClient implements ScarletApi {
   }
 
   /** The demo's folder for another app: real timeline files, with the sample video standing in for every clip. */
-  async handoff(projectId: string, version: string, folder: string): Promise<HandoffResponse> {
+  async handoff(projectId: string, version: string, folder: string, format?: HandoffFormat): Promise<HandoffResponse> {
     const stored = this.projectById(projectId);
     const project = { ...stored, media: this.db.media[projectId] ?? stored.media };
     const tl = this.db.timelines[version === "head" ? (project.head ?? "") : version];
@@ -629,7 +629,20 @@ export class MockClient implements ScarletApi {
     const sources = new Map<string, HandoffSource>(assets.map((a, i) => [a.id, {
       url: `file://${encodeURI(`${folder}/Media/${names[i]}`)}`, fileName: names[i]!, hasVideo: a.kind !== "audio", hasAudio: a.hasAudio !== false,
       rate: a.fps ? exactRate(a.fps).rate : undefined, width: a.width, height: a.height, duration: a.duration ?? 0,
+      still: a.kind === "image" || (a.kind === "graphic" && !a.duration),
     }]));
+    const mediaFiles = names.map(name => ({ path: `Media/${name}`, source: "/sample.mp4", size: 0 }));
+    if (format === "jianying") {
+      const separator = /^[a-z]:\\|^\\\\/i.test(folder) ? "\\" : "/";
+      const mediaPaths = new Map(assets.map((asset, i) => [asset.id, [folder, "Media", names[i]!].join(separator)]));
+      const { content, metadata } = buildJianyingDraft(project, tl, { name: base, draftDirectory: folder, sources, mediaPaths });
+      const files: HandoffFile[] = [
+        { path: "draft_content.json", text: JSON.stringify(content) },
+        { path: "draft_meta_info.json", text: JSON.stringify(metadata) },
+        ...mediaFiles,
+      ];
+      return this.latency({ files, mediaBytes: 0 }, 250);
+    }
     const captions = captionTracks(tl).map(({ track }) => ({ path: `${base} captions.srt`, text: timelineToSrt(tl, { trackId: track.id }) })).slice(0, 1);
     const files: HandoffFile[] = [
       { path: `${base}.fcpxml`, text: toFcpxml(project, tl, sources) },
@@ -637,7 +650,7 @@ export class MockClient implements ScarletApi {
       ...captions,
       { path: "Read me.txt", text: handoffReadMe({ projectName: project.name, timelineFiles: { fcpxml: `${base}.fcpxml`, otio: `${base}.otio` },
         captionFiles: captions.map(c => c.path), losses: handoffLosses(project, tl, sources), warnings: [] }) },
-      ...names.map(name => ({ path: `Media/${name}`, source: "/sample.mp4", size: 0 })),
+      ...mediaFiles,
     ];
     return this.latency({ files, mediaBytes: 0 }, 250);
   }

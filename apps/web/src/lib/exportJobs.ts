@@ -51,8 +51,8 @@ export function exportFailureSeen(projectId: string) {
 export interface ExportFile {
   /** The name the native Save dialog opens on. Once the editor has picked a file there, that file's name. */
   name: string;
-  /** `folder`: the timeline files, captions and a copy of the footage, for finishing the edit in another app. */
-  format: "mp4" | "otio" | "srt" | "vtt" | "folder";
+  /** `folder` and `jianying` each save a timeline with a copy of the footage. */
+  format: "mp4" | "otio" | "srt" | "vtt" | "folder" | "jianying";
   video: Pick<RenderRequest, "kind" | "quality" | "range" | "exportOptions">;
   /** Caption track to write. Omitted for video and timeline files. */
   trackId?: string;
@@ -150,10 +150,12 @@ async function run(projectId: string, file: ExportFile, context: string, version
       }
     }
     if (ticket === null) throw new Error("Export destination expired");
-    if (file.format === "folder") {
+    if (file.format === "folder" || file.format === "jianying") {
       update({ phase: "saving" });
       // The timeline files link the copies where the folder will be, so the engine is told where that is.
-      const { files } = await api.handoff(projectId, version, path!);
+      const { files } = file.format === "jianying"
+        ? await api.handoff(projectId, version, path!, "jianying")
+        : await api.handoff(projectId, version, path!);
       if (cancelled) return;
       const saved = await desktop.finishFolderExport(ticket, files);
       ticket = null;

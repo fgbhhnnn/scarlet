@@ -4,13 +4,13 @@
  */
 import { randomUUID } from "node:crypto";
 import { mkdir, rename, rm, stat, writeFile } from "node:fs/promises";
-import { extname, isAbsolute, join } from "node:path";
-import { pathToFileURL } from "node:url";
+import { basename, extname, isAbsolute, join } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import {
-  captionTracks, exactRate, handoffFileNames, handoffLosses, handoffRateWarnings, handoffReadMe, isDropFrameRate,
+  buildJianyingDraft, captionTracks, exactRate, handoffFileNames, handoffLosses, handoffRateWarnings, handoffReadMe, isDropFrameRate,
   parseColor, timecodeFrames, timelineToSrt, toFcpxml, toOtio, usedMedia, type HandoffSource, type Project, type Timeline,
 } from "@scarlet/timeline";
-import type { HandoffFile } from "@scarlet/shared";
+import type { HandoffFile, HandoffFormat } from "@scarlet/shared";
 import type { Ctx } from "../context.js";
 import { badRequest } from "../errors.js";
 import { ffmpeg, ffprobe } from "../render/ffmpeg.js";
@@ -63,7 +63,7 @@ export interface Handoff {
  * Everything the hand-off folder holds. `folder` is where the desktop app will write it, so the timeline files can
  * link the copies by their full path, which every app opens without asking.
  */
-export async function buildHandoff(ctx: Ctx, project: Project, timeline: Timeline, folder: string, signal?: AbortSignal): Promise<Handoff> {
+export async function buildHandoff(ctx: Ctx, project: Project, timeline: Timeline, folder: string, signal?: AbortSignal, format?: HandoffFormat): Promise<Handoff> {
   if (!isAbsolute(folder)) throw badRequest("handoff_folder", "Choose where to save the folder.");
   const base = safeFileName(folder.split(/[\\/]/).filter(Boolean).pop() || project.name).trim() || "Scarlet";
   const assets = usedMedia(project, timeline);
@@ -118,6 +118,19 @@ export async function buildHandoff(ctx: Ctx, project: Project, timeline: Timelin
       return png.length;
     });
     files.push({ path: `Media/${name}`, source: still, size });
+  }
+
+  if (format === "jianying") {
+    const { content, metadata } = buildJianyingDraft(project, timeline, {
+      name: basename(folder), draftDirectory: folder, sources, colorStills,
+      mediaPaths: new Map([...sources].map(([id, source]) => [id, fileURLToPath(source.url)])),
+      colorPaths: new Map([...colorStills].map(([color, source]) => [color, fileURLToPath(source.url)])),
+    });
+    files.unshift(
+      { path: "draft_content.json", text: JSON.stringify(content) },
+      { path: "draft_meta_info.json", text: JSON.stringify(metadata) },
+    );
+    return { files, mediaBytes };
   }
 
   const fcpxml = `${base}.fcpxml`, otio = `${base}.otio`;

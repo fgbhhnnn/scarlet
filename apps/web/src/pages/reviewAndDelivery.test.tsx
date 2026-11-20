@@ -1298,6 +1298,31 @@ it("goes back from Advanced export to the video's settings", async () => {
   expect(buttonByText("Advanced export")).toBeTruthy();
 });
 
+it("saves a Jianying draft and its copied footage through the desktop folder export", async () => {
+  const path = "/Users/me/剪映草稿/Interview";
+  const files = [
+    { path: "draft_content.json", text: '{"tracks":[]}' },
+    { path: "draft_meta_info.json", text: '{"draft_name":"Interview"}' },
+    { path: "Media/camera.mov", source: "/library/camera.mov", size: 20 },
+  ];
+  const choose = vi.spyOn(desktop, "chooseVideoExport").mockResolvedValue({ ticket: 17, path });
+  const handoff = vi.spyOn(api, "handoff").mockResolvedValue({ files, mediaBytes: 20 });
+  const save = vi.spyOn(desktop, "finishFolderExport").mockResolvedValue(path);
+  const render = vi.spyOn(api, "requestRender");
+  vi.spyOn(desktop, "discardVideoExport").mockResolvedValue();
+  await show(<ExportSheet hasCut onClose={() => {}} />);
+  await click(buttonByText("Advanced export")!);
+  await selectOption(container.querySelector<HTMLButtonElement>("#export-handoff-format")!, "Jianying draft (剪映)");
+  expect(container.textContent).toContain("Save in your Jianying draft library.");
+  expect(container.querySelector("#export-range")).toBeNull();
+  await click(exportButton()!);
+  expect(choose).toHaveBeenCalledExactlyOnceWith(data.project.name);
+  expect(handoff).toHaveBeenCalledExactlyOnceWith(PRJ, data.project.head, path, "jianying");
+  expect(save).toHaveBeenCalledExactlyOnceWith(17, files);
+  expect(render).not.toHaveBeenCalled();
+  expect(buttonByText("Show in folder")).toBeTruthy();
+});
+
 it("exports captions as a sidecar, keeps the range, and does not start a video render", async () => {
   const choose = vi.spyOn(desktop, "chooseVideoExport").mockResolvedValue({ ticket: 21, path: "/chosen/Interview.srt" });
   const request = vi.spyOn(api, "requestRender");

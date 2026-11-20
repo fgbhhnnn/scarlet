@@ -7,6 +7,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { applyOps, createProject, makeMediaClip, planPlaybackSegments, planSegments, spanningSections, timelineFromKeepRanges } from "@scarlet/timeline";
 import type { MediaClip, Project, Timeline } from "@scarlet/timeline";
 import * as ffmpeg from "./exec.js";
+import { fontCoversCjkText } from "./fontCoverage.js";
 import {
   atempoFactors,
   assembleSegments,
@@ -201,6 +202,28 @@ it("exports a resized frame range with optional captions and an equally long aud
     return (await runCapture("ffmpeg", ["-v", "error", "-ss", "0.5", "-i", file, "-frames:v", "1", "-f", "md5", "-"])).stdout.toString();
   };
   expect(await saved(true)).not.toBe(await saved(false));
+});
+
+it("draws distinct Chinese glyphs with the default caption style", async ({ skip }) => {
+  const { project, timeline } = fixture();
+  const explicit = ["PingFang", "Hiragino Sans GB", "msyh", "simsun", "NotoSansCJK", "Arial Unicode"]
+    .map(family => resolveFontFile(family))
+    .find(font => font?.exact && fontCoversCjkText(font.file, "中文视频"));
+  if (!explicit) return skip();
+  const font = resolveFontFile("Inter", {}, "中文视频");
+  expect(font && fontCoversCjkText(font.file, "中文视频")).toBe(true);
+  expect(resolveFontFile(explicit.file, {}, "中文视频")).toEqual(explicit);
+  const captionTrack = timeline.tracks.find(track => track.kind === "caption")!;
+  const clip = captionTrack.clips.find(item => item.kind === "caption")!;
+  const fingerprints: string[] = [];
+  for (const text of ["中文", "视频"]) {
+    clip.text = text;
+    const file = path.join(dir, `${text}.mp4`);
+    await renderRange(project, timeline, { start: 1, end: 1.2 }, file, { mediaRoot: dir, hwaccel: "none" });
+    const frame = await runCapture("ffmpeg", ["-v", "error", "-i", file, "-frames:v", "1", "-f", "md5", "-"]);
+    fingerprints.push(frame.stdout.toString());
+  }
+  expect(fingerprints[0]).not.toBe(fingerprints[1]);
 });
 
 it.skipIf(process.platform === "win32")("says before encoding that an FFmpeg without drawtext can't draw captions, and exports without them", async () => {

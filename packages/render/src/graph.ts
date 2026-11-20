@@ -804,10 +804,10 @@ async function writeFilterGraph(
       await fs.writeFile(textFile, wrapText(text, maxChars), "utf8");
 
       const o: string[] = [];
-      const font = resolveFontFile(style.fontFamily, opts);
+      const font = resolveFontFile(style.fontFamily, opts, text);
       if (font) {
         o.push(`fontfile=${escapeFilterPath(font.file)}`);
-        if (!font.exact) warn(`font "${style.fontFamily}" not found; using ${path.basename(font.file)}`);
+        if (!font.exact) warn(`font "${style.fontFamily}" unavailable for this caption; using ${path.basename(font.file)}`);
       } else {
         const family = /^[\p{L}\p{N} _.-]+$/u.test(style.fontFamily) ? style.fontFamily : "sans-serif";
         o.push(`font='${family}'`);

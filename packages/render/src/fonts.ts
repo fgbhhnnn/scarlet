@@ -8,6 +8,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileInDirectory } from "./assetPath.js";
+import { fontCoversCjkText, hasCjkCaptionText } from "./fontCoverage.js";
 
 export interface FontOptions {
   /** Use this font file for every caption, skipping family lookup. */
@@ -33,6 +34,13 @@ const FALLBACKS = [
   "notosans-regular.ttf",
   "freesans.ttf",
   "helvetica.ttc",
+  "arial unicode.ttf",
+];
+
+const CJK_FALLBACKS = [
+  "pingfang.ttc", "hiragino sans gb.ttc", "stheiti medium.ttc",
+  "msyh.ttc", "simhei.ttf", "simsun.ttc", "msgothic.ttc", "malgun.ttf",
+  "notosanscjksc-regular.otf", "notosanscjk-regular.ttc", "notosanssc-regular.ttf",
   "arial unicode.ttf",
 ];
 
@@ -85,14 +93,14 @@ function indexDir(dir: string): Map<string, string> {
   return index;
 }
 
-function lookup(dirs: string[], names: string[]): string | undefined {
+function lookup(dirs: string[], names: string[], match: (file: string) => boolean = () => true): string | undefined {
   for (const dir of dirs) {
     const index = indexDir(dir);
     for (const n of names) {
       const hit = index.get(n);
       if (hit) {
         const file = fileInDirectory(dir, hit);
-        if (file) return file;
+        if (file && match(file)) return file;
       }
     }
   }
@@ -117,17 +125,17 @@ function candidates(family: string): string[] {
  * could be found, in which case callers should fall back to `font=` and hope
  * fontconfig is present.
  */
-export function resolveFontFile(family: string, opts: FontOptions = {}): ResolvedFont | undefined {
+export function resolveFontFile(family: string, opts: FontOptions = {}, caption = ""): ResolvedFont | undefined {
   if (opts.fontFile) return { file: opts.fontFile, exact: true };
   const dirs = [...(opts.fontDirs ?? []), ...defaultFontDirs()].map((dir) => path.resolve(dir));
   // Timeline font paths may only select files in configured font directories.
-  if (FONT_EXTS.has(path.extname(family).toLowerCase())) {
-    for (const dir of dirs) {
-      const file = fileInDirectory(dir, family);
-      if (file) return { file, exact: true };
-    }
+  const explicitPath = FONT_EXTS.has(path.extname(family).toLowerCase())
+    ? dirs.map(dir => fileInDirectory(dir, family)).find(file => file !== undefined) : undefined;
+  const exact = explicitPath ?? lookup(dirs, candidates(family));
+  if (hasCjkCaptionText(caption) && (!exact || !fontCoversCjkText(exact, caption))) {
+    const fallback = lookup(dirs, CJK_FALLBACKS, file => fontCoversCjkText(file, caption));
+    if (fallback) return { file: fallback, exact: false };
   }
-  const exact = lookup(dirs, candidates(family));
   if (exact) return { file: exact, exact: true };
   const fallback = lookup(dirs, FALLBACKS);
   return fallback ? { file: fallback, exact: false } : undefined;

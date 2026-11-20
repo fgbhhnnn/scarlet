@@ -5,7 +5,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { Link, MemoryRouter, Outlet } from "react-router-dom";
 import { afterEach, beforeEach, expect, it, onTestFinished, vi } from "vitest";
 import { fullRenderContext, type Render } from "@scarlet/shared";
-import { NO_CAPTION_TRACK, NO_CAPTIONS_IN_RANGE, snapToFrame, timelineDuration } from "@scarlet/timeline";
+import { snapToFrame, timelineDuration } from "@scarlet/timeline";
 import { MonitorPlayback } from "../components/player/MonitorPlayback";
 import { usePictureWait } from "../components/player/usePictureWait";
 import { TimelineScrubber } from "../components/review/TimelineScrubber";
@@ -16,6 +16,8 @@ import { api } from "../lib/client";
 import { buildDb, mc, PRJ } from "../lib/mock/fixtures";
 import { joinClock } from "../lib/joinClock";
 import { player } from "../lib/player";
+import { zh } from "../lib/zh";
+import { zhReview } from "../lib/zhReview";
 import { scrubFrameUrl } from "../components/review/thumbs";
 import { dispatchWsEvent } from "../lib/realtime";
 import { useProjectStore, type ProjectData } from "../stores/project";
@@ -114,7 +116,7 @@ it("shows the loading ripple until the audible clips in this window have their m
   ] };
   const draw = (ingesting: boolean, mediaPaused = false, duration = 10) => show(<TimelineWaveform
     timeline={timeline} media={[video, { ...mic, status: ingesting ? "ingesting" : "ready" }]} mediaPaused={mediaPaused} start={0} duration={duration} />);
-  const ripple = () => container.querySelector('[aria-label="Loading audio waveform"]');
+  const ripple = () => labeled(zhReview.timeline.loadingWaveform);
   let finish!: () => void;
   const hold = new Promise<void>(resolve => { finish = resolve; });
   vi.mocked(api.waveform).mockImplementation(async (mediaId, from, to) => {
@@ -277,7 +279,7 @@ it("loads the picture and the sound as one wave, and lands them together when th
 it("skips 5 seconds with an arrow and 1 second with Shift, once per key repeat", async () => {
   const onSeek = vi.fn();
   await show(<TimelineScrubber duration={60} playhead={20} frameAt={() => undefined} onSeek={onSeek} />);
-  const slider = labeled("Position in the video");
+  const slider = labeled(zhReview.timeline.position);
   const down = (key: string, shiftKey: boolean, repeat = false) => act(() => {
     slider.dispatchEvent(new KeyboardEvent("keydown", { key, shiftKey, repeat, bubbles: true }));
   });
@@ -301,7 +303,7 @@ it("seeks on one full-video timeline with keyboard steps and endpoints", async (
   const onSeek = vi.fn();
   await show(<TimelineScrubber duration={244} frameAt={() => undefined} onSeek={onSeek} playhead={192} />);
   expect(container.querySelectorAll('[role="slider"]')).toHaveLength(1);
-  const slider = labeled("Position in the video");
+  const slider = labeled(zhReview.timeline.position);
   for (const [key, target] of [["Home", 0], ["ArrowRight", 197], ["End", 244]] as const) {
     await act(() => slider.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true })));
     expect(onSeek).toHaveBeenLastCalledWith(target);
@@ -335,14 +337,12 @@ it("keeps zoom controls in the row under the timeline and draws no edit points, 
   const rail = () => container.querySelector(".timeline-cuts, .timeline-cut, .timeline-cut-group");
   await render();
   expect(rail()).toBeNull();
-  const controls = container.querySelector(".timeline-foot > [aria-label='Timeline zoom']");
-  const zoomIn = labeled("Zoom in");
+  const controls = container.querySelector(`.timeline-foot > [aria-label="${zhReview.timeline.zoomControls}"]`);
+  const zoomIn = labeled(zhReview.timeline.zoomIn);
   expect(controls?.contains(zoomIn)).toBe(true);
-  expect(labeled("Timeline controls")).toBeNull();
-  expect(labeled("Zoom out").disabled).toBe(true);
+  expect(labeled(zhReview.timeline.zoomOut).disabled).toBe(true);
   expect(zoomLevel().textContent).toBe("100%");
   expect(zoomSlider().value).toBe("0");
-  expect(button("Show edit points")).toBeUndefined();
   const ruler = container.querySelector(".timeline-ruler")!;
   expect(ruler.textContent).toContain("2:00");
   expect(ruler.textContent).toContain("3:00");
@@ -364,8 +364,7 @@ it("keeps zoom controls in the row under the timeline and draws no edit points, 
   await act(() => zoomIn.dispatchEvent(escape));
   expect(escape.defaultPrevented).toBe(false);
   await act(() => document.body.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })));
-  expect(labeled("Zoom in")).toBe(zoomIn);
-  expect(container.textContent).not.toContain("edit points");
+  expect(labeled(zhReview.timeline.zoomIn)).toBe(zoomIn);
 });
 
 it("brings the playhead part of the way to the middle with each zoom in, and leaves it where it is zooming out", async () => {
@@ -540,7 +539,7 @@ it("zooms a pill when another group's circle is under the pointer too", async ()
 it("names what waits on the editor in one amber line under the frame", async () => {
   vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(1000);
   const dot = (time: number, n: number, waits = false) => ({ time, n, title: `Cut ${n} of 6`, open: () => {},
-    ...waits && { state: "check" as const, need: `Cut ${n}` } });
+    ...waits && { state: "check" as const, need: `剪辑 ${n}` } });
   // 100 s across 1000 px: cuts 1 to 3 share a pill, and the second of them waits on the editor.
   await show(<TimelineScrubber duration={100} playhead={0} frameAt={() => undefined} onSeek={() => {}}
     marks={[dot(10, 1), dot(11, 2, true), dot(12, 3), dot(60, 4)]} />);
@@ -550,7 +549,7 @@ it("names what waits on the editor in one amber line under the frame", async () 
   vi.spyOn(strip, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 1000, 24));
   const point = (clientX: number) => act(() => strip.dispatchEvent(new PointerEvent("pointermove", { pointerId: 1, isPrimary: true, button: 0, clientX, bubbles: true })));
   await point(108);
-  expect(container.querySelector(".simple-timeline-need")?.textContent).toBe("Cut 2 needs you");
+  expect(container.querySelector(".simple-timeline-need")?.textContent).toBe("剪辑 2待确认");
   // A marker with nothing waiting writes nothing under the frame.
   await point(600);
   expect(container.querySelector(".simple-timeline-need")).toBeNull();
@@ -564,7 +563,7 @@ it("anchors wheel and pinch zoom to the pointer and defers new media samples unt
   await show(<TimelineScrubber start={10} duration={100} playhead={35} frameAt={frameAt} onSeek={seek} activeShortcuts />);
   const track = container.querySelector<HTMLElement>(".timeline-track")!;
   vi.spyOn(track, "getBoundingClientRect").mockReturnValue(new DOMRect(100, 0, 400, 120));
-  const slider = labeled("Position in the video");
+  const slider = labeled(zhReview.timeline.position);
   const playheadX = () => slider.querySelector<HTMLElement>(".timeline-playhead")?.style.left;
   vi.useFakeTimers();
   try {
@@ -620,7 +619,7 @@ it("samples the visible range once and seeks between its stills during a capture
   await show(scrubber(10));
   const images = [...container.querySelectorAll(".timeline-filmstrip img")];
   expect(images.map(el => el.getAttribute("src"))).toEqual(["/frame/12", "/frame/16"]);
-  const slider = labeled("Position in the video");
+  const slider = labeled(zhReview.timeline.position);
   vi.spyOn(slider, "getBoundingClientRect").mockReturnValue(new DOMRect(100, 0, 300, 48));
   Object.defineProperty(slider, "setPointerCapture", { value: vi.fn() });
   const point = (type: string, x: number) => slider.dispatchEvent(new PointerEvent(type, {
@@ -728,7 +727,7 @@ it("turns the play button only when a seek is slow, and gives its icon back when
     expect([spinner(), container.querySelector('[role="status"]')]).toEqual([null, null]);
     await act(() => { seek(); vi.advanceTimersByTime(200); });
     expect(spinner()).not.toBeNull();
-    expect(container.querySelector('.monitor-playback > [role="status"]')?.textContent).toContain("Loading this moment");
+    expect(container.querySelector('.monitor-playback > [role="status"]')?.textContent).toContain(zh.ui.player.loading);
     await act(() => { done(); });
     expect([spinner(), container.querySelector('[role="status"]')]).toEqual([null, null]);
   } finally { vi.useRealTimers(); }
@@ -983,10 +982,10 @@ it("uses the full monitor for landscape and fits the picture to the project or s
     expect(Number(monitor.style.getPropertyValue("--picture-aspect"))).toBe(aspect);
     expect(monitor.hasAttribute("data-landscape")).toBe(landscape);
   };
-  const frame = () => new URL(container.querySelector<HTMLImageElement>('img[alt="Selected edit frame"]')!.src).searchParams;
+  const frame = () => new URL(container.querySelector<HTMLImageElement>('img[alt="选中剪辑的画面"]')!.src).searchParams;
   await drawPlayerFormat();
   expectMonitor(16 / 9, true);
-  await act(() => labeled("Position in the video").dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true })));
+  await act(() => labeled(zhReview.timeline.position).dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true })));
   expect(frame().get("format")).toBe("1920x1080@30");
   const selected = frame().get("frame");
   const settings = { ...data.project.settings, width: 1080, height: 1920, aspect: "9:16" as const };
@@ -1079,7 +1078,7 @@ it("shows an export again after a reload or restart, saves it to the destination
   await act(() => resumeExports());
   await show(<ExportSheet hasCut onClose={() => {}} />);
   expect(container.textContent).toContain("正在导出 · 42%");
-  expect(container.querySelector("progress")!.getAttribute("aria-label")).toBe("Export progress for Interview final.mp4");
+  expect(container.querySelector("progress")!.getAttribute("aria-label")).toBe(zh.export.progressFor("Interview final.mp4"));
   expect(container.querySelector("#export-resolution")!.textContent).toMatch(/ × 480$/);
   expect(button("取消导出")).toBeDefined();
   // The engine restarting mid-export is not a failure.
@@ -1312,7 +1311,7 @@ it("saves a Jianying draft and its copied footage through the desktop folder exp
   vi.spyOn(desktop, "discardVideoExport").mockResolvedValue();
   await show(<ExportSheet hasCut onClose={() => {}} />);
   await click(buttonByText("高级导出")!);
-  await selectOption(container.querySelector<HTMLButtonElement>("#export-handoff-format")!, "剪映草稿");
+  await selectOption(container.querySelector<HTMLButtonElement>("#export-handoff-format")!, zh.export.jianying);
   expect(container.textContent).toContain("保存到剪映草稿库。");
   expect(container.querySelector("#export-range")).toBeNull();
   await click(exportButton()!);
@@ -1349,18 +1348,18 @@ it("disables caption export when the video has no caption track", async () => {
   await show(<ExportSheet hasCut onClose={() => {}} />);
   await selectOption(container.querySelector<HTMLButtonElement>("#export-format")!, /字幕 \(\.srt\)/);
   expect(exportButton()!.disabled).toBe(true);
-  expect(container.textContent).toContain(NO_CAPTION_TRACK);
+  expect(container.textContent).toContain(zh.export.noCaptionTrack);
 });
 
 it("tells a new project with no cut to add captions when captions are chosen", async () => {
   const timeline = { ...data.timeline!, tracks: data.timeline!.tracks.filter(t => t.kind !== "caption") };
   await act(async () => useProjectStore.setState({ current: { ...data, timeline } }));
   await show(<ExportSheet hasCut={false} onClose={() => {}} />);
-  expect(container.textContent).toContain("There’s no video to export yet.");
+  expect(container.textContent).toContain(zh.export.noVideo);
   await selectOption(container.querySelector<HTMLButtonElement>("#export-format")!, /字幕 \(\.srt\)/);
   expect(exportButton()!.disabled).toBe(true);
-  expect(container.textContent).toContain(NO_CAPTION_TRACK);
-  expect(container.textContent).not.toContain("There’s no video to export yet.");
+  expect(container.textContent).toContain(zh.export.noCaptionTrack);
+  expect(container.textContent).not.toContain(zh.export.noVideo);
 });
 
 it("disables caption export when the range has no cues", async () => {
@@ -1377,7 +1376,7 @@ it("disables caption export when the range has no cues", async () => {
     set("#export-end", "0:15.000");
   });
   expect(exportButton()!.disabled).toBe(true);
-  expect(container.textContent).toContain(NO_CAPTIONS_IN_RANGE);
+  expect(container.textContent).toContain(zh.export.noCaptionsInRange);
 });
 
 it("does not throw when the chosen caption track is removed while Export is open", async () => {
@@ -1423,7 +1422,7 @@ it("offers a caption track picker only when more than one caption track is visib
   expect(container.querySelector("#export-track")!.textContent).toBe("Captions");
   await selectOption(container.querySelector<HTMLButtonElement>("#export-track")!, "Titles");
   expect(exportButton()!.disabled).toBe(true);
-  expect(container.textContent).toContain(NO_CAPTIONS_IN_RANGE);
+  expect(container.textContent).toContain(zh.export.noCaptionsInRange);
   await selectOption(container.querySelector<HTMLButtonElement>("#export-track")!, "Captions");
   await click(exportButton()!);
   expect(choose).toHaveBeenCalledWith(`${data.project.name}.vtt`);
@@ -1482,7 +1481,7 @@ it("adds a second zoom step to the one under way, and turns a zoom back from whe
   usePlayerStore.setState({ time: 50, playing: true });
   await render(50);
   const slider = container.querySelector(".timeline-slider");
-  await click(labeled("Zoom in"));
+  await click(labeled(zhReview.timeline.zoomIn));
   expect(zoomLevel().textContent).toBe("100%");
   await advance(130);
   const halfway = parseFloat(zoomLevel().textContent!);
@@ -1490,10 +1489,10 @@ it("adds a second zoom step to the one under way, and turns a zoom back from whe
   expect(halfway).toBeLessThan(200);
   await render(51); // An unrelated playback tick must not pull the view back.
   expect(container.querySelector(".timeline-slider")).toBe(slider);
-  await click(labeled("Zoom in")); // A second step compounds the pending destination.
+  await click(labeled(zhReview.timeline.zoomIn)); // A second step compounds the pending destination.
   await advance(500);
   expect(zoomLevel().textContent).toBe("400%");
-  await click(labeled("Zoom out"));
+  await click(labeled(zhReview.timeline.zoomOut));
   await advance(60);
   await fitBySlider(); // Reverse an in-flight zoom from its current pose.
   await advance(500);

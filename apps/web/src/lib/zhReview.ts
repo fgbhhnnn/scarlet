@@ -31,6 +31,7 @@ export const zhReview = {
     position: "视频位置", frameScrub: "从画面或波形向上拖动，即可逐帧定位。", markRange: "拖动以标记消息涉及的范围",
     rangeStart: "范围起点", rangeEnd: "范围终点", adjustRange: "拖动调整 · 按住逐帧移动 · ← → 移动一帧",
     atEditEdge: "位于剪辑边缘", preciseRange: "拖动逐帧移动 · 松开以设置", loadingWaveform: "正在加载音频波形",
+    needsEditor: (name: string) => `${name}待确认`,
   },
 } as const;
 

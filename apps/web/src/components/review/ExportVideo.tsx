@@ -8,6 +8,7 @@ import { clock, fmtBytes, pct, playbackClock } from "../../lib/format";
 import { useProjectStore, type ProjectData } from "../../stores/project";
 import { ActivityProgress, Field, Icon, InlineError, Modal } from "../ui/primitives";
 import { PreferenceSelect } from "../ui/PreferenceSelect";
+import { zh } from "../../lib/zh";
 
 type ExportQuality = RenderRequest["quality"] | "best";
 
@@ -16,9 +17,9 @@ type ExportQuality = RenderRequest["quality"] | "best";
 export const LOADING_LATEST_EDIT = "Loading the latest edit before exporting captions…";
 
 const QUALITY: Record<ExportQuality, { label: string; hint: string }> = {
-  preview: { label: "Compressed", hint: "A smaller file for sharing a draft. Softer picture." },
-  delivery: { label: "High", hint: "Looks the same as the original, in a smaller file." },
-  best: { label: "Original quality", hint: "Matches the original footage, for re-editing or grading. About the size of the original." },
+  preview: { label: zh.export.compressed, hint: "适合分享草稿的较小文件，画面更柔和。" },
+  delivery: { label: zh.export.high, hint: "画面接近原片，文件更小。" },
+  best: { label: zh.export.original, hint: "保留原片质量，适合继续编辑或调色。" },
 };
 
 function parseClock(value: string): number {
@@ -115,53 +116,53 @@ function ExportForm({ current, hasCut, onClose }: { current: ProjectData; hasCut
     void exportFile(current, { format, name, video, ...(captions && exportTrackId ? { trackId: exportTrackId } : {}) });
   };
   const switchTo = !busy && !exportedCurrentEdit && <button type="button" className="btn-quiet mr-auto" onClick={() => setAdvanced(!advanced)}>
-    {advanced ? "Back" : "Advanced export"}
+    {advanced ? zh.export.back : zh.export.advanced}
   </button>;
-  return <Modal open title={advanced ? "Advanced export" : "Export"} width={600} onClose={onClose} footer={running ? <>
-    {busy.phase === "rendering" && <button type="button" className="btn-quiet" onClick={busy.cancel}>Cancel export</button>}
-    <button type="button" className="btn-primary" onClick={onClose}>Continue editing</button>
+  return <Modal open title={advanced ? zh.export.advanced : zh.terms.export} width={600} onClose={onClose} footer={running ? <>
+    {busy.phase === "rendering" && <button type="button" className="btn-quiet" onClick={busy.cancel}>取消导出</button>}
+    <button type="button" className="btn-primary" onClick={onClose}>{zh.export.continueEditing}</button>
   </> : <>
     {switchTo}
-    <button type="button" className="btn-ghost" onClick={onClose}>{busy || exportedCurrentEdit ? "Close" : "Cancel"}</button>
+    <button type="button" className="btn-ghost" onClick={onClose}>{busy || exportedCurrentEdit ? zh.export.close : zh.common.cancel}</button>
     <button type="submit" form="export-working-cut" className="btn-primary" data-log-control="export" disabled={!!busy || !!invalid}>
-      {failed ? "Retry" : "Export"}
+      {failed ? zh.export.retry : zh.terms.export}
     </button>
   </>}>
     <form id="export-working-cut" onSubmit={event => { event.preventDefault(); submit(); }}>
       <fieldset disabled={!!busy} className="min-w-0">
         {advanced ? <HandoffSummary summary={handoff} /> : <div className="grid grid-cols-1 gap-x-3 sm:grid-cols-2">
-          <Field label="Format" htmlFor="export-format">
+          <Field label={zh.export.format} htmlFor="export-format">
             <PreferenceSelect id="export-format" value={plainFormat} onChange={setPlainFormat}
               options={[
-                { value: "mp4", label: "Video (.mp4)" },
-                { value: "srt", label: "Captions (.srt)" },
-                { value: "vtt", label: "Captions (.vtt)" },
+                { value: "mp4", label: `${zh.export.video} (.mp4)` },
+                { value: "srt", label: `${zh.export.captions} (.srt)` },
+                { value: "vtt", label: `${zh.export.captions} (.vtt)` },
               ]} />
           </Field>
-          <Field label="Range" htmlFor="export-range">
+          <Field label={zh.export.range} htmlFor="export-range">
             <PreferenceSelect id="export-range" value={customRange ? "custom" : "whole"}
-              onChange={value => setCustomRange(value === "custom")} options={[{ value: "whole", label: "Whole video" }, { value: "custom", label: "Custom range" }]} />
+              onChange={value => setCustomRange(value === "custom")} options={[{ value: "whole", label: zh.export.whole }, { value: "custom", label: zh.export.custom }]} />
           </Field>
           {range && <div className="hidden sm:block" />}
           {range && <>
-            <Field label="From" htmlFor="export-start"><input className="field tnum" id="export-start" value={start} onChange={e => setStart(e.target.value)} /></Field>
-            <Field label="To" htmlFor="export-end"><input className="field tnum" id="export-end" value={end} onChange={e => setEnd(e.target.value)} /></Field>
+            <Field label="从" htmlFor="export-start"><input className="field tnum" id="export-start" value={start} onChange={e => setStart(e.target.value)} /></Field>
+            <Field label="到" htmlFor="export-end"><input className="field tnum" id="export-end" value={end} onChange={e => setEnd(e.target.value)} /></Field>
           </>}
-          {captions && captionTrackChoices.length > 1 && <Field label="Track" htmlFor="export-track">
+          {captions && captionTrackChoices.length > 1 && <Field label={zh.export.track} htmlFor="export-track">
             <PreferenceSelect id="export-track" value={trackId} onChange={setTrackId}
               options={captionTrackChoices.map(track => ({ value: track.id, label: track.name }))} />
           </Field>}
         </div>}
         {format === "mp4" ? <details className="border-t border-line pt-3">
-          <summary className="cursor-pointer text-xs"><strong>Video options</strong><span className="ml-2 text-muted">{size} · {Number(fps.toFixed(3))} fps · {level.label}</span></summary>
+          <summary className="cursor-pointer text-xs"><strong>{zh.export.options}</strong><span className="ml-2 text-muted">{size} · {Number(fps.toFixed(3))} fps · {level.label}</span></summary>
           <div className="mt-4 grid grid-cols-1 gap-x-3 sm:grid-cols-2">
-            <Field label="Resolution" htmlFor="export-resolution">
+            <Field label={zh.export.resolution} htmlFor="export-resolution">
               <PreferenceSelect id="export-resolution" value={targetHeight} onChange={setTargetHeight} options={[
                 { value: 0, label: `Project · ${width} × ${height}` },
                 ...[2160, 1080, 720, 480].filter(h => h < height).map(h => ({ value: h, label: `${Math.round(width * h / height / 2) * 2} × ${h}` })),
               ]} />
             </Field>
-            <Field label="Quality" htmlFor="export-quality" hint={level.hint}>
+            <Field label={zh.export.quality} htmlFor="export-quality" hint={level.hint}>
               <PreferenceSelect id="export-quality" value={quality} onChange={setQuality}
                 options={(Object.keys(QUALITY) as ExportQuality[]).map(value => ({ value, label: QUALITY[value].label }))} />
             </Field>
@@ -175,18 +176,18 @@ function ExportForm({ current, hasCut, onClose }: { current: ProjectData; hasCut
       !hasCut ? "There’s no video to export yet." :
       invalidRange ? `Enter a range between 0:00 and ${playbackClock(duration)}, at least one frame long.` : sampleOnly ? "The isolated demo saves its included MP4. Custom video settings are available in library projects." : ""}</InlineError>}
     {busy && <div className="mt-3">
-      {busy.phase === "choosing" ? <p className="text-xs text-muted" role="status">Choose a location…</p> :
+      {busy.phase === "choosing" ? <p className="text-xs text-muted" role="status">{zh.export.chooseLocation}</p> :
         <ActivityProgress label={`Export progress for ${busy.file.name}`} value={counting ? busy.progress : undefined}>
-          {busy.phase === "saving" ? (busy.file.format === "folder" ? "Saving the folder…" : "Saving file…") : busy.waiting ? "Waiting to start" : Math.round(busy.progress * 100) >= PICTURE_DONE ? "Finishing…"
-            : `Exporting${busy.context !== context ? " an earlier version" : ""}${counting ? ` · ${pct(busy.progress)}` : ""}`}
+          {busy.phase === "saving" ? (busy.file.format === "folder" ? zh.export.saveFolder : zh.export.saveFile) : busy.waiting ? zh.export.waiting : Math.round(busy.progress * 100) >= PICTURE_DONE ? zh.export.finishing
+            : `${zh.export.exporting}${busy.context !== context ? `（${zh.export.earlier}）` : ""}${counting ? ` · ${pct(busy.progress)}` : ""}`}
         </ActivityProgress>}
-      {running && <p className="mt-2 text-xs text-muted">Your export continues in the background while you edit.</p>}
+      {running && <p className="mt-2 text-xs text-muted">{zh.export.background}</p>}
     </div>}
     {exported && <p className="mt-3 flex items-center gap-2 text-xs" role="status">
       {exportedCurrentEdit && <Icon name="check" />}
       <span className="truncate" title={exported.path} data-log-private>{exported.path.split(/[\\/]/).pop()}</span>
-      {!exportedCurrentEdit && <span className="shrink-0 text-muted">· Earlier edit</span>}
-      <button className="btn-quiet shrink-0" data-log-control="reveal-export" onClick={() => { setRevealError(""); void desktop.revealPath(exported.path).catch(e => setRevealError(errorMessage(e))); }}>Show in folder</button>
+      {!exportedCurrentEdit && <span className="shrink-0 text-muted">· {zh.export.earlier}</span>}
+      <button className="btn-quiet shrink-0" data-log-control="reveal-export" onClick={() => { setRevealError(""); void desktop.revealPath(exported.path).catch(e => setRevealError(errorMessage(e))); }}>{zh.export.showInFolder}</button>
     </p>}
     <InlineError>{(failed || revealError) && <span data-log-private>{failed ? job.error : revealError}</span>}</InlineError>
   </Modal>;
@@ -199,15 +200,15 @@ function HandoffSummary({ summary }: { summary?: { bytes?: number; files: number
   if (!summary) return null;
   const { losses } = summary;
   return <div className="text-xs">
-    <p className="text-muted">A folder for finishing the edit in DaVinci Resolve, Final Cut Pro or Premiere Pro.</p>
+    <p className="text-muted">{zh.export.folderSummary}</p>
     <ul className="mt-2 list-disc space-y-1 pl-4">
-      <li>The timeline: cuts, tracks, zooms, volume, fades, markers and graphics</li>
-      <li>A copy of the footage{summary.files ? <span className="text-muted"> · {summary.files} {summary.files === 1 ? "file" : "files"}{summary.bytes !== undefined ? `, ${fmtBytes(summary.bytes)}` : ""}</span> : null}</li>
-      {summary.captions && <li>The captions, as a SubRip file</li>}
-      <li>A Read me with how to open it in each app</li>
+      <li>{zh.export.timeline}：剪点、轨道、缩放、音量、淡入淡出、标记和图形</li>
+      <li>{zh.export.footage}{summary.files ? <span className="text-muted"> · {summary.files} {summary.files === 1 ? "file" : "files"}{summary.bytes !== undefined ? `, ${fmtBytes(summary.bytes)}` : ""}</span> : null}</li>
+      {summary.captions && <li>字幕文件（SubRip）</li>}
+      <li>{zh.export.readme}</li>
     </ul>
     {losses.length > 0 && <>
-      <p className="mt-3 text-muted">Doesn’t carry over</p>
+      <p className="mt-3 text-muted">{zh.export.notCarried}</p>
       <ul className="mt-1 list-disc space-y-1 pl-4">
         {losses.slice(0, SHOWN_LOSSES).map((loss, i) => <li key={i}>{loss.at !== undefined && <span className="tnum text-muted">{clock(loss.at)} </span>}{loss.what}</li>)}
         {losses.length > SHOWN_LOSSES && <li className="text-muted">{losses.length - SHOWN_LOSSES} more, listed in the Read me</li>}

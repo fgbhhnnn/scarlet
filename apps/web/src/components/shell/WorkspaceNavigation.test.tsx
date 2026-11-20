@@ -12,7 +12,7 @@ it("omits a notification button", async () => {
   const root = createRoot(container);
   try {
     await act(async () => root.render(<MemoryRouter><WindowActions /></MemoryRouter>));
-    expect(container.querySelector('[aria-label="Settings"]')).toBeTruthy();
+    expect(container.querySelector('[aria-label="设置"]')).toBeTruthy();
     expect(container.querySelector('[aria-label^="Notifications"]')).toBeNull();
   } finally {
     await act(async () => root.unmount());

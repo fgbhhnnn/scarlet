@@ -4,6 +4,7 @@ import { Link, NavLink } from "react-router-dom";
 import { IS_MOCK } from "../../lib/client";
 import { Icon } from "../ui/primitives";
 import { ConnectionStatus } from "./StatusIndicators";
+import { zh } from "../../lib/zh";
 
 /** `description` explains a visual mark. `floating` lets the menu escape a scrolling container. */
 export function Dropdown({ button, children, align = "left", width = 260, label, above = false, description, floating = false }: { button: ReactNode; children: (close: () => void) => ReactNode; align?: "left" | "right"; width?: number; label: string; above?: boolean; description?: string; floating?: boolean }) {
@@ -130,9 +131,9 @@ export function MenuItem({ onClick, children, to, danger, disabled, title }: { o
 
 export function WindowActions({ inSettings = false }: { inSettings?: boolean }) {
   return <div className="flex shrink-0 items-center gap-1">
-      {IS_MOCK && <span className="demo-tag" title="This workspace uses sample projects">Demo</span>}
+      {IS_MOCK && <span className="demo-tag" title="当前工作区使用示例项目">{zh.shell.demo}</span>}
       <ConnectionStatus />
 
-      {!inSettings && <NavLink to="/settings" aria-label="Settings" title="Settings" className="btn-icon"><Icon name="settings" size={16} /></NavLink>}
+      {!inSettings && <NavLink to="/settings" aria-label={zh.shell.settings} title={zh.shell.settings} className="btn-icon"><Icon name="settings" size={16} /></NavLink>}
   </div>;
 }

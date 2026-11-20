@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import type { ProjectActivity, ProjectSummary } from "@scarlet/shared";
 import { api, errorMessage, IS_DESKTOP } from "../lib/client";
 import { absTime, clock, plural, relTime } from "../lib/format";
+import { zh } from "../lib/zh";
 import { isEditableTarget } from "../lib/hotkeys";
 import { useProjectStore } from "../stores/project";
 import { useUiStore } from "../stores/ui";
@@ -74,9 +75,9 @@ function usePoster(projectId: string, mediaCount: number, poster: ProjectSummary
  * "Caching paused". A job under way gives how far it has got once there is a figure, and never says 100%.
  */
 function activityLabel(activity: ProjectActivity): string {
-  const name = { editing: "Editing", importing: "Importing", transcribing: "Transcribing", caching: "Caching" }[activity.kind];
-  if (activity.paused) return `${name} paused`;
-  if (activity.kind === "importing") return `Importing ${plural(activity.count ?? 1, "file")}`;
+  const name = { editing: "剪辑中", importing: zh.terms.import, transcribing: "转写中", caching: "缓存中" }[activity.kind];
+  if (activity.paused) return `${name}已暂停`;
+  if (activity.kind === "importing") return `正在${zh.terms.import} ${activity.count ?? 1} 个文件`;
   return activity.fraction === undefined ? name : `${name} ${Math.min(99, Math.floor(activity.fraction * 100))}%`;
 }
 
@@ -118,37 +119,37 @@ function ProjectActions({ project }: { project: ProjectSummary }) {
   return <>
     <div className="project-actions">
       <Dropdown label={`Actions for ${project.name}`} align="right" width={176}
-        button={<span className="btn-icon" title="Project actions"><Icon name="more" size={18} /></span>}>
+        button={<span className="btn-icon" title={zh.project.actions}><Icon name="more" size={18} /></span>}>
         {close => <>
-          <MenuItem onClick={() => { close(); setName(project.name); setError(""); setDialog("rename"); }}>Rename</MenuItem>
-          <MenuItem onClick={() => { close(); void save({ archived: !project.archived }); }}>{project.archived ? "Unarchive" : "Archive"}</MenuItem>
+          <MenuItem onClick={() => { close(); setName(project.name); setError(""); setDialog("rename"); }}>{zh.project.rename}</MenuItem>
+          <MenuItem onClick={() => { close(); void save({ archived: !project.archived }); }}>{project.archived ? zh.project.unarchive : zh.project.archive}</MenuItem>
           {(project.mediaPaused || project.activity?.some(a => a.kind !== "editing")) && (
-            <MenuItem disabled={busy} title={project.mediaPaused ? "Resume media processing" : "Pause media processing"}
+            <MenuItem disabled={busy} title={project.mediaPaused ? zh.project.resumeMedia : zh.project.pauseMedia}
               onClick={() => { close(); void save({ mediaPaused: !project.mediaPaused }); }}>
-              {project.mediaPaused ? "Resume" : "Pause"}
+              {project.mediaPaused ? zh.project.resume : zh.project.pause}
             </MenuItem>
           )}
-          <MenuItem danger onClick={() => { close(); setError(""); setDialog("trash"); }}>Move to Trash</MenuItem>
+          <MenuItem danger onClick={() => { close(); setError(""); setDialog("trash"); }}>{zh.project.moveToTrash}</MenuItem>
         </>}
       </Dropdown>
     </div>
     {!dialog && <InlineError>{error}</InlineError>}
     {/* A rename given up on takes its failure with it: left behind, it would show under the project's row. */}
-    <Modal open={dialog === "rename"} onClose={() => { if (!busy) { setDialog(null); setError(""); } }} title="Rename project">
+    <Modal open={dialog === "rename"} onClose={() => { if (!busy) { setDialog(null); setError(""); } }} title={zh.project.rename}>
       <form onSubmit={e => { e.preventDefault(); if (name.trim()) void save({ name: name.trim() }); }}>
-        <Field label="Project name" htmlFor={`rename-${project.id}`}>
+        <Field label={zh.project.projectName} htmlFor={`rename-${project.id}`}>
           <input autoFocus id={`rename-${project.id}`} className="field" value={name} onChange={e => setName(e.target.value)} />
         </Field>
         <InlineError>{error}</InlineError>
         <div className="flex justify-end gap-2 mt-3">
-          <button type="button" className="btn-ghost" disabled={busy} onClick={() => { setDialog(null); setError(""); }}>Cancel</button>
-          <button className="btn-primary" disabled={busy || !name.trim()}>Save</button>
+          <button type="button" className="btn-ghost" disabled={busy} onClick={() => { setDialog(null); setError(""); }}>{zh.common.cancel}</button>
+          <button className="btn-primary" disabled={busy || !name.trim()}>{zh.common.save}</button>
         </div>
       </form>
     </Modal>
     {dialog === "trash" && <ConfirmDialog open onClose={() => setDialog(null)} danger
-      title={`Move “${project.name}” to Trash?`} confirmLabel="Move to Trash"
-      body="You can restore this project and its footage from Trash for 30 days."
+      title={zh.project.moveToTrashQuestion(project.name)} confirmLabel={zh.project.moveToTrash}
+      body="项目和素材可在废纸篓中恢复 30 天。"
       onConfirm={() => remove(project.id)} />}
   </>;
 }
@@ -190,25 +191,25 @@ function ProjectCard({ p, notice, selected, selecting, onSelect, nested = false,
     {/* The count and the words of the project's chat: the calls, questions and suggestions that wait on the editor. */}
     <div className="project-review" id={`project-review-${p.id}`}>
       {p.pendingChanges > 0
-        ? <span className="review-badge"><i aria-hidden />{p.pendingChanges} {p.pendingChanges === 1 ? "needs" : "need"} you</span>
-        : <span className="sr-only">Nothing needs you</span>}
+        ? <span className="review-badge"><i aria-hidden />{zh.project.needsYou(p.pendingChanges)}</span>
+        : <span className="sr-only">{zh.project.nothingNeedsYou}</span>}
     </div>
     <time className="project-date" dateTime={p.updatedAt} title={absTime(p.updatedAt)}>{relTime(p.updatedAt)}</time>
   </>;
   return (
-    <Dropzone onFiles={start} onPaths={startPaths} label={`Add files to ${p.name}`} notice={notice} className={`project-card${selected ? " is-selected" : ""}${nested ? " is-short" : ""}`}>
+    <Dropzone onFiles={start} onPaths={startPaths} label={zh.project.addFiles(p.name)} notice={notice} className={`project-card${selected ? " is-selected" : ""}${nested ? " is-short" : ""}`}>
       <div className="project-entry" {...flip}>
-        <label className="project-selector" title={`Select ${p.name} · Shift-click to select a range`}>
+        <label className="project-selector" title={`选择${p.name} · 按住 Shift 点击可选择范围`}>
           <input ref={checkbox} id={checkboxId} type="checkbox" aria-label={`Select ${p.name}`} checked={selected}
             onChange={e => onSelect((e.nativeEvent as MouseEvent).shiftKey)} />
         </label>
         {selecting
           ? <label className="project-link" htmlFor={checkboxId} onClickCapture={onRowClick}>{contents}</label>
-          : <Link to={`/p/${p.id}`} className="project-link" aria-label={`Open ${p.name}`}
+          : <Link to={`/p/${p.id}`} className="project-link" aria-label={zh.project.openProject(p.name)}
               aria-describedby={`project-meta-${p.id}${p.activity?.length ? ` project-activity-${p.id}` : ""} project-review-${p.id}`} onClick={onRowClick}>{contents}</Link>}
         {!selecting && <ProjectActions project={p} />}
       </div>
-      {pending > 0 && <small role="status">Adding {plural(pending, "file")}…</small>}
+      {pending > 0 && <small role="status">{zh.project.adding(pending)}</small>}
       <UploadList items={items} onDismiss={dismiss} />
     </Dropzone>
   );
@@ -301,8 +302,8 @@ function ProjectCollection({ projects, view, archived, notice, selectionSlot, se
 
   // The box that selects every project shown. The list has it in its heading row, in line with each row's own box. The
   // grid has no heading row, so there it sits beside the layout switch. No row is kept for it.
-  const selectAll = (className: string) => <label className={className} title="Select all visible projects">
-    <input type="checkbox" aria-label="Select all visible projects" disabled={busy} checked={count === projects.length}
+  const selectAll = (className: string) => <label className={className} title={zh.project.selectAll}>
+    <input type="checkbox" aria-label={zh.project.selectAll} disabled={busy} checked={count === projects.length}
       ref={box => { if (box) box.indeterminate = count > 0 && count < projects.length; }} onChange={e => selectVisible(e.target.checked)} />
   </label>;
   // How many are selected and what can be done with them, there only while something is. It sits on the row that
@@ -310,23 +311,23 @@ function ProjectCollection({ projects, view, archived, notice, selectionSlot, se
   // its own, so no project moves from under the pointer when it comes in. In the grid it is outside the fieldset, so
   // its buttons are turned off here while a batch runs.
   const selection = count > 0 && <div className="library-selection-bar">
-    <span aria-hidden>{count} selected</span>
-    <button className="btn-ghost" disabled={busy} onClick={() => void apply("archive")}>{archived ? "Unarchive" : "Archive"}</button>
-    <button className="btn-ghost" disabled={busy} onClick={() => setTrashOpen(true)}><Icon name="trash" size={14} /> Move to Trash</button>
-    <button className="btn-quiet" disabled={busy} onClick={() => selectVisible(false)}>Clear selection</button>
+    <span aria-hidden>{zh.project.selected(count)}</span>
+    <button className="btn-ghost" disabled={busy} onClick={() => void apply("archive")}>{archived ? zh.project.unarchive : zh.project.archive}</button>
+    <button className="btn-ghost" disabled={busy} onClick={() => setTrashOpen(true)}><Icon name="trash" size={14} /> {zh.project.moveToTrash}</button>
+    <button className="btn-quiet" disabled={busy} onClick={() => selectVisible(false)}>{zh.common.clear}</button>
     {busy && <Spinner />}
   </div>;
   return <>
     {view === "grid" && selectionSlot && createPortal(selection, selectionSlot)}
     {view === "grid" && selectAllSlot && createPortal(selectAll("library-select-all"), selectAllSlot)}
     <fieldset disabled={busy} className="min-w-0" aria-label="Project library">
-      <span className="sr-only" role="status">{count ? `${count} selected` : ""}</span>
+      <span className="sr-only" role="status">{count ? zh.project.selected(count) : ""}</span>
       <InlineError>{error}</InlineError>
       <div className={`project-collection ${view}`}>
         {/* The column of what needs the editor has no heading: a row that has something there says so in its own words. */}
         {view === "list" && <div className="project-columns">
           {selectAll("project-selector")}
-          <span aria-hidden>Project</span><span /><span aria-hidden>Last edited</span>
+          <span aria-hidden>{zh.common.project}</span><span /><span aria-hidden>{zh.project.lastEdited}</span>
           {selection}
         </div>}
         {withShorts(projects).map(({ p, nested, shorts }) => <ProjectCard key={p.id} p={p} notice={notice} selected={selected.has(p.id)}
@@ -334,8 +335,8 @@ function ProjectCollection({ projects, view, archived, notice, selectionSlot, se
       </div>
     </fieldset>
     {trashOpen && count > 0 && <ConfirmDialog open danger onClose={() => { if (!busy) setTrashOpen(false); }}
-      title={`Move ${plural(batchSize || count, "project")} to Trash?`} confirmLabel="Move to Trash"
-      body="Projects and their footage can be restored from Trash for 30 days."
+      title={`将 ${batchSize || count} 个项目移到废纸篓？`} confirmLabel={zh.project.moveToTrash}
+      body="项目和素材可在废纸篓中恢复 30 天。"
       onConfirm={() => apply("trash")} />}
   </>;
 }
@@ -357,21 +358,21 @@ export function ImportUrlModal({ projectId, open, notice, onClose }: { projectId
     <Modal
       open={open}
       onClose={onClose}
-      title="Add from a link"
+      title={zh.create.addFromLink}
       footer={
         <>
           <button className="btn-ghost" onClick={onClose}>
-            Cancel
+            {zh.common.cancel}
           </button>
           <button type="submit" form="import-link" className="btn-primary" disabled={!url.trim()}>
-            Add
+            {zh.create.add}
           </button>
         </>
       }
     >
       {notice && <p className="text-muted text-[12px] mb-3">{notice}</p>}
       <form id="import-link" onSubmit={e => { e.preventDefault(); run(); }}>
-        <Field label="Link or file path" htmlFor="import-url">
+        <Field label={zh.create.linkOrPath} htmlFor="import-url">
           <input id="import-url" className="field" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://drive.google.com/file/d/…" autoFocus />
         </Field>
       </form>
@@ -384,25 +385,25 @@ function FirstEditGuide() {
     <>
       <ol className="first-edit-steps">
         <li>
-          <h3>Add your footage</h3>
-          <p>Drop a clip onto Projects or choose <strong>New project</strong>.</p>
+          <h3>{zh.create.addFootage}</h3>
+          <p>把素材拖到项目库，或选择<strong>{zh.create.newProject}</strong>。</p>
         </li>
         <li>
-          <h3>Ask for an edit</h3>
-          <p>Close Media, then type or say “Trim the silence before my first word.”</p>
-          <p>If prompted, connect Claude, ChatGPT or Google under <strong>More → Set up a model</strong>.</p>
+          <h3>{zh.create.askEdit}</h3>
+          <p>关闭媒体面板，然后输入或说出剪辑要求。</p>
+          <p>如有提示，请在<strong>更多 → 设置模型</strong>中连接 Claude、ChatGPT 或 Google。</p>
         </li>
         <li>
-          <h3>Play it back</h3>
-          <p>Play the edit on the timeline. Choose <strong>Revise</strong> to adjust it or <strong>Export</strong> to save an MP4.</p>
+          <h3>{zh.create.playback}</h3>
+          <p>在时间线上播放成片，选择<strong>审阅</strong>进行调整，或选择<strong>{zh.terms.export}</strong>保存 MP4。</p>
         </li>
       </ol>
       <details className="first-edit-skills">
-        <summary>Teach Scarlet your editing style <Icon name="chevron" size={13} /></summary>
-        <p>To reuse editing instructions, type <strong>/</strong> in chat and choose <strong>Create a skill</strong>.</p>
-        <p>Scarlet can also suggest a rule when you ask for an edit like this.</p>
-        <blockquote>“For interviews, always leave a beat after a difficult question.”</blockquote>
-        <p>Review the rule in <strong>More → Learnings</strong>. Choose a skill and press <strong>Approve</strong> to save it.</p>
+        <summary>教 Scarlet 了解你的剪辑风格 <Icon name="chevron" size={13} /></summary>
+        <p>要重复使用剪辑指令，请在聊天中输入<strong>/</strong>并选择<strong>创建技能</strong>。</p>
+        <p>当你提出类似剪辑要求时，Scarlet 也会建议规则。</p>
+        <blockquote>“采访中遇到难答的问题后，始终保留一拍停顿。”</blockquote>
+        <p>在<strong>更多 → 学习</strong>中审阅规则，选择技能并按<strong>批准</strong>保存。</p>
       </details>
     </>
   );
@@ -524,30 +525,30 @@ export function ProjectsPage() {
 
   const empty = !list.length && !archived && status === "ready";
   const newProject = <button type="button" className="btn-primary" onClick={() => begin([])}>
-    <Icon name="plus" size={15} /> New project
+    <Icon name="plus" size={15} /> {zh.create.newProject}
   </button>;
   const quickStart = <button type="button" className="btn-quiet" aria-haspopup="dialog" onClick={() => setDialog("guide")}>
-    Quick start {empty && <Icon name="arrow" size={14} />}
+    {zh.create.quickStart} {empty && <Icon name="arrow" size={14} />}
   </button>;
 
   return (
     <div className="flex-1 overflow-y-auto">
-      <Dropzone onFiles={sources => begin(Array.from(sources))} onPaths={begin} label="Create a project from these files" notice={notice} className="min-h-full">
+      <Dropzone onFiles={sources => begin(Array.from(sources))} onPaths={begin} label={zh.create.dropToCreate} notice={notice} className="min-h-full">
         <main className={empty ? "library-page library-welcome" : "library-page"}>
           <header className="library-heading">
-            <h1>Projects</h1>
+            <h1>{zh.common.projects}</h1>
             <span ref={setSelectionSlot} className="contents" />
             <div className="flex-1" />
             {list.length > 0 && quickStart}
             {(archived || list.some(p => p.archived)) && <div className="view-switch library-filter" role="group" aria-label="Project status">
-              <button aria-pressed={!archived} onClick={() => setArchived(false)}>Active</button>
-              <button aria-pressed={archived} onClick={() => setArchived(true)}>Archived</button>
+              <button aria-pressed={!archived} onClick={() => setArchived(false)}>{zh.project.active}</button>
+              <button aria-pressed={archived} onClick={() => setArchived(true)}>{zh.project.archived}</button>
             </div>}
             <TrashButton />
             <span ref={setSelectAllSlot} className="contents" />
             {list.length > 0 && <div className="view-switch" role="group" aria-label="Project layout">
-              <button aria-label="List view" aria-pressed={view === "list"} title="List view" onClick={() => chooseView("list")}><Icon name="diff" size={15} /></button>
-              <button aria-label="Grid view" aria-pressed={view === "grid"} title="Grid view" onClick={() => chooseView("grid")}><Icon name="library" size={14} /></button>
+              <button aria-label="List view" aria-pressed={view === "list"} title={zh.project.listView} onClick={() => chooseView("list")}><Icon name="diff" size={15} /></button>
+              <button aria-label="Grid view" aria-pressed={view === "grid"} title={zh.project.gridView} onClick={() => chooseView("grid")}><Icon name="library" size={14} /></button>
             </div>}
             {!empty && newProject}
             <WindowActions />
@@ -558,13 +559,13 @@ export function ProjectsPage() {
           ) : status === "error" && !list.length ? (
             <ErrorState body={error ?? undefined} onRetry={() => void loadList(true)} />
           ) : archived && !projects.length ? (
-            <EmptyState title="No archived projects" action={<button className="btn-ghost" onClick={() => setArchived(false)}>View active projects</button>} />
+            <EmptyState title={zh.project.noArchived} action={<button className="btn-ghost" onClick={() => setArchived(false)}>{zh.project.viewActive}</button>} />
           ) : list.length > 0 && !projects.length ? (
-            <EmptyState title="No active projects" action={<button className="btn-ghost" onClick={() => setArchived(true)}>View archived projects</button>} />
+            <EmptyState title={zh.project.noActive} action={<button className="btn-ghost" onClick={() => setArchived(true)}>{zh.project.viewArchived}</button>} />
           ) : empty ? (
             <section className="library-first-edit" aria-labelledby="first-edit-title">
-              <h2 id="first-edit-title">Make your first edit</h2>
-              <p>Drop your footage here, then tell Scarlet what you’d like to change.</p>
+              <h2 id="first-edit-title">{zh.create.firstEdit}</h2>
+              <p>{zh.create.firstEditBody}</p>
               <div className="first-edit-actions">{newProject}{quickStart}</div>
             </section>
           ) : (
@@ -574,45 +575,45 @@ export function ProjectsPage() {
         </main>
       </Dropzone>
 
-      <Modal open={dialog === "guide"} onClose={() => setDialog(null)} title="Quick start" width={480} footer={newProject}>
+      <Modal open={dialog === "guide"} onClose={() => setDialog(null)} title={zh.create.quickStart} width={480} footer={newProject}>
         <FirstEditGuide />
       </Modal>
       <Modal
         open={dialog === "create"}
         onClose={() => { if (!busy) { setDialog(null); setErr(null); } }}
-        title="New project"
+        title={zh.create.newProject}
         footer={
           <>
-            <button className="btn-ghost" disabled={busy} onClick={() => { setDialog(null); setErr(null); }}>Cancel</button>
+            <button className="btn-ghost" disabled={busy} onClick={() => { setDialog(null); setErr(null); }}>{zh.common.cancel}</button>
             <button type="submit" form="new-project" className="btn-primary" disabled={!name.trim() || busy}>
-              {busy && <Spinner className="size-3" />} {files.length ? "Create and import" : "Create project"}
+              {busy && <Spinner className="size-3" />} {files.length ? zh.create.createAndImport : zh.create.create}
             </button>
           </>
         }
       >
         <form id="new-project" onSubmit={e => { e.preventDefault(); void create(); }}>
-          <Dropzone onFiles={sources => addFootage(Array.from(sources))} onPaths={addFootage} label="Drop to add videos" notice={notice}>
-            <Field label="Project name" htmlFor="np-name">
-              <input id="np-name" className="field" value={name} required disabled={busy} onChange={e => setName(e.target.value)} placeholder="Enter a name" />
+          <Dropzone onFiles={sources => addFootage(Array.from(sources))} onPaths={addFootage} label={zh.create.dropVideos} notice={notice}>
+            <Field label={zh.project.projectName} htmlFor="np-name">
+              <input id="np-name" className="field" value={name} required disabled={busy} onChange={e => setName(e.target.value)} placeholder={zh.create.enterName} />
             </Field>
             <fieldset>
-              <legend className="label">Media files</legend>
+              <legend className="label">{zh.create.mediaFiles}</legend>
               <input ref={fileInput} type="file" hidden multiple accept={ACCEPTED_MEDIA} onChange={e => {
                 if (e.target.files) addFootage(Array.from(e.target.files));
                 e.target.value = "";
               }} />
               <button type="button" className="btn-ghost" aria-describedby="np-file-types" disabled={busy} onClick={() => void pick()}>
-                {files.length ? "Add files…" : "Choose files…"}
+                {files.length ? zh.create.addFiles : zh.create.chooseFiles}
               </button>
               {/* Each file has its own ×: Clear is for a longer list. */}
-              {files.length > 1 && <button type="button" className="btn-quiet" disabled={busy} onClick={() => selectFootage([])}>Clear</button>}
+              {files.length > 1 && <button type="button" className="btn-quiet" disabled={busy} onClick={() => selectFootage([])}>{zh.common.clear}</button>}
               <p id="np-file-types" className="sr-only">{MEDIA_FORMAT_HINT}</p>
             </fieldset>
             {files.length > 0 && <>
               <ul aria-label="Selected files" className="new-project-files">
                 {files.map((file, index) => <li key={sourceKey(file)}>
                   <span>{filename(file)}</span>
-                  <button type="button" className="new-project-file-remove" aria-label={`Remove ${filename(file)}`} title="Remove" disabled={busy}
+                  <button type="button" className="new-project-file-remove" aria-label={`Remove ${filename(file)}`} title={zh.common.remove} disabled={busy}
                     onClick={() => removeFootage(index)}><Icon name="x" size={11} /></button>
                 </li>)}
               </ul>

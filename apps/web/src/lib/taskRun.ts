@@ -384,9 +384,9 @@ export type RunLine = { kind: RunItem["kind"]; text: string; took?: number; live
 export function runLines(task: Task, events: readonly TaskEvent[], items: readonly RunItem[], now: number): RunLine[] {
   // Each line also keeps how it reads while it's still going, for the live last line.
   const lines: Array<RunLine & { start?: number; parts?: string[]; doing?: string[] }> = [];
-  const join = (parts: string[]) => parts.length === 2 ? parts.join("，") : `${parts.slice(0, -1).join("、")} 和 ${parts.at(-1)}`;
+  const join = (parts: string[]) => parts.join(parts.length === 2 ? "，" : "、");
   const lower = (text: string) => text.charAt(0).toLowerCase() + text.slice(1);
-  const stepText = (verb: string, detail: string) => `${verb}${/[\u4e00-\u9fff]$/.test(verb) ? "" : " "}${detail}`;
+  const stepText = (verb: string, detail: string) => `${verb}${/[\u4e00-\u9fff]$/.test(verb) && /^[\u4e00-\u9fff]/.test(detail) ? "" : " "}${detail}`;
   for (const item of items) {
     if (item.kind === "note") { lines.push({ kind: "note", text: item.text }); continue; }
     const text = stepText(item.verb, item.detail);

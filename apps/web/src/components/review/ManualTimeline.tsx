@@ -56,6 +56,7 @@ export function ManualTimeline({ open, projectId, timeline, media, fps, canEdit,
   const firstVideo = visualAssets.find(asset => asset.kind === "video");
   const canAddFirstVideo = !!v1 && v1.clips.length === 0 && !!firstVideo &&
     (firstVideo.duration ?? 0) >= 1 / fps;
+  const canUseFirstVideoAction = canEdit || !!onAddFirstVideo;
   const disabled = !timeline || !canEdit || busy;
   const start = selected?.timelineIn ?? 0;
   const end = selected ? clipEnd(selected) : 0;
@@ -173,9 +174,13 @@ export function ManualTimeline({ open, projectId, timeline, media, fps, canEdit,
     {busy && <p role="status">正在保存剪辑…</p>}
     {(error || moveError) && <p className="simple-error" role="alert">{error || moveError}</p>}
     {timeline && <>
-      {canAddFirstVideo && <button type="button" className={toolClass} disabled={disabled}
+      {canAddFirstVideo && <button type="button" className={toolClass} disabled={busy || addingFirstVideo || !canUseFirstVideoAction}
         onClick={() => {
           if (!v1 || !firstVideo || !(firstVideo.duration && firstVideo.duration >= 1 / fps)) return;
+          if (onAddFirstVideo) {
+            void addFirstVideo();
+            return;
+          }
           const clip = makeMediaClip(firstVideo.id, 0, firstVideo.duration, 0, { label: firstVideo.name });
           void submit([{ op: "addClip", trackId: v1.id, clip }], "将首个视频添加到 V1");
         }}>

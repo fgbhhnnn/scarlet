@@ -80,6 +80,17 @@ describe("ManualTimeline first video", () => {
     expect(firstVideoButton()).toBeUndefined();
     expect(manual.apply).not.toHaveBeenCalled();
   });
+
+  it("keeps the first-video action enabled on an initialized empty timeline", async () => {
+    const onAddFirstVideo = vi.fn().mockResolvedValue(undefined);
+    await show({ canEdit: false, onAddFirstVideo });
+    const button = firstVideoButton();
+    expect(button).toBeTruthy();
+    expect(button!.disabled).toBe(false);
+    await act(async () => button!.click());
+    expect(onAddFirstVideo).toHaveBeenCalledOnce();
+    expect(manual.apply).not.toHaveBeenCalled();
+  });
 });
 
 it("keeps the V1 entry point enabled even when the empty workspace is read-only", async () => {

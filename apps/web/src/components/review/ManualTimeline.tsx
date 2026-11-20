@@ -20,7 +20,7 @@ function clipName(clip: Clip, media: ReadonlyMap<string, MediaAsset>) {
   return clip.label || media.get(clip.mediaId)?.name || "素材";
 }
 
-export function ManualTimeline({ open, projectId, timeline, media, fps, canEdit, onClose, onMedia }: {
+export function ManualTimeline({ open, projectId, timeline, media, fps, canEdit, onClose, onMedia, onAddFirstVideo }: {
   open: boolean;
   projectId: string;
   timeline?: Timeline;
@@ -29,6 +29,7 @@ export function ManualTimeline({ open, projectId, timeline, media, fps, canEdit,
   canEdit: boolean;
   onClose(): void;
   onMedia(): void;
+  onAddFirstVideo?(): Promise<void>;
 }) {
   const cursorSeconds = usePlayerStore(state => open ? state.time : 0);
   const { apply, undo, redo, canUndo, canRedo, busy, error } = useManualEdits(projectId, timeline);
@@ -37,6 +38,7 @@ export function ManualTimeline({ open, projectId, timeline, media, fps, canEdit,
   const [dragged, setDragged] = useState<string>();
   const dragOffset = useRef(0);
   const [moveError, setMoveError] = useState("");
+  const [addingFirstVideo, setAddingFirstVideo] = useState(false);
   const seconds = useMemo(() => timeline ? timelineDuration(timeline) : 0, [timeline]);
   const mediaById = useMemo(() => new Map(media.map(asset => [asset.id, asset])), [media]);
   const visualAssets = useMemo(() => media.filter(asset =>
@@ -59,6 +61,19 @@ export function ManualTimeline({ open, projectId, timeline, media, fps, canEdit,
   function submit(ops: TimelineOp[], label: string) {
     setMoveError("");
     return apply(ops, label);
+  }
+
+  async function addFirstVideo() {
+    if (!onAddFirstVideo || addingFirstVideo) return;
+    setMoveError("");
+    setAddingFirstVideo(true);
+    try {
+      await onAddFirstVideo();
+    } catch (cause) {
+      setMoveError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setAddingFirstVideo(false);
+    }
   }
 
   function seek(time: number) {
@@ -144,7 +159,13 @@ export function ManualTimeline({ open, projectId, timeline, media, fps, canEdit,
       <button type="button" className={toolClass} onClick={onClose}>关闭</button>
     </div>
     {!canEdit && timeline && <p role="status">回到当前成片的预览后即可编辑。</p>}
-    {!timeline && <p role="status">导入素材后即可编辑时间线。</p>}
+    {!timeline && <>
+      <p role="status">导入素材后即可编辑时间线。</p>
+      <button type="button" className={toolClass} disabled={!canEdit || !onAddFirstVideo || addingFirstVideo}
+        onClick={() => void addFirstVideo()}>
+        {addingFirstVideo ? "正在添加…" : "将首个视频添加到 V1"}
+      </button>
+    </>}
     {busy && <p role="status">正在保存剪辑…</p>}
     {(error || moveError) && <p className="simple-error" role="alert">{error || moveError}</p>}
     {timeline && <>

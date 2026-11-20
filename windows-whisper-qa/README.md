@@ -41,6 +41,18 @@ try {
 
 如果 SPIRV-Headers 配置由本机单独安装，把其 CMake 安装前缀加入 `CMAKE_PREFIX_PATH`。保留 `build.log`，确认 CPU 和 Vulkan 各出现一次 `Adding CPU backend variant ggml-cpu:`，这两行的架构参数应为空。构建产物位于 `apps/desktop/src-tauri/binaries/`。
 
+构建脚本改变后，Actions 的 native-runtime 缓存必须失效。Windows checkout 使用 CRLF 时，本分支预期缓存键为 `native-runtimes-x86_64-pc-windows-msvc-vulkan-1.4.363.1-56701587cfe86b3c24b88469efee4ba0ea55ecacb195840af44f5bdced571ca8`。复测脚本会把按两个构建脚本 SHA-256 摘要计算出的完整键写入 `report.json`，可与构建日志的 cache key 对照。
+
+构建日志可在 PowerShell 中加一道门，防止误用旧的 AVX2 产物。
+
+~~~powershell
+$Configures = @(Select-String -LiteralPath (Join-Path $Evidence 'build.log') -Pattern 'Adding CPU backend variant ggml-cpu:')
+if ($Configures.Count -ne 2) { throw "Expected CPU and Vulkan configure lines, found $($Configures.Count)" }
+if ($Configures | Where-Object { $_.Line -match '/arch:|GGML_(AVX|AVX2|FMA|F16C|BMI2)' }) {
+    throw 'The candidate still advertises AVX-family or BMI2 CPU flags.'
+}
+~~~
+
 ## 转写并留证
 
 将 $Model 指向 Scarlet 已下载的多语模型 ggml-large-v3-turbo-q5_0.bin。项目固定的 SHA-256 是 394221709cd5ad1f40c46e6031ca61bce88931e6e088c188294c6d5a55ffa7e2。同一次对比使用同一模型和 WAV。

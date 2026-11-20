@@ -20,7 +20,6 @@ $Model = (Resolve-Path -LiteralPath $Model).Path
 $Wav = (Resolve-Path -LiteralPath $Wav).Path
 $Revision = & git -C $Repository rev-parse HEAD
 if ($LASTEXITCODE -ne 0) { throw 'Cannot determine candidate commit.' }
-$Recipe = Join-Path $Repository 'apps/desktop/scripts/build-whisper.mjs'
 $Bin = Join-Path $Repository 'apps/desktop/src-tauri/binaries'
 if (!$CpuExe) { $CpuExe = Join-Path $Bin 'whisper-cli-x86_64-pc-windows-msvc.exe' }
 if (!$VulkanExe) { $VulkanExe = Join-Path $Bin 'whisper-gpu/whisper-cli.exe' }
@@ -29,9 +28,32 @@ $Run = (New-Item -ItemType Directory -Force -Path (Join-Path $OutputDirectory (G
 $HighestLeaf = [System.Runtime.Intrinsics.X86.X86Base]::CpuId(0, 0).Item1
 $Leaf1 = [System.Runtime.Intrinsics.X86.X86Base]::CpuId(1, 0)
 $Leaf7Ebx = if ($HighestLeaf -ge 7) { [System.Runtime.Intrinsics.X86.X86Base]::CpuId(7, 0).Item2 } else { 0 }
+$HasSse2 = [bool]($Leaf1.Item4 -band (1 -shl 26))
+if (!$HasSse2) { throw 'This x64 process reports no SSE2 support. Do not start either Whisper binary.' }
+
+function Get-NativeRuntimeCacheSuffix {
+    param([string[]]$Paths)
+    $Inner = [Security.Cryptography.IncrementalHash]::CreateHash([Security.Cryptography.HashAlgorithmName]::SHA256)
+    try {
+        # Keep the same file order as hashFiles(...) in desktop-build.yml. On Windows Get-FileHash sees the
+        # checked-out CRLF bytes, matching Actions' hashFiles digest.
+        foreach ($Path in $Paths) {
+            $Digest = [Convert]::FromHexString((Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash)
+            $Inner.AppendData($Digest)
+        }
+        [Convert]::ToHexString($Inner.GetHashAndReset()).ToLowerInvariant()
+    } finally { $Inner.Dispose() }
+}
+
+$WhisperRecipe = Join-Path $Repository 'apps/desktop/scripts/build-whisper.mjs'
+$SpeakerRecipe = Join-Path $Repository 'apps/desktop/scripts/build-speaker-gpu.mjs'
+$CacheSuffix = Get-NativeRuntimeCacheSuffix @($WhisperRecipe, $SpeakerRecipe)
 $Report = [ordered]@{
     commit = $Revision
-    recipeSha256 = (Get-FileHash -LiteralPath $Recipe -Algorithm SHA256).Hash
+    recipeSha256 = (Get-FileHash -LiteralPath $WhisperRecipe -Algorithm SHA256).Hash
+    cacheKey = "native-runtimes-x86_64-pc-windows-msvc-vulkan-1.4.363.1-$CacheSuffix"
+    cpuBaseline = 'x64 SSE2, AVX2 not required'
+    cpuPreflight = [ordered]@{ passed = $true; SSE2 = $HasSse2 }
     os = Get-CimInstance Win32_OperatingSystem | Select-Object Caption, Version, BuildNumber, OSArchitecture
     cpu = @(Get-CimInstance Win32_Processor | Select-Object Name, Architecture, NumberOfCores, NumberOfLogicalProcessors)
     cpuFeatures = [ordered]@{

@@ -387,6 +387,8 @@ export const Project = z.object({
   id: Id,
   archived: z.boolean().optional(),
   branch: z.string().optional(),
+  /** OpenAI-compatible provider selected for this project's agent tasks. */
+  providerId: z.string().trim().max(80).optional(),
   name: z.string(),
   settings: ProjectSettings,
   media: z.array(MediaAsset).default([]),

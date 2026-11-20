@@ -715,6 +715,12 @@ export class ScarletClient {
   retryTask(taskId: string, body: RunChoice = {}) {
     return this.post<{ task: Task }>(`/tasks/${taskId}/retry`, body);
   }
+  testModelProvider(body: import("./api.js").ModelProviderTestRequest) {
+    return this.post<import("./api.js").ModelProviderTestResponse>("/settings/model-providers/test", body);
+  }
+  modelProviders() {
+    return this.get<{ providers: Array<Omit<import("./api.js").ModelProviderConfig, "apiKey">> }>("/settings/model-providers");
+  }
   /** Resume a run that ended without its transcripts once they're ready, or stop waiting to. Returns the resumed run when it starts now. */
   continueWhenReady(taskId: string, on: boolean) {
     return this.post<{ task: Task; resumed?: Task }>(`/tasks/${taskId}/continue-when-ready`, { on });

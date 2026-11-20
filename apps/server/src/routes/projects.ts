@@ -163,6 +163,7 @@ export function projectRoutes(ctx: Ctx) {
         if (ctx.repos.projects.formatSet(previous.id, true) || !sameHead || JSON.stringify(previous.settings) !== JSON.stringify(expectedFormat.settings))
           return requireProject(ctx, previous.id);
       }
+      if (body.providerId !== undefined && body.providerId !== null && !ctx.repos.settings.provider(body.providerId)) throw badRequest("unknown_provider", "The selected model provider is not configured.");
       const updated = ctx.repos.projects.update(previous.id, body);
       ctx.bus.publish({ type: "project.updated", projectId: updated.id, project: updated });
       if (body.mediaPaused !== undefined && body.mediaPaused !== previous.mediaPaused) ctx.db.afterCommit(() => {

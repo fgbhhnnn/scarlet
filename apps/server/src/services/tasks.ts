@@ -106,6 +106,7 @@ export function createTask(
     kind: TaskKind;
     agent: AgentId;
     model?: string;
+    providerId?: string;
     effort?: Task["effort"];
     fast?: boolean;
     serviceTier?: string;
@@ -128,7 +129,8 @@ export function createTask(
     projectId: input.projectId,
     kind: input.kind,
     agent: input.agent,
-    model: input.model,
+    model: input.model ?? (input.providerId ? ctx.repos.settings.provider(input.providerId)?.model : undefined),
+    providerId: input.providerId ?? ctx.repos.projects.header(input.projectId)?.providerId,
     effort: input.effort,
     fast: input.fast || undefined,
     serviceTier: input.serviceTier,
@@ -379,6 +381,7 @@ export function completeTask(ctx: Ctx, task: Task, body: CompleteTaskRequest): T
     ...(reply ? { reply } : {}),
     ...(needsTranscripts.length ? { needsTranscripts } : {}),
     error: body.error,
+    ...(body.failedStage ? { context: { ...task.context, failedStage: body.failedStage } } : {}),
     changeIds,
     question: null,
     finishedAt,
@@ -474,6 +477,7 @@ export function taskPrompt(ctx: Ctx, task: Task, opts: { workDir?: string; fresh
   const project = ctx.repos.projects.get(task.projectId);
   if (!project) throw notFound("project");
   const c = task.context;
+  const provider = task.providerId ? ctx.repos.settings.provider(task.providerId) : undefined;
   const editSkill = isSkillEdit(task) ? ctx.repos.skills.get(c.skillId ?? "") : undefined;
   if (isSkillEdit(task) && !editSkill) throw notFound("the skill this request revises");
   const notes = c.noteIds?.length ? ctx.repos.notes.select("project_id = ? AND id IN (SELECT value FROM json_each(?))", [task.projectId, JSON.stringify(c.noteIds)]) : undefined;
@@ -523,6 +527,7 @@ export function taskPrompt(ctx: Ctx, task: Task, opts: { workDir?: string; fresh
   });
   // Whether the host launches the CLI with its own to-do tool on.
   const plan = plans ? { plan: true } : {};
+  const providerPrompt = provider ? `\nSelected OpenAI-compatible provider: ${provider.name} (${provider.id}), model ${provider.model}. The host will supply its endpoint securely.` : "";
   if (isDialoguePass(task) && task.repeatAudit?.returns) {
     // The goal and what counts as done, not the steps: the tools say how they check and repair.
     const finish = "The dialogue pass has saved its editing work. What is left is the closing check on the current playback: " +
@@ -530,12 +535,12 @@ export function taskPrompt(ctx: Ctx, task: Task, opts: { workDir?: string; fresh
       "with its reason, or staged for the editor when you doubt it, as the skill and the editor ask. " +
       "The pass is done once dialogue_check_repeats on the current version has nothing outstanding. " +
       "Honor the editor’s scope, preferences, protected footage and decisions.";
-    return { systemPrompt, instruction: finish + "\nEditor’s request: " + firstMessage(task.instruction.trim()) +
+    return { systemPrompt: systemPrompt + providerPrompt, instruction: finish + "\nEditor’s request: " + firstMessage(task.instruction.trim()) +
       (answered ? "\nThe editor answered: " + last!.text : ""), ...plan };
   }
   return resumeSession
-    ? { systemPrompt, instruction: answered ? `The editor answered: "${last!.text.trim()}"\nContinue the task with that answer.` : INTERRUPTED, resumeSession, ...plan }
-    : { systemPrompt, instruction: firstMessage(task.instruction.trim()), ...plan };
+    ? { systemPrompt: systemPrompt + providerPrompt, instruction: answered ? `The editor answered: "${last!.text.trim()}"\nContinue the task with that answer.` : INTERRUPTED, resumeSession, ...plan }
+    : { systemPrompt: systemPrompt + providerPrompt, instruction: firstMessage(task.instruction.trim()), ...plan };
 }
 
 /**

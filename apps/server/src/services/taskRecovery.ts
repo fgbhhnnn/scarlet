@@ -24,6 +24,10 @@ function savedChanges(ctx: Ctx, tasks: Task[]) {
 /** A run that keeps losing its worker stops carrying on by itself after this many attempts, and waits for the editor. */
 const LOST_WORKER_ATTEMPTS = 3;
 
+function safeUptime(): number {
+  try { return os.uptime(); } catch { return 0; }
+}
+
 /**
  * Called with the write lock held, after the worker has stopped or surrendered the job. Scarlet stopped, not the
  * run, so the run carries on by itself and neither a quit nor a lost worker costs the editor a pass.
@@ -176,7 +180,7 @@ export function interruptTask(ctx: Ctx, taskId: string, ifStartedAt?: string, qu
 export function recoverTasks(ctx: Ctx, starting = false): void {
   const cutoff = new Date(Date.now() - 90_000).toISOString();
   // A minute's margin for a clock set since.
-  const booted = new Date(Date.now() - os.uptime() * 1000 - 60_000).toISOString();
+  const booted = new Date(Date.now() - safeUptime() * 1000 - 60_000).toISOString();
   ctx.db.transaction(() => {
     const renew = ctx.db.prepare("UPDATE tasks SET worker_seen_at = ? WHERE id = ?");
     for (const id of ctx.transcriptions.keys()) renew.run(now(), id);
@@ -328,6 +332,7 @@ function recoveryInstruction(ctx: Ctx, task: Task, rootId?: string): string {
   }
   if (!rootId) return lines.join("\n");
   lines.push("", "Resume this interrupted request. Continue only the unfinished work: the saved changes below and their states say what is done. Keep saved proposals and honor the editor’s decisions, including rejected or partially approved edits.");
+  if (task.context.failedStage) lines.push(`The previous attempt failed in stage ${task.context.failedStage}. Retry that stage only, using any checkpoint it saved.`);
   if (task.needsTranscripts?.length) {
     const ready = task.needsTranscripts.filter(id => hasTranscript(ctx, id));
     lines.push(`The previous attempt ended without the transcript of ${task.needsTranscripts.join(", ")}.${ready.length ? ` Ready now: ${ready.join(", ")}.` : ""}`);
@@ -394,7 +399,7 @@ function resumeTask(ctx: Ctx, task: Task, choice: RunChoice = {}, afterProjectSt
   if (!afterProjectStop && checkOnly) {
     const head = ctx.repos.projects.get(task.projectId)?.head;
     if (!head) throw conflict("not_retryable", "This request cannot be retried.");
-    const run = choice.agent ? { agent: choice.agent, model: choice.model, effort: choice.effort, fast: choice.fast, serviceTier: choice.serviceTier } : {};
+    const run = choice.agent || choice.model || choice.providerId ? { agent: choice.agent ?? task.agent, model: choice.model ?? task.model, providerId: choice.providerId ?? task.providerId, effort: choice.effort ?? task.effort, fast: choice.fast ?? task.fast, serviceTier: choice.serviceTier ?? task.serviceTier } : {};
     const queued = queueRepeatCheck(ctx, { ...task, ...run, repeatAudit: { ...task.repeatAudit!, returns: 0, failed: undefined } }, head);
     ctx.log(`[task] ${id} closing check retried`);
     return queued;
@@ -403,11 +408,11 @@ function resumeTask(ctx: Ctx, task: Task, choice: RunChoice = {}, afterProjectSt
   if (!action) throw conflict("not_retryable", "This request cannot be retried.");
   const resumeRootId = action === "resume" ? task.resumeRootId ?? id : undefined;
   // A new id fences off late events, proposals and completions from the previous worker.
-  const run = choice.agent ? { agent: choice.agent, model: choice.model, effort: choice.effort, fast: choice.fast, serviceTier: choice.serviceTier } : {};
+  const run = choice.agent || choice.model || choice.providerId ? { agent: choice.agent ?? task.agent, model: choice.model ?? task.model, providerId: choice.providerId ?? task.providerId, effort: choice.effort ?? task.effort, fast: choice.fast ?? task.fast, serviceTier: choice.serviceTier ?? task.serviceTier } : {};
   let retry = createTask(ctx, {
-    ...task, ...run, state: "queued", instruction: recoveryInstruction(ctx, task, resumeRootId), resumeRootId,
+    ...task, ...run, state: "queued", instruction: `${recoveryInstruction(ctx, task, resumeRootId)}${choice.stage ? `\nRetry only failed stage: ${choice.stage}.` : ""}`, resumeRootId,
     resumesAfterProjectStop: afterProjectStop || undefined,
-    context: { ...task.context, threadId: task.context.threadId ?? id, message: task.context.message ?? task.instruction },
+    context: { ...task.context, ...(choice.stage && { failedStage: undefined }), threadId: task.context.threadId ?? id, message: task.context.message ?? task.instruction },
   });
   // A request the editor started ahead of their calls was at work: it isn't put behind those calls again.
   if (task.startsBeforeCalls || (afterProjectStop && (task.repeatAudit || task.reply))) {

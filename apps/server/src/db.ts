@@ -492,6 +492,7 @@ export function openDb(path: string): Db {
   ensureProjectSource(db);
   ensureProjectRowRevision(db);
   ensureColumn(db, "projects", "editing_paused", "ALTER TABLE projects ADD COLUMN editing_paused INTEGER NOT NULL DEFAULT 0;");
+  ensureColumn(db, "projects", "provider_id", "ALTER TABLE projects ADD COLUMN provider_id TEXT;");
   return db;
 }
 

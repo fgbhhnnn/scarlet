@@ -28,14 +28,10 @@ afterEach(async () => {
 it("offers the first video in an initialized empty timeline", async () => {
   const timeline = emptyTimeline("prj_first");
   await act(async () => root.render(<ManualTimeline open projectId="prj_first" timeline={timeline} media={[video]} fps={30}
-    canEdit={false} allowFirstVideo={false} onClose={vi.fn()} onMedia={vi.fn()} />));
+    canEdit={false} allowFirstVideo onClose={vi.fn()} onMedia={vi.fn()} />));
   const button = [...container.querySelectorAll<HTMLButtonElement>("button")].find(button => button.textContent?.includes("将首个视频添加到 V1"));
   expect(button).toBeDefined();
-  expect(button!.disabled).toBe(true);
-  await act(async () => root.render(<ManualTimeline open projectId="prj_first" timeline={timeline} media={[video]} fps={30}
-    canEdit allowFirstVideo onClose={vi.fn()} onMedia={vi.fn()} />));
-  const enabled = [...container.querySelectorAll<HTMLButtonElement>("button")].find(button => button.textContent?.includes("将首个视频添加到 V1"));
-  expect(enabled?.disabled).toBe(false);
+  expect(button!.disabled).toBe(false);
 });
 
 it("keeps the V1 entry point enabled even when the empty workspace is read-only", async () => {

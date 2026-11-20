@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { errorMessage } from "../../lib/client";
+import { api, errorMessage } from "../../lib/client";
 import { runIsActive } from "../../lib/taskRun";
 import { isPreparingMedia } from "../../lib/upload";
 import { useProjectStore } from "../../stores/project";
@@ -48,11 +48,19 @@ function AutoRoughCutSheet({ importing, onClose, onQueued }: {
     setError("");
     try {
       const skillIds = await commandSkillIds(instruction);
+      // A new project has no head until its first timeline is read. The timeline route creates that
+      // initial version transactionally, so the edit task always starts against a real version.
+      let version = current.project.head ?? undefined;
+      if (!version) {
+        const result = await api.timeline(current.id, "head");
+        version = result.timeline.version;
+        await useProjectStore.getState().refreshHead(current.id);
+      }
       await useProjectStore.getState().createTask(current.id, {
         kind: "edit",
         ...effective,
         instruction,
-        context: { version: current.project.head ?? undefined, skillIds },
+        context: { version, skillIds },
       });
       onQueued();
       onClose();

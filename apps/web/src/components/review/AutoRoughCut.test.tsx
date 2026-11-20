@@ -25,7 +25,8 @@ beforeEach(() => {
   container = document.createElement("div");
   document.body.append(container);
   root = createRoot(container);
-  useProjectStore.setState({ current: {
+  const refreshHead = vi.fn().mockResolvedValue(undefined);
+  useProjectStore.setState({ refreshHead, current: {
     id: PRJ, project, media: project.media, timeline: db.timelines[project.head!]!,
     notes: [], changes: [], tasks: [], taskEvents: {}, renders: [], versions: [],
   } });
@@ -73,4 +74,24 @@ it("waits for imports to finish before enabling the request", async () => {
 
   await act(async () => root.render(<AutoRoughCut importing={0} onQueued={onQueued} />));
   expect(start().disabled).toBe(false);
+});
+
+it("initializes a new project's timeline before queuing the pass", async () => {
+  const fresh = { ...project, head: null };
+  const refreshHead = vi.fn().mockResolvedValue(undefined);
+  const timeline = vi.spyOn(api, "timeline").mockResolvedValue({ timeline: { ...db.timelines[project.head!]!, version: "ver_initialized" } });
+  const createTask = vi.spyOn(api, "createTask").mockImplementation(async (_projectId, body) => ({
+    task: { ...db.tasks[0]!, kind: "edit", instruction: body.instruction, state: "queued" },
+  }));
+  useProjectStore.setState({ refreshHead, current: {
+    id: PRJ, project: fresh, media: fresh.media, timeline: null,
+    notes: [], changes: [], tasks: [], taskEvents: {}, renders: [], versions: [],
+  } });
+  await act(async () => root.render(<AutoRoughCut importing={0} onQueued={vi.fn()} />));
+  await open();
+  await act(async () => start().click());
+
+  expect(timeline).toHaveBeenCalledWith(PRJ, "head");
+  expect(refreshHead).toHaveBeenCalledWith(PRJ);
+  expect(createTask).toHaveBeenCalledWith(PRJ, expect.objectContaining({ context: { version: "ver_initialized", skillIds: undefined } }));
 });

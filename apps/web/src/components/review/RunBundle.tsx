@@ -79,8 +79,8 @@ function Tokens({ usage, className, time, details = [] }: {
     <span className="sr-only">{zh.ui.review.activeTime} </span><span className="run-work-time">{time}</span>
   </span> : null;
   const parts: [string, number][] = [
-    ["Input", usage.inputTokens], ["Output", usage.outputTokens], ["Cache read", usage.cacheReadTokens],
-    ["Cache write", usage.cacheWriteTokens],
+    [zhReview.run.input, usage.inputTokens], [zhReview.run.output, usage.outputTokens], [zhReview.run.cacheRead, usage.cacheReadTokens],
+    [zhReview.run.cacheWrite, usage.cacheWriteTokens],
   ];
   const label = tokenLabel(usage.totalTokens);
   const [count, ...unit] = label.split(" ");
@@ -102,7 +102,7 @@ function Tokens({ usage, className, time, details = [] }: {
   </button>{open && createPortal(<span ref={panel} id={id} className="tokens-tip" aria-hidden data-escape-owner>
       {time && <span><span>{zh.ui.review.activeTime}</span><b>{time}</b></span>}
       {details.map(([name, value]) => <span key={name}><span>{name}</span><b>{value}</b></span>)}
-      {parts.filter(([label, n]) => n || label === "Input" || label === "Output").map(([label, n]) =>
+      {parts.filter(([label, n]) => n || label === zhReview.run.input || label === zhReview.run.output).map(([label, n]) =>
         <span key={label}><span>{label}</span><b>{n.toLocaleString()}</b></span>)}
       <span className="tokens-tip-total"><span>{zh.ui.review.total}</span><b>{usage.totalTokens.toLocaleString()}</b></span>
       <span title={costDescription} style={mode === "pinned" ? { pointerEvents: "auto" } : undefined}><span>{zh.ui.review.estimatedCost}</span><b>{cost}</b></span>
@@ -252,11 +252,11 @@ export function RequestMetrics({ attempts, events }: { attempts: readonly Task[]
     const report = reports[i];
     if (!report) continue;
     for (const model of report.models?.length ? report.models : [task.model ?? "Unknown"]) models.add(runModelName(model));
-    efforts.add(task.effort ? task.effort.charAt(0).toUpperCase() + task.effort.slice(1) : "Provider default");
+    efforts.add(task.effort ? task.effort.charAt(0).toUpperCase() + task.effort.slice(1) : zhReview.run.providerDefault);
   }
   return <Tokens usage={usage} time={time} className="unit-tokens" details={[
-    [models.size > 1 ? "Models" : "Model", [...models].join(", ")],
-    ["Thinking effort", [...efforts].join(", ")],
+    [models.size > 1 ? zhReview.run.models : zhReview.run.model, [...models].join(", ")],
+    [zhReview.run.thinking, [...efforts].join(", ")],
   ]} />;
 }
 

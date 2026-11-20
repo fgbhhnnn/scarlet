@@ -10,7 +10,7 @@ const task = { id: "tsk", projectId: "prj", kind: "edit", agent: "codex", instru
 const at = (s: number) => new Date(Date.parse("2026-11-05T03:34:17.000Z") + s * 1000).toISOString();
 const tool = (s: number, name: string, input: object = {}): TaskEvent => ({ at: at(s), type: "tool", text: `scarlet.${name} {}`, data: { tool: `scarlet.${name}`, input } });
 const log = (s: number, text: string, data?: TaskEvent["data"]): TaskEvent => ({ at: at(s), type: "log", text, ...(data ? { data } : {}) });
-const assembly = { id: "chg_assembly", description: "Placed the full recording at 0:00 so its picture and dialogue can be edited together.", state: "approved" } as unknown as Change;
+const assembly = { id: "chg_assembly", description: "已将完整录音放在 0:00，以便同时编辑画面和对白.", state: "approved" } as unknown as Change;
 const pass = { id: "chg_pass", description: "Review 116 optional dialogue cuts", state: "ready",
   cutReasons: [{ start: 10, end: 70, reason: "Mic check" }, { start: 100, end: 112, reason: "Rehearsal" }] } as unknown as Change;
 
@@ -90,7 +90,7 @@ it("says where each step looked, and drops repeats of the same call", () => {
       "搜索“DeepSeek”对应的转写稿",
     ]);
     const few = runItems({ ...task, state: "running" }, events.slice(1, 4), []);
-    expect(few).toEqual([{ kind: "step", at: at(2), verb: "Looked at", detail: "the picture at 0:24, 1:33 and 3:05" }]);
+    expect(few).toEqual([{ kind: "step", at: at(2), verb: "查看", detail: "画面，位于 0:24、1:33 和 3:05" }]);
 });
 
 it("shows a wait for the transcript as one row instead of every call that checks on it", () => {
@@ -108,7 +108,7 @@ it("shows a wait for the transcript as one row instead of every call that checks
     ]);
     const done = [...events, wait(370, true), tool(371, "transcript_get", read)];
     expect(runItems(running, done, []).map(i => i.kind === "step" && `${i.verb} ${i.detail}`)).toEqual([
-      "已等待 6:00，转写稿", "Looked at the picture at 0:24 and 1:33", "读取转写稿，范围 0:00–57:47",
+      "已等待 6:00，转写稿", "查看画面，位于 0:24 和 1:33", "读取转写稿，范围 0:00–57:47",
     ]);
     // The wait ran alongside the other steps, so it takes no time of its own in the list.
     expect(runLines(running, done, runItems(running, done, []), Date.parse(at(400))).map(l => l.took)).toEqual([undefined, 341_000, 29_000]);
@@ -149,8 +149,8 @@ it("gives each step the time until the next one starts, so the steps add up to t
     const together = [tool(1, "dialogue_check_join"), tool(1.2, "project_get"), tool(1.4, "media_frame", { t: 5 }),
       { at: at(1.6), type: "change" as const, text: "", data: { changeId: "chg_assembly" } }];
     expect(runLines(finished, together, runItems(finished, together, [assembly]), Date.now()).map(l => l.text)).toEqual([
-      "检查 1 个衔接，读取项目和查看画面，位于 0:05",
-      "Placed the full recording at 0:00 so its picture and dialogue can be edited together",
+      "检查 1 个衔接、读取项目、查看画面，位于 0:05",
+      "已将完整录音放在 0:00，以便同时编辑画面和对白",
     ]);
 });
 

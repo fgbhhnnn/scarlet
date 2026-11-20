@@ -56,7 +56,7 @@ function setupModelRefresh(initial: AgentHost) {
 }
 
 function refreshButton(container: Element) {
-  const button = [...container.querySelectorAll("button")].find(b => b.textContent === "Refresh models");
+  const button = [...container.querySelectorAll("button")].find(b => b.textContent === "刷新模型");
   expect(button).toBeDefined();
   return button!;
 }
@@ -70,7 +70,7 @@ it("refreshes the open picker and shares one discovery with Settings while prese
   await act(() => root.render(<MemoryRouter><AgentChip /><ModelSettings /></MemoryRouter>));
   const trigger = container.querySelector<HTMLButtonElement>('[aria-haspopup="dialog"]')!;
   await act(() => trigger.click());
-  const picker = container.querySelector('[aria-label="Model selector"]')!;
+  const picker = container.querySelector('[aria-label="选择模型"]')!;
   const refreshPicker = refreshButton(picker);
   const refreshSettings = refreshButton(container.querySelector("section")!);
   try {
@@ -85,14 +85,14 @@ it("refreshes the open picker and shares one discovery with Settings while prese
   }
   expect(readHosts).toHaveBeenCalledTimes(1);
   expect(trigger.getAttribute("aria-expanded")).toBe("true");
-  expect(picker.querySelector('[role="status"]')?.textContent).toContain("Models refreshed");
+  expect(picker.querySelector('[role="status"]')?.textContent).toContain("模型已刷新");
   expect(refreshPicker.disabled).toBe(false);
   expect(refreshSettings.disabled).toBe(false);
   expect(picker.querySelector('[aria-label="Codex · gpt-6.2-sol"]')).toBeTruthy();
   expect(picker.querySelector('[aria-label="Codex · studio-model · Custom"]')).toBeTruthy();
   expect(picker.querySelector('[aria-label="Codex · gpt-6-astra"]')).toBeNull();
   expect(picker.querySelector('[aria-label="Codex · gpt-6-luna"]')).toBeNull();
-  expect(picker.querySelector('[aria-label="Favorite Codex · gpt-6.1-sol"]')?.getAttribute("aria-pressed")).toBe("true");
+  expect(picker.querySelector('[aria-label="收藏 Codex · gpt-6.1-sol"]')?.getAttribute("aria-pressed")).toBe("true");
   expect(picker.querySelector('[aria-label="Codex · gpt-6.1-sol"]')?.getAttribute("aria-checked")).toBe("true");
   expect(useUiStore.getState().agent).toEqual({ agent: "codex", model: "gpt-6.1-sol", effort: "high", serviceTier: "priority" });
 });
@@ -104,13 +104,13 @@ it("refreshes an empty catalog directly and lets the editor retry a failed disco
     <Dropdown label="More" button="⋯">{() => <AgentChip variant="menu" />}</Dropdown>
   </MemoryRouter>));
   await act(() => container.querySelector<HTMLButtonElement>('[aria-label="More"]')!.click());
-  const row = container.querySelector<HTMLButtonElement>('[role="menuitem"][aria-label="Refresh models"]')!;
+  const row = container.querySelector<HTMLButtonElement>('[role="menuitem"][aria-label="刷新模型"]')!;
   await act(() => row.click());
-  const picker = container.querySelector('[aria-label="Model selector"]')!;
+  const picker = container.querySelector('[aria-label="选择模型"]')!;
   expect(discover).toHaveBeenCalledTimes(1);
   expect(useUiStore.getState().agentSetupOpen).toBe(false);
   expect(picker.querySelector('[role="alert"]')?.textContent).toContain("Codex timed out. Try refreshing again.");
-  expect(picker.textContent).not.toContain("Models refreshed");
+  expect(picker.textContent).not.toContain("模型已刷新");
 
   readHosts.mockResolvedValue({ hosts: [modelHost(["gpt-6.2-sol"])] });
   await act(() => refreshButton(picker).click());
@@ -118,7 +118,7 @@ it("refreshes an empty catalog directly and lets the editor retry a failed disco
   expect(container.querySelector('[role="menu"]')).toBeTruthy();
   expect(discover).toHaveBeenCalledTimes(2);
   expect(picker.querySelector('[role="alert"]')).toBeNull();
-  expect(picker.querySelector('[role="status"]')?.textContent).toContain("Models refreshed");
+  expect(picker.querySelector('[role="status"]')?.textContent).toContain("模型已刷新");
   expect(picker.querySelector('[aria-label="Codex · gpt-6.2-sol"]')).toBeTruthy();
 });
 
@@ -148,19 +148,19 @@ it("shows the model name and effort dial and returns focus after keyboard naviga
     const trigger = container.querySelector<HTMLButtonElement>('[aria-haspopup="dialog"]')!;
     expect(trigger.textContent).toBe("Aurora Alpha");
     expect(trigger.querySelectorAll("svg")).toHaveLength(1);
-    expect(trigger.title).toBe("Thinking effort: Medium (provider default)");
+    expect(trigger.title).toBe("推理强度：中（服务商默认）");
     expect(trigger.getAttribute("aria-label")).toContain(trigger.title);
     // What is picked is the model, by that name.
-    expect(trigger.getAttribute("aria-label")).toMatch(/^Model: Codex · Aurora Alpha\. .* Change model, effort or speed$/);
+    expect(trigger.getAttribute("aria-label")).toMatch(/^模型：Codex · Aurora Alpha。.*更改模型、推理强度或速度$/);
     const defaultDial = trigger.querySelector("svg")!.innerHTML;
 
     await act(() => trigger.click());
-    expect(document.activeElement?.getAttribute("aria-label")).toBe("Search models");
+    expect(document.activeElement?.getAttribute("aria-label")).toBe("搜索模型");
     await press("ArrowDown");
     expect(document.activeElement?.getAttribute("aria-label")).toBe("Codex · Aurora Alpha · Custom");
-    const effortButtons = [...container.querySelectorAll<HTMLButtonElement>('[aria-label="Effort"] [role="radio"]')];
-    const high = effortButtons.find(button => button.textContent === "High")!;
-    effortButtons.find(button => button.textContent === "Medium")!.focus();
+    const effortButtons = [...container.querySelectorAll<HTMLButtonElement>('[aria-label="推理强度"] [role="radio"]')];
+    const high = effortButtons.find(button => button.textContent === "高")!;
+    effortButtons.find(button => button.textContent === "中")!.focus();
     await press("ArrowDown");
     expect(document.activeElement).toBe(high);
     await act(() => high.click());
@@ -169,7 +169,7 @@ it("shows the model name and effort dial and returns focus after keyboard naviga
     expect(document.activeElement).toBe(trigger);
     expect(trigger.textContent).toBe("Aurora Alpha");
     expect(trigger.querySelector("svg")!.innerHTML).not.toBe(defaultDial);
-    expect(trigger.title).toBe("Thinking effort: High");
+    expect(trigger.title).toBe("推理强度：高");
     expect(trigger.getAttribute("aria-label")).toContain(trigger.title);
     expect(useUiStore.getState().agent.serviceTier).toBe("priority");
 
@@ -177,7 +177,7 @@ it("shows the model name and effort dial and returns focus after keyboard naviga
     await act(() => container.querySelector<HTMLButtonElement>('[aria-label="Codex · gpt-6-astra"]')!.click());
     await press("Escape");
     expect(trigger.textContent).toBe("gpt-6-astra");
-    expect(trigger.title).toBe("Thinking effort: Provider default");
+    expect(trigger.title).toBe("推理强度：服务商默认");
   } finally {
     await act(() => root.unmount());
     container.remove();
@@ -296,9 +296,9 @@ it("closes only the picker on Esc when it opened from a menu's Model row, and gi
     await act(() => container.querySelector<HTMLButtonElement>('button[aria-label="More"]')!.click());
     const row = container.querySelector<HTMLButtonElement>('[role="menu"] [aria-haspopup="dialog"]')!;
     await act(() => row.click());
-    expect(container.querySelector('[aria-label="Model selector"]')).toBeTruthy();
+    expect(container.querySelector('[aria-label="选择模型"]')).toBeTruthy();
     await esc();
-    expect(container.querySelector('[aria-label="Model selector"]')).toBeNull();
+    expect(container.querySelector('[aria-label="选择模型"]')).toBeNull();
     expect(container.querySelector('[role="menu"]')).toBeTruthy();
     expect(document.activeElement).toBe(row);
     // With the picker closed, the next Esc is the menu's.
@@ -325,8 +325,8 @@ it("says the model list couldn't be read, with Refresh to try again, when a sign
   try {
     await act(() => root.render(<MemoryRouter><AgentChip /><ModelSettings /></MemoryRouter>));
     const chip = container.querySelector<HTMLButtonElement>('button[aria-haspopup="dialog"]')!;
-    expect([chip.textContent?.trim(), chip.title]).toEqual(["Refresh models", "Couldn’t read the model list. Refresh models to try again."]);
-    expect(container.textContent).toContain("Couldn’t read the model list. Refresh models to try again, and update Claude Code, Codex or Gemini if it still fails.");
+    expect([chip.textContent?.trim(), chip.title]).toEqual(["刷新模型", "无法读取模型列表，请刷新模型后重试。"]);
+    expect(container.textContent).toContain("无法读取模型列表。请刷新模型后重试，若仍失败请更新 Claude Code、Codex 或 Gemini。");
     expect(container.textContent).not.toContain("current-generation");
   } finally {
     await act(() => root.unmount());
@@ -376,32 +376,32 @@ it("installs Codex and signs in without leaving the project or clearing the draf
     await act(async () => root.render(<MemoryRouter initialEntries={[`/p/${PRJ}`]}><Routes>
       <Route path="/p/:id" element={<ProjectLayout />}><Route index element={<AgentChip />} /></Route>
     </Routes></MemoryRouter>));
-    expect(el.textContent).not.toContain("Set up a model");
+    expect(el.textContent).not.toContain("设置模型");
     await act(() => {
       listeners.forEach(cb => cb({ ...host, agents: [] }));
       useHostsStore.setState({ status: "ready" });
     });
-    expect(el.textContent).not.toContain("Set up a model");
+    expect(el.textContent).not.toContain("设置模型");
     await act(() => {
       listeners.forEach(cb => cb(host));
       useHostsStore.setState({ hosts: db.hosts.map(h => ({ ...h, online: false })) });
     });
-    expect(el.textContent).not.toContain("Set up a model");
+    expect(el.textContent).not.toContain("设置模型");
     await act(() => useHostsStore.setState({ hosts: [] }));
-    await click("Set up a model");
+    await click("设置模型");
     // The dialog is the sign-in card, in the card's words.
-    expect(el.querySelector("dialog[open] h2")?.textContent).toBe("Sign in");
-    expect(el.querySelector("dialog[open] p")?.textContent).toBe("Choose Claude Code, Codex or Gemini. Install it if needed, then sign in with your subscription.");
-    await click("Install Codex");
+    expect(el.querySelector("dialog[open] h2")?.textContent).toBe("登录");
+    expect(el.querySelector("dialog[open] p")?.textContent).toBe("选择 Claude Code、Codex 或 Gemini。安装后使用你的订阅账号登录。");
+    await click("安装 Codex");
     expect(install).toHaveBeenCalledWith("codex");
-    await click("Sign in with ChatGPT");
+    await click("使用 ChatGPT 登录");
     expect(login).toHaveBeenCalledWith("codex");
     await act(async () => {
       host = { ...host, agents: [{ id: "codex", installed: true, loggedIn: true, auth: "subscription" }] };
       listeners.forEach(cb => cb(host));
     });
     expect(el.querySelector("dialog[open]")).toBeNull();
-    expect(el.textContent).not.toContain("Set up a model");
+    expect(el.textContent).not.toContain("设置模型");
     expect(useUiStore.getState()).toMatchObject({ agentDraft: "Tighten the pause", agentContext: { time: 12 }, agentSetupOpen: false });
     expect(usePlayerStore.getState().time).toBe(12);
   } finally {
@@ -443,11 +443,11 @@ it("shares provider-scoped visibility and favorites between Settings and the pic
   try {
     await render("/");
     await click(picker());
-    await click(button("Favorite Codex · New model"));
-    await click(button("Favorites"));
+    await click(button("收藏 Codex · New model"));
+    await click(button("收藏"));
     expect(button("Codex · New model")).toBeTruthy();
     expect(button("Codex · Shared")).toBeNull();
-    const search = container.querySelector<HTMLInputElement>('[aria-label="Search models"]')!;
+    const search = container.querySelector<HTMLInputElement>('[aria-label="搜索模型"]')!;
     await act(() => {
       Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(search, "shared");
       search.dispatchEvent(new Event("input", { bubbles: true }));
@@ -459,28 +459,28 @@ it("shares provider-scoped visibility and favorites between Settings and the pic
     expect(search.value).toBe("");
     expect(button("Claude Code · Shared")).toBeNull();
     const option = (group: string, label: string) => [...container.querySelectorAll<HTMLButtonElement>(`[aria-label="${group}"] button`)].find(b => b.textContent === label)!;
-    expect(option("Effort", "Auto")).toBeUndefined();
-    await click(option("Effort", "Ultra"));
-    await click(option("Speed", "Expedited"));
+    expect(option("推理强度", "自动")).toBeUndefined();
+    await click(option("推理强度", "超高"));
+    await click(option("速度", "Expedited"));
     expect(useUiStore.getState().agent).toMatchObject({ effort: "ultra", serviceTier: "priority" });
-    await click(option("Speed", "Economy"));
+    await click(option("速度", "Economy"));
     expect(useUiStore.getState().agent.effort).toBeUndefined();
-    await click(option("Effort", "Ultra"));
+    await click(option("推理强度", "超高"));
     expect(useUiStore.getState().agent.serviceTier).toBeUndefined();
     await click(button("Codex · New model"));
-    expect(container.querySelector('[aria-label="Speed"]')).toBeNull();
-    expect(container.querySelector('[aria-label="Effort"]')).toBeNull();
+    expect(container.querySelector('[aria-label="速度"]')).toBeNull();
+    expect(container.querySelector('[aria-label="推理强度"]')).toBeNull();
     expect(useUiStore.getState().agent.serviceTier).toBeUndefined();
     expect(useUiStore.getState().agent.effort).toBeUndefined();
     await click(button("Codex · Shared"));
     expect(picker().textContent).toContain("Shared");
-    expect(container.querySelector('[aria-label="Models"] [role="radio"]')?.textContent).toContain("New model");
+    expect(container.querySelector('[aria-label="模型"] [role="radio"]')?.textContent).toContain("New model");
     await click(container.querySelector<HTMLAnchorElement>('a[href="/settings#models"]')!);
-    await click(button("Show Codex · Shared in selector"));
+    await click(button("在选择器中显示 Codex · Shared"));
     await click(button("Claude Code"));
-    expect(button("Show Claude Code · Shared in selector").getAttribute("aria-checked")).toBe("true");
+    expect(button("在选择器中显示 Claude Code · Shared").getAttribute("aria-checked")).toBe("true");
     await click(button("Codex"));
-    expect(button("Favorite Codex · New model").getAttribute("aria-pressed")).toBe("true");
+    expect(button("收藏 Codex · New model").getAttribute("aria-pressed")).toBe("true");
 
     const snapshot = localStorage.getItem("scarlet.modelPicker.v1")!;
     await act(() => useModelPreferences.setState({ hidden: [], favorites: [] }));
@@ -497,14 +497,14 @@ it("shares provider-scoped visibility and favorites between Settings and the pic
 
     await render("/settings#models");
     await click(button("Claude Code"));
-    await click(button("Hide all Claude Code models"));
+    await click(button("隐藏所有 Claude Code 模型"));
     await click(button("Codex"));
-    await click(button("Hide all Codex models"));
+    await click(button("隐藏所有 Codex 模型"));
     await render("/");
-    expect(container.querySelector('a[href="/settings#models"]')?.textContent).toContain("Choose visible models");
+    expect(container.querySelector('a[href="/settings#models"]')?.textContent).toContain("选择可见模型");
     await click(container.querySelector("a")!);
-    await click(button("Favorite Codex · New model"));
-    expect(button("Show Codex · New model in selector").getAttribute("aria-checked")).toBe("true");
+    await click(button("收藏 Codex · New model"));
+    expect(button("在选择器中显示 Codex · New model").getAttribute("aria-checked")).toBe("true");
     await render("/");
     expect(picker().textContent).toContain("New model");
   } finally {
@@ -537,20 +537,20 @@ it("keeps a sign-in row to its name and one control, with why a sign-in failed o
   try {
     await act(async () => root.render(<MemoryRouter><AgentChip /></MemoryRouter>));
     await act(async () => container.querySelector<HTMLButtonElement>('[aria-haspopup="dialog"]')!.click());
-    const signIn = () => [...container.querySelectorAll("button")].find(b => b.textContent === "Sign in with Claude")!;
+    const signIn = () => [...container.querySelectorAll("button")].find(b => b.textContent === "使用 Claude 登录")!;
     const row = signIn().parentElement!;
     const parts = () => [...row.children].map(part => part.textContent);
-    expect(parts()).toEqual(["Claude Code", "Sign in with Claude"]);
+    expect(parts()).toEqual(["Claude Code", "使用 Claude 登录"]);
     // A test lays nothing out, so the classes stand for it: the name and its control share a line, centred on each other.
     expect(row.className).toContain("grid grid-cols-[1fr_auto] items-center");
     await act(async () => signIn().click());
-    expect(parts()).toEqual(["Claude Code", "Finish signing in in your browser…Cancel"]);
+    expect(parts()).toEqual(["Claude Code", "请在浏览器中完成登录…取消"]);
     // A sign-in that started and failed reports what the CLI printed last, sign-in address and all. It is the row's
     // third part, across the row's whole width and free to break anywhere, so the name keeps its line and the button
     // stays in the menu.
     const printed = `If the browser didn't open, visit: https://example.test/authorize?state=${"x".repeat(300)}\nLogin failed`;
     await act(async () => report({ agent: "claude", state: "failed", acceptsCode: true, message: printed }));
-    expect(parts()).toEqual(["Claude Code", "Sign in with Claude", printed]);
+    expect(parts()).toEqual(["Claude Code", "使用 Claude 登录", printed]);
     expect(row.lastElementChild!.className).toBe("col-span-full min-w-0 wrap-anywhere");
   } finally {
     await act(async () => root.unmount());

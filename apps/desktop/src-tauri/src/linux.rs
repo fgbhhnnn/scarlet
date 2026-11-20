@@ -25,8 +25,8 @@ pub fn enable_voice_input(window: &tauri::WebviewWindow) -> tauri::Result<()> {
                 return true;
             }
             let (send, answer) = tokio::sync::oneshot::channel();
-            owner.dialog().message("Allow Scarlet to use your microphone for voice input?")
-                .parent(&owner).buttons(MessageDialogButtons::OkCancelCustom("Allow".into(), "Cancel".into()))
+            owner.dialog().message("允许 Scarlet 使用麦克风进行语音输入？")
+                .parent(&owner).buttons(MessageDialogButtons::OkCancelCustom("允许".into(), "取消".into()))
                 .show(move |allow| { let _ = send.send(allow); });
             // The dialog can answer from another thread. Resolve WebKit's request on the GTK thread.
             let request = request.clone();

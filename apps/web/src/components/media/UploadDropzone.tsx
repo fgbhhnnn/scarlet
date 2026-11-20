@@ -267,15 +267,15 @@ export function UploadList({ items, onDismiss }: { items: UploadItem[]; onDismis
             <span className="truncate flex-1">{it.name}</span>
             {it.size !== undefined && <span className="text-dim">{fmtBytes(it.size)}</span>}
             <span className={it.state === "error" ? "text-bad" : "text-muted"}>
-              {it.state === "uploading" ? `${Math.floor(it.progress * 100)}%` : { preparing: "Preparing…", done: "Added", error: "Failed" }[it.state]}
+              {it.state === "uploading" ? `${Math.floor(it.progress * 100)}%` : { preparing: "准备中…", done: "已添加", error: "失败" }[it.state]}
             </span>
             {it.state === "uploading" && (
               <button className="btn-quiet py-0.5" onClick={it.abort}>
-                Cancel
+                取消
               </button>
             )}
             {(it.state === "done" || it.state === "error") && (
-              <button className="btn-icon size-5" aria-label="Dismiss" title="Dismiss" onClick={() => onDismiss(it.id)}>
+              <button className="btn-icon size-5" aria-label="关闭" title="关闭" onClick={() => onDismiss(it.id)}>
                 <Icon name="x" size={10} />
               </button>
             )}
@@ -289,7 +289,7 @@ export function UploadList({ items, onDismiss }: { items: UploadItem[]; onDismis
 }
 
 /** Highlight the drop target and add files dropped anywhere inside it. */
-export function Dropzone({ onFiles, onPaths, children, className = "", label = "Drop media here", notice }: { onFiles: (files: FileList) => void; onPaths: (paths: string[]) => void; children: ReactNode; className?: string; label?: string; notice?: string }) {
+export function Dropzone({ onFiles, onPaths, children, className = "", label = "将媒体拖到这里", notice }: { onFiles: (files: FileList) => void; onPaths: (paths: string[]) => void; children: ReactNode; className?: string; label?: string; notice?: string }) {
   const [over, setOver] = useState(false);
   const zone = useRef<HTMLDivElement>(null);
   const handlePaths = useRef(onPaths);

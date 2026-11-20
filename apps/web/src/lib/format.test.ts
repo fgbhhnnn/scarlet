@@ -7,25 +7,25 @@ it("words a past time in whole units that have passed, never 60 minutes or 24 ho
   vi.useFakeTimers();
   vi.setSystemTime(new Date("2030-01-10T12:00:00Z"));
   const ago = (seconds: number) => relTime(new Date(Date.now() - seconds * 1000).toISOString());
-  expect(ago(20)).toBe("just now");
-  expect(ago(50)).toBe("1m ago");
-  expect(ago(59 * 60 + 40)).toBe("59m ago");
-  expect(ago(60 * 60)).toBe("1h ago");
-  expect(ago(23 * 3600 + 50 * 60)).toBe("23h ago");
-  expect(ago(24 * 3600)).toBe("1d ago");
-  expect(ago(6 * 86400 + 20 * 3600)).toBe("6d ago");
+  expect(ago(20)).toBe("刚刚");
+  expect(ago(50)).toBe("1 分钟前");
+  expect(ago(59 * 60 + 40)).toBe("59 分钟前");
+  expect(ago(60 * 60)).toBe("1 小时前");
+  expect(ago(23 * 3600 + 50 * 60)).toBe("23 小时前");
+  expect(ago(24 * 3600)).toBe("1 天前");
+  expect(ago(6 * 86400 + 20 * 3600)).toBe("6 天前");
 });
 
 it("words a project in the Trash one way: when it was deleted, then when it goes for good", () => {
   vi.useFakeTimers();
   vi.setSystemTime(new Date("2030-01-10T12:00:00Z"));
   const hours = (n: number) => new Date(Date.now() + n * 3_600_000).toISOString();
-  expect(trashedLine(hours(-1), hours(30 * 24 - 1))).toBe("Deleted 1h ago · gone for good in 30 days");
-  expect(trashedLine(hours(-72), hours(20))).toBe("Deleted 3d ago · gone for good in 1 day");
+  expect(trashedLine(hours(-1), hours(30 * 24 - 1))).toBe("删除于1 小时前 · 30 天后永久删除");
+  expect(trashedLine(hours(-72), hours(20))).toBe("删除于3 天前 · 1 天后永久删除");
   // Past its date a project waits for the next sweep: never "in 0 days".
-  expect(trashedLine(hours(-72), hours(-1))).toBe("Deleted 3d ago · gone for good today");
+  expect(trashedLine(hours(-72), hours(-1))).toBe("删除于3 天前 · 今天永久删除");
   // An older engine's storage list doesn't say the day.
-  expect(trashedLine(hours(-72))).toBe("Deleted 3d ago");
+  expect(trashedLine(hours(-72))).toBe("删除于3 天前");
 });
 
 it("says how much a cut took out to a tenth under ten seconds and whole above, with no \"10.0\" between, and in minutes from a minute up", () => {
@@ -91,17 +91,17 @@ it("sizes a file in the unit that reads best", () => {
 });
 
 it("counts tokens at a glance and in full", () => {
-  expect(tokenLabel(1)).toBe("1 token");
-  expect(tokenLabel(850)).toBe("850 tokens");
-  expect(tokenLabel(48_240)).toBe("48.2K tokens");
-  expect(tokenLabel(312_400)).toBe("312K tokens");
+  expect(tokenLabel(1)).toBe("1 个令牌");
+  expect(tokenLabel(850)).toBe("850 个令牌");
+  expect(tokenLabel(48_240)).toBe("48.2K 个令牌");
+  expect(tokenLabel(312_400)).toBe("312K 个令牌");
   // Just under a million rounds to a million, not to "1000K".
-  expect(tokenLabel(999_499)).toBe("999K tokens");
-  expect(tokenLabel(999_500)).toBe("1M tokens");
-  expect(tokenLabel(1_240_000)).toBe("1.2M tokens");
+  expect(tokenLabel(999_499)).toBe("999K 个令牌");
+  expect(tokenLabel(999_500)).toBe("1M 个令牌");
+  expect(tokenLabel(1_240_000)).toBe("1.2M 个令牌");
   const usage = { inputTokens: 1200, outputTokens: 340, cacheReadTokens: 0, cacheWriteTokens: 0 };
-  expect(tokenBreakdown(usage)).toBe(`${(1200).toLocaleString()} input · 340 output`);
-  expect(tokenBreakdown({ ...usage, cacheReadTokens: 50, cacheWriteTokens: 7, runs: 3 })).toBe(`${(1200).toLocaleString()} input · 340 output · 50 cache read · 7 cache write · 3 runs`);
+  expect(tokenBreakdown(usage)).toBe(`${(1200).toLocaleString()} 输入 · 340 输出`);
+  expect(tokenBreakdown({ ...usage, cacheReadTokens: 50, cacheWriteTokens: 7, runs: 3 })).toBe(`${(1200).toLocaleString()} 输入 · 340 输出 · 50 读取缓存 · 7 写入缓存 · 3 次运行`);
   expect(tokenBreakdown({ ...usage, runs: 1 })).not.toContain("runs");
 });
 
@@ -125,11 +125,11 @@ it("leaves a missing or unreadable date blank", () => {
   expect(relTime("not a date")).toBe("");
   expect(absTime()).toBe("");
   expect(absTime("not a date")).toBe("");
-  expect(absTime("2030-01-10T12:00:00Z")).toBe(new Date("2030-01-10T12:00:00Z").toLocaleString());
+  expect(absTime("2030-01-10T12:00:00Z")).toBe(new Date("2030-01-10T12:00:00Z").toLocaleString("zh-CN"));
   vi.useFakeTimers();
   vi.setSystemTime(new Date("2030-01-10T12:00:00Z"));
   // Older than a week reads as the day.
-  expect(relTime("2030-01-01T12:00:00Z")).toBe(new Date("2030-01-01T12:00:00Z").toLocaleDateString());
+  expect(relTime("2030-01-01T12:00:00Z")).toBe(new Date("2030-01-01T12:00:00Z").toLocaleDateString("zh-CN"));
 });
 
 it("keeps a share between 0 and 100 percent, counts things in the singular or plural, and reads frames as timecode", () => {

@@ -64,7 +64,7 @@ export function uploadMedia(
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable) onProgress(e.loaded / e.total);
     };
-    xhr.onerror = () => { log("unreachable", undefined, "warn"); reject(new Error("Network error during upload")); };
+    xhr.onerror = () => { log("unreachable", undefined, "warn"); reject(new Error("上传时发生网络错误")); };
     xhr.onabort = () => { log("stopped"); reject(new DOMException("Upload cancelled", "AbortError")); };
     xhr.onload = () => {
       try {
@@ -72,11 +72,11 @@ export function uploadMedia(
         if (xhr.status >= 200 && xhr.status < 300 && json.media) { log("did", { status: xhr.status }); resolve(json.media); }
         else {
           log("failed", { status: xhr.status, code: json.error?.code }, "warn");
-          reject(new Error(json.error?.message ?? `Upload failed (${xhr.status})`));
+          reject(new Error(json.error?.message ?? `上传失败（${xhr.status}）`));
         }
       } catch {
         log("invalid-body", { status: xhr.status }, "warn");
-        reject(new Error(`Upload failed (${xhr.status})`));
+        reject(new Error(`上传失败（${xhr.status}）`));
       }
     };
     xhr.send(fd);
@@ -85,7 +85,7 @@ export function uploadMedia(
 }
 
 export const ACCEPTED_MEDIA = "video/*,audio/*,image/*,.mov,.mp4,.mkv,.wav,.mp3,.aac,.png,.jpg,.jpeg,.webp";
-export const MEDIA_FORMAT_HINT = "Common formats include MP4 and MOV video, WAV and MP3 audio, and PNG and JPEG images.";
+export const MEDIA_FORMAT_HINT = "支持常见格式，包括 MP4 和 MOV 视频、WAV 和 MP3 音频，以及 PNG 和 JPEG 图片。";
 export const MEDIA_FORMATS = "MP4, MOV, WAV, MP3, PNG, JPEG";
 
 export function isPreparingMedia(m: MediaAsset): boolean {

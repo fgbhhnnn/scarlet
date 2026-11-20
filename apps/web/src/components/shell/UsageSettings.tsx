@@ -20,7 +20,7 @@ function UsageRows({ title, groups, label, empty }: { title: string; groups: Usa
     {groups.map(g => <div key={g.key ?? ""} className="flex items-center gap-3 border-t border-line py-2">
       <div className="min-w-0 flex-1"><div className="break-words text-sm font-medium">{label(g.key)}</div>
         <span className="text-xs text-muted">{tokenBreakdown(g)}</span></div>
-      <span className="text-sm tabular-nums" title={`${g.totalTokens.toLocaleString()} tokens`}>{tokenLabel(g.totalTokens)}</span>
+      <span className="text-sm tabular-nums" title={`${g.totalTokens.toLocaleString()} 个令牌`}>{tokenLabel(g.totalTokens)}</span>
     </div>)}
   </section>;
 }
@@ -49,30 +49,30 @@ export function UsageSettings() {
 
   const total = usage?.byProject.total;
   return <div className="space-y-4">
-    <section className="card p-5" aria-label="Token usage">
-      <div className="flex items-center justify-between gap-3"><SectionTitle>Tokens</SectionTitle>
-        <button className="btn-quiet" disabled={loading} onClick={() => void refresh()}>{loading ? "Loading…" : "Refresh"}</button></div>
-      <div className="text-3xl font-semibold tabular-nums" title={total ? `${total.totalTokens.toLocaleString()} tokens` : undefined}>
+    <section className="card p-5" aria-label="令牌用量">
+      <div className="flex items-center justify-between gap-3"><SectionTitle>令牌</SectionTitle>
+        <button className="btn-quiet" disabled={loading} onClick={() => void refresh()}>{loading ? "正在加载…" : "刷新"}</button></div>
+      <div className="text-3xl font-semibold tabular-nums" title={total ? `${total.totalTokens.toLocaleString()} 个令牌` : undefined}>
         {total ? tokenLabel(total.totalTokens) : "—"}</div>
       {/* The runs are counted once, in the sentence: the breakdown would add "· 42 runs" before it. */}
       {total && <p className="text-sm text-muted">{total.runs
-        ? `${tokenBreakdown({ ...total, runs: undefined })}. ${total.runs === 1 ? "1 run" : `${total.runs.toLocaleString()} runs`} since ${new Date(total.firstAt!).toLocaleDateString()}.`
-        : "No runs have reported tokens yet."}</p>}
+        ? `${tokenBreakdown({ ...total, runs: undefined })}。自 ${new Date(total.firstAt!).toLocaleDateString("zh-CN")} 起，共 ${total.runs.toLocaleString("zh-CN")} 次运行。`
+        : "暂无令牌用量记录。"}</p>}
     </section>
-    <section className="card p-5" aria-label="Token counts in edits">
+    <section className="card p-5" aria-label="剪辑中的令牌统计">
       <div className="flex items-center justify-between gap-3">
-        <div className="text-sm font-medium">Show tokens in the chat</div>
-        <Toggle checked={showRunTokens} onChange={setShowRunTokens} label="Show tokens in the chat" />
+        <div className="text-sm font-medium">在聊天中显示令牌</div>
+        <Toggle checked={showRunTokens} onChange={setShowRunTokens} label="在聊天中显示令牌" />
       </div>
     </section>
     {error && <InlineError>{error}</InlineError>}
     {usage && <>
-      <UsageRows title="By project" groups={usage.byProject.groups} empty="No projects have used tokens yet."
-        label={key => (key && usage.names.get(key)) || "Deleted project"} />
-      <UsageRows title="By provider" groups={usage.byAgent.groups} empty="No providers have used tokens yet."
-        label={key => (key && AGENT_LABEL[key as AgentId]) || key || "Unknown provider"} />
-      <UsageRows title="By model" groups={usage.byModel.groups} empty="No models have used tokens yet."
-        label={key => key ?? "Default model"} />
+      <UsageRows title="按项目" groups={usage.byProject.groups} empty="暂无项目使用过令牌。"
+        label={key => (key && usage.names.get(key)) || "已删除的项目"} />
+      <UsageRows title="按服务商" groups={usage.byAgent.groups} empty="暂无服务商使用过令牌。"
+        label={key => (key && AGENT_LABEL[key as AgentId]) || key || "未知服务商"} />
+      <UsageRows title="按模型" groups={usage.byModel.groups} empty="暂无模型使用过令牌。"
+        label={key => key ?? "默认模型"} />
     </>}
   </div>;
 }

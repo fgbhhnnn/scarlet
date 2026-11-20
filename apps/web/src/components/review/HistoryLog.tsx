@@ -1,26 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ActivityEntry } from "@scarlet/shared";
 import { errorMessage } from "../../lib/client";
-import { relTime } from "../../lib/format";
+import { zh } from "../../lib/zh";
+import { absTime, relTime } from "../../lib/format";
+import { reviewDayLabel, zhReview } from "../../lib/zhReview";
 import { useProjectStore } from "../../stores/project";
 import { Avatar, Spinner } from "../ui/primitives";
 
 const FILTERS: Array<{ id: string; label: string; match: (type: string) => boolean }> = [
-  { id: "all", label: "Everything", match: () => true },
-  { id: "decisions", label: "Decisions", match: (t) => t.startsWith("change.") || t.startsWith("version.") || t.startsWith("import.") },
-  { id: "requests", label: "Edits and notes", match: (t) => t.startsWith("request.") || t.startsWith("question.") || t.startsWith("note.") },
-  { id: "project", label: "Footage and settings", match: (t) => t.startsWith("media.") || t.startsWith("project.") || t.startsWith("members.") || t.startsWith("skill.") || t.startsWith("action.") },
+  { id: "all", label: zhReview.history.filters.all, match: () => true },
+  { id: "decisions", label: zhReview.history.filters.decisions, match: (t) => t.startsWith("change.") || t.startsWith("version.") || t.startsWith("import.") },
+  { id: "requests", label: zhReview.history.filters.requests, match: (t) => t.startsWith("request.") || t.startsWith("question.") || t.startsWith("note.") },
+  { id: "project", label: zhReview.history.filters.project, match: (t) => t.startsWith("media.") || t.startsWith("project.") || t.startsWith("members.") || t.startsWith("skill.") || t.startsWith("action.") },
 ];
-
-function dayLabel(iso: string): string {
-  const d = new Date(iso);
-  const today = new Date();
-  const yesterday = new Date(today);
-  yesterday.setDate(today.getDate() - 1);
-  if (d.toDateString() === today.toDateString()) return "Today";
-  if (d.toDateString() === yesterday.toDateString()) return "Yesterday";
-  return d.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
-}
 
 /** The entries that carry a small mark before their words: approved, put back or sent back, gone wrong. The words stay white. */
 const MARK: Record<string, string> = {
@@ -58,7 +50,7 @@ export function HistoryLog() {
   const days = useMemo(() => {
     const out: Array<{ day: string; entries: ActivityEntry[] }> = [];
     for (const a of shown) {
-      const day = dayLabel(a.createdAt);
+      const day = reviewDayLabel(a.createdAt);
       const last = out[out.length - 1];
       if (last && last.day === day) last.entries.push(a);
       else out.push({ day, entries: [a] });
@@ -71,20 +63,20 @@ export function HistoryLog() {
     if (error) {
       return (
         <p className="text-[13px] text-bad" role="alert">
-          Couldn’t load the history: {error} <button className="btn-quiet" onClick={() => setAttempt((a) => a + 1)}>Retry</button>
+          {zhReview.history.loadFailed}：{error} <button className="btn-quiet" onClick={() => setAttempt((a) => a + 1)}>{zh.common.retry}</button>
         </p>
       );
     }
     return (
       <p className="text-[13px] text-muted flex items-center gap-2">
-        <Spinner className="size-3" /> Loading history…
+        <Spinner className="size-3" /> {zhReview.history.loadingHistory}
       </p>
     );
   }
 
   return (
     <div>
-      <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Filter history">
+      <div className="flex flex-wrap gap-1.5" role="tablist" aria-label={zhReview.history.filter}>
         {FILTERS.map((f) => (
           <button key={f.id} role="tab" aria-selected={filter === f.id} onClick={() => setFilter(f.id)} className={`chip px-3 py-1 text-[12px] ${filter === f.id ? "bg-hi-dim text-fg" : "bg-raised text-muted hover:text-fg"}`}>
             {f.label}
@@ -92,7 +84,7 @@ export function HistoryLog() {
         ))}
       </div>
 
-      {days.length === 0 && <p className="mt-6 text-[13px] text-muted">Nothing here yet.</p>}
+      {days.length === 0 && <p className="mt-6 text-[13px] text-muted">{zhReview.history.empty}</p>}
       {days.map((d) => (
         <section key={d.day} className="mt-6">
           <h3 className="eyebrow mb-2">{d.day}</h3>
@@ -109,7 +101,7 @@ export function HistoryLog() {
                     <div className="text-[13px] leading-snug text-fg">
                       {MARK[a.type] && <span className={`history-mark ${MARK[a.type]}`} aria-hidden />}{a.summary}
                     </div>
-                    <div className="mt-0.5 text-[11px] text-dim" title={new Date(a.createdAt).toLocaleString()}>
+                    <div className="mt-0.5 text-[11px] text-dim" title={absTime(a.createdAt)}>
                       {relTime(a.createdAt)}
                     </div>
                   </div>
@@ -133,9 +125,9 @@ export function HistoryLog() {
                 .finally(() => setLoadingMore(false));
             }}
           >
-            {loadingMore && <Spinner className="size-3" />} Show older
+            {loadingMore && <Spinner className="size-3" />} {zhReview.history.older}
           </button>
-          {olderError && <span className="text-[13px] text-bad" role="alert">Couldn’t load older history: {olderError}</span>}
+          {olderError && <span className="text-[13px] text-bad" role="alert">{zhReview.history.loadOlderFailed}：{olderError}</span>}
         </div>
       )}
     </div>

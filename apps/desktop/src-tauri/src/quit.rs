@@ -41,9 +41,9 @@ pub fn warning(work: &UnderWay, leaving: Leaving) -> Option<String> {
         n => Some(many.replace("{n}", &n.to_string())),
     };
     let parts: Vec<String> = [
-        name(work.edits, "the edit Scarlet is working on", "the {n} edits Scarlet is working on"),
-        name(work.queued, "an edit waiting its turn", "{n} edits waiting their turn"),
-        name(work.exports, "an export", "{n} exports"),
+        name(work.edits, "Scarlet 正在处理的剪辑", "Scarlet 正在处理的 {n} 个剪辑"),
+        name(work.queued, "一个排队中的剪辑", "{n} 个排队中的剪辑"),
+        name(work.exports, "一个导出任务", "{n} 个导出任务"),
     ]
     .into_iter()
     .flatten()
@@ -51,13 +51,12 @@ pub fn warning(work: &UnderWay, leaving: Leaving) -> Option<String> {
     let list = match parts.as_slice() {
         [] => return None,
         [one] => one.clone(),
-        [rest @ .., last] => format!("{} and {last}", rest.join(", ")),
+        [rest @ .., last] => format!("{}和{last}", rest.join("、")),
     };
     // A run cut short by a quit resumes at the next launch, a queued edit starts then, and an export renders again.
-    let carry_on = if work.edits + work.queued + work.exports == 1 { "It carries on" } else { "They carry on" };
     Some(match leaving {
-        Leaving::Quit => format!("Quitting stops {list}. {carry_on} when you open Scarlet again."),
-        Leaving::Restart => format!("Restarting stops {list}. {carry_on} when Scarlet reopens."),
+        Leaving::Quit => format!("退出会停止{list}。下次打开 Scarlet 时会继续。"),
+        Leaving::Restart => format!("重启会停止{list}。Scarlet 重新打开时会继续。"),
     })
 }
 
@@ -102,10 +101,10 @@ pub async fn confirm_if_busy(app: &AppHandle, leaving: Leaving) -> bool {
     let running_here = state.host.status().await.running.len();
     let Some(asked) = warning(&what_would_stop(said, running_here), leaving) else { return true };
     log::info!("asking before {}: {asked}", if leaving == Leaving::Quit { "quitting" } else { "restarting" });
-    let (title, yes) = if leaving == Leaving::Quit { ("Quit Scarlet?", "Quit") } else { ("Restart Scarlet?", "Restart") };
+    let (title, yes) = if leaving == Leaving::Quit { ("退出 Scarlet？", "退出") } else { ("重启 Scarlet？", "重启") };
     let dialog = app.dialog().message(asked).title(title)
         .kind(MessageDialogKind::Warning)
-        .buttons(MessageDialogButtons::OkCancelCustom(yes.into(), "Cancel".into()));
+        .buttons(MessageDialogButtons::OkCancelCustom(yes.into(), "取消".into()));
     #[cfg(windows)]
     let dialog = match app.get_webview_window("main") {
         Some(window) => dialog.parent(&window),
@@ -136,17 +135,46 @@ pub fn ask_before_quitting(app: &AppHandle) {
 /// The standard Mac menu, with a Quit that asks first in place of the standard one.
 #[cfg(target_os = "macos")]
 pub fn menu(app: &AppHandle) -> tauri::Result<tauri::menu::Menu<tauri::Wry>> {
-    use tauri::menu::{Menu, MenuItem, MenuItemKind};
-    let menu = Menu::default(app)?;
-    // The app's own menu comes first, and Quit is its last item.
-    if let Some(MenuItemKind::Submenu(scarlet)) = menu.items()?.into_iter().next() {
-        if let Some(MenuItemKind::Predefined(standard)) = scarlet.items()?.last() {
-            let quit = MenuItem::with_id(app, QUIT_MENU_ID, format!("Quit {}", app.package_info().name), true, Some("CmdOrCtrl+Q"))?;
-            scarlet.remove(standard)?;
-            scarlet.append(&quit)?;
-        }
-    }
-    Ok(menu)
+    use tauri::menu::{AboutMetadata, Menu, MenuItem, PredefinedMenuItem as Item, Submenu, HELP_SUBMENU_ID, WINDOW_SUBMENU_ID};
+    let package = app.package_info();
+    let bundle = &app.config().bundle;
+    let name = &package.name;
+    let about = AboutMetadata {
+        name: Some(name.clone()),
+        version: Some(package.version.to_string()),
+        copyright: bundle.copyright.clone(),
+        authors: bundle.publisher.clone().map(|publisher| vec![publisher]),
+        ..Default::default()
+    };
+    let scarlet = Submenu::with_items(app, name, true, &[
+        &Item::about(app, Some(&format!("关于 {name}")), Some(about))?,
+        &Item::separator(app)?,
+        &Item::services(app, Some("服务"))?,
+        &Item::separator(app)?,
+        &Item::hide(app, Some(&format!("隐藏 {name}")))?,
+        &Item::hide_others(app, Some("隐藏其他应用"))?,
+        &Item::separator(app)?,
+        &MenuItem::with_id(app, QUIT_MENU_ID, format!("退出 {name}"), true, Some("CmdOrCtrl+Q"))?,
+    ])?;
+    let file = Submenu::with_items(app, "文件", true, &[&Item::close_window(app, Some("关闭窗口"))?])?;
+    let edit = Submenu::with_items(app, "编辑", true, &[
+        &Item::undo(app, Some("撤销"))?,
+        &Item::redo(app, Some("重做"))?,
+        &Item::separator(app)?,
+        &Item::cut(app, Some("剪切"))?,
+        &Item::copy(app, Some("复制"))?,
+        &Item::paste(app, Some("粘贴"))?,
+        &Item::select_all(app, Some("全选"))?,
+    ])?;
+    let view = Submenu::with_items(app, "视图", true, &[&Item::fullscreen(app, Some("切换全屏"))?])?;
+    let window = Submenu::with_id_and_items(app, WINDOW_SUBMENU_ID, "窗口", true, &[
+        &Item::minimize(app, Some("最小化"))?,
+        &Item::maximize(app, Some("缩放"))?,
+        &Item::separator(app)?,
+        &Item::close_window(app, Some("关闭窗口"))?,
+    ])?;
+    let help = Submenu::with_id_and_items(app, HELP_SUBMENU_ID, "帮助", true, &[])?;
+    Menu::with_items(app, &[&scarlet, &file, &edit, &view, &window, &help])
 }
 
 #[cfg(test)]
@@ -158,15 +186,15 @@ mod tests {
     fn names_what_quitting_would_stop() {
         let asks = |edits, queued, exports| warning(&UnderWay { edits, queued, exports }, Leaving::Quit);
         assert_eq!(asks(0, 0, 0), None);
-        assert_eq!(asks(1, 0, 0).as_deref(), Some("Quitting stops the edit Scarlet is working on. It carries on when you open Scarlet again."));
-        assert_eq!(asks(1, 2, 0).as_deref(), Some("Quitting stops the edit Scarlet is working on and 2 edits waiting their turn. They carry on when you open Scarlet again."));
-        assert_eq!(asks(2, 1, 1).as_deref(), Some("Quitting stops the 2 edits Scarlet is working on, an edit waiting its turn and an export. They carry on when you open Scarlet again."));
-        assert_eq!(asks(0, 0, 3).as_deref(), Some("Quitting stops 3 exports. They carry on when you open Scarlet again."));
+        assert_eq!(asks(1, 0, 0).as_deref(), Some("退出会停止Scarlet 正在处理的剪辑。下次打开 Scarlet 时会继续。"));
+        assert_eq!(asks(1, 2, 0).as_deref(), Some("退出会停止Scarlet 正在处理的剪辑和2 个排队中的剪辑。下次打开 Scarlet 时会继续。"));
+        assert_eq!(asks(2, 1, 1).as_deref(), Some("退出会停止Scarlet 正在处理的 2 个剪辑、一个排队中的剪辑和一个导出任务。下次打开 Scarlet 时会继续。"));
+        assert_eq!(asks(0, 0, 3).as_deref(), Some("退出会停止3 个导出任务。下次打开 Scarlet 时会继续。"));
         // Restart to update opens Scarlet again by itself, and says so in its own words.
         let restart = |edits, queued| warning(&UnderWay { edits, queued, exports: 0 }, Leaving::Restart);
         assert_eq!(restart(0, 0), None);
-        assert_eq!(restart(1, 0).as_deref(), Some("Restarting stops the edit Scarlet is working on. It carries on when Scarlet reopens."));
-        assert_eq!(restart(1, 2).as_deref(), Some("Restarting stops the edit Scarlet is working on and 2 edits waiting their turn. They carry on when Scarlet reopens."));
+        assert_eq!(restart(1, 0).as_deref(), Some("重启会停止Scarlet 正在处理的剪辑。Scarlet 重新打开时会继续。"));
+        assert_eq!(restart(1, 2).as_deref(), Some("重启会停止Scarlet 正在处理的剪辑和2 个排队中的剪辑。Scarlet 重新打开时会继续。"));
     }
 
     #[tokio::test]
@@ -178,7 +206,7 @@ mod tests {
         .await;
         let said = under_way(&busy.url, "sct_t").await;
         assert_eq!(said, Some(UnderWay { edits: 1, queued: 0, exports: 1 }));
-        assert_eq!(warning(&what_would_stop(said, 1), Leaving::Quit).as_deref(), Some("Quitting stops the edit Scarlet is working on and an export. They carry on when you open Scarlet again."));
+        assert_eq!(warning(&what_would_stop(said, 1), Leaving::Quit).as_deref(), Some("退出会停止Scarlet 正在处理的剪辑和一个导出任务。下次打开 Scarlet 时会继续。"));
         // The engine's word stands over the host's: nothing under way, so Scarlet quits at once.
         let idle = fake::engine(|_, _| (200, r#"{"edits":0,"queued":0,"exports":0}"#.into())).await;
         assert_eq!(warning(&what_would_stop(under_way(&idle.url, "sct_t").await, 0), Leaving::Quit), None);
@@ -187,7 +215,7 @@ mod tests {
         let old = fake::engine(|_, _| (404, r#"{"error":{"code":"not_found","message":"Not found"}}"#.into())).await;
         for silent in [under_way(&gone, "sct_t").await, under_way(&old.url, "sct_t").await] {
             assert_eq!(silent, None);
-            assert_eq!(warning(&what_would_stop(None, 2), Leaving::Quit).as_deref(), Some("Quitting stops the 2 edits Scarlet is working on. They carry on when you open Scarlet again."));
+            assert_eq!(warning(&what_would_stop(None, 2), Leaving::Quit).as_deref(), Some("退出会停止Scarlet 正在处理的 2 个剪辑。下次打开 Scarlet 时会继续。"));
             assert_eq!(warning(&what_would_stop(silent, 0), Leaving::Quit), None);
         }
     }

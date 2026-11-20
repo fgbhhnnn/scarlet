@@ -106,8 +106,8 @@ it("waits for the edit history only for a note's link or the history panel", asy
     await act(async () => root.unmount());
     return text;
   };
-  expect(await show(`/p/${project.id}?note=note_1`)).toContain("Loading edit history…");
-  expect(await show(`/p/${project.id}?panel=history`)).toContain("Loading edit history…");
+  expect(await show(`/p/${project.id}?note=note_1`)).toContain("正在加载剪辑历史…");
+  expect(await show(`/p/${project.id}?panel=history`)).toContain("正在加载剪辑历史…");
   // Older links named a thread or item that nothing reads any more.
   expect(await show(`/p/${project.id}?thread=chg_1`)).toBe(`/p/${project.id}?thread=chg_1`);
   expect(await show(`/p/${project.id}`)).toBe(`/p/${project.id}`);

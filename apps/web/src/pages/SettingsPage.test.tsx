@@ -51,13 +51,13 @@ it("saves the telemetry switch from About and links the filler-word model credit
   const save = vi.spyOn(api, "updateSettings").mockImplementation(async patch => ({ settings: { ...settings, ...patch } }));
   const browse = vi.spyOn(desktop, "openUrl").mockResolvedValue();
   await open("/settings#about");
-  const toggle = el.querySelector<HTMLButtonElement>('[role="switch"][aria-label="Send usage reports"]')!;
+  const toggle = el.querySelector<HTMLButtonElement>('[role="switch"][aria-label="发送使用情况报告"]')!;
   expect(toggle.getAttribute("aria-checked")).toBe("true");
   await act(async () => toggle.click());
   expect(save).toHaveBeenCalledExactlyOnceWith({ telemetryEnabled: false });
   expect(toggle.getAttribute("aria-checked")).toBe("false");
   const credit = el.querySelector<HTMLAnchorElement>('a[href="https://desertant.com"]')!;
-  expect(credit.textContent).toBe("Uhm by Desert Ant Labs");
+  expect(credit.textContent).toBe("Desert Ant Labs 的 Uhm");
   await act(async () => credit.click());
   expect(browse).toHaveBeenCalledExactlyOnceWith("https://desertant.com");
 });
@@ -65,10 +65,10 @@ it("saves the telemetry switch from About and links the filler-word model credit
 it("shows reporting locked off by the environment even with a saved opt-in", async () => {
   vi.mocked(api.settings).mockResolvedValue({ settings, telemetryUnavailable: "environment" });
   await open("/settings#about");
-  const toggle = el.querySelector<HTMLButtonElement>('[aria-label="Send usage reports"]')!;
+  const toggle = el.querySelector<HTMLButtonElement>('[aria-label="发送使用情况报告"]')!;
   expect(toggle.disabled).toBe(true);
   expect(toggle.getAttribute("aria-checked")).toBe("false");
-  expect(el.textContent).toContain("turned off by the engine environment");
+  expect(el.textContent).toContain("引擎环境已关闭使用情况报告。");
 });
 
 it("leaves Settings on Esc when nothing is unsaved", async () => {
@@ -83,10 +83,10 @@ it("keeps Settings open on Esc while a change is unsaved and moves focus to Save
   await selectOption(previewHeight(), "720p");
   expect(document.activeElement).toBe(previewHeight());
   await esc();
-  expect(heading()).toBe("Settings");
+  expect(heading()).toBe("设置");
   expect(document.activeElement).toBe(saveButton());
   await esc();
-  expect(heading()).toBe("Settings");
+  expect(heading()).toBe("设置");
   expect(document.activeElement).toBe(saveButton());
 });
 
@@ -102,7 +102,7 @@ it("leaves on Esc again once the change is saved", async () => {
   expect(save).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ render: expect.objectContaining({ previewHeight: 720 }) }));
   // The change isn't saved until the engine answers.
   await esc();
-  expect(heading()).toBe("Settings");
+  expect(heading()).toBe("设置");
   await act(async () => finish());
   expect(saveButton().disabled).toBe(true);
   await esc();
@@ -121,7 +121,7 @@ it("only blurs a changed text field on the first Esc and moves focus to Save on 
   await esc();
   expect(document.activeElement).toBe(document.body);
   await esc();
-  expect(heading()).toBe("Settings");
+  expect(heading()).toBe("设置");
   expect(document.activeElement).toBe(saveButton());
 });
 
@@ -131,10 +131,10 @@ it("leaves Esc to an open list, which closes without leaving Settings", async ()
   expect(document.querySelector('[role="listbox"]')).not.toBeNull();
   // Transcription can't be turned off: the list offers only the ways to run it.
   expect([...document.querySelectorAll('[role="option"]')].map(o => o.textContent))
-    .toEqual(["CrisperWhisper 2.0 (default)", "Whisper large-v3-turbo (bundled)", "Custom local model", "OpenAI Whisper (cloud)"]);
+    .toEqual(["CrisperWhisper 2.0（默认）", "Whisper large-v3-turbo（内置）", "自定义本地模型", "OpenAI Whisper（云端）"]);
   await esc();
   expect(document.querySelector('[role="listbox"]')).toBeNull();
-  expect(heading()).toBe("Settings");
+  expect(heading()).toBe("设置");
   await esc();
   expect(el.textContent).toBe("Project library");
 });
@@ -147,10 +147,10 @@ it("says who is signed in once on General, in the card, and has no default to pi
   expect(el.querySelectorAll("#hosts")).toHaveLength(1);
   expect(el.querySelector(".settings-page")!.firstElementChild!.nextElementSibling!.id).toBe("hosts");
   // The model is picked in the selector, which a default here never changed once one was picked.
-  expect(el.querySelector("form h2")?.textContent).toBe("Speech transcription");
-  expect([...el.querySelectorAll<HTMLLabelElement>("form label")].map(label => [label.htmlFor, label.textContent])).toEqual([["tr-provider", "Preferred model"]]);
+  expect(el.querySelector("form h2")?.textContent).toBe("语音转写");
+  expect([...el.querySelectorAll<HTMLLabelElement>("form label")].map(label => [label.htmlFor, label.textContent])).toEqual([["tr-provider", "首选模型"]]);
   // The one choice left is saved as it is made, and nothing else goes with it.
-  await selectOption(transcribeWith(), "CrisperWhisper 2.0 (default)");
+  await selectOption(transcribeWith(), "CrisperWhisper 2.0（默认）");
   expect(save).toHaveBeenCalledExactlyOnceWith({ transcription: expect.objectContaining({ provider: "whispercpp", localModel: "crisperwhisper" }) });
 });
 
@@ -158,18 +158,18 @@ it("picks how much Scarlet checks with the editor on General, saved as it is cho
   const save = vi.spyOn(api, "updateSettings").mockImplementation(async patch => ({ settings: { ...settings, ...patch } as typeof settings }));
   await open();
   const card = el.querySelector(".check-in-preferences")!;
-  expect(card.querySelector("h2")?.textContent).toBe("Checking with you");
-  expect(card.querySelector("label")?.textContent).toBe("Ask me to check");
+  expect(card.querySelector("h2")?.textContent).toBe("剪点确认");
+  expect(card.querySelector("label")?.textContent).toBe("请我确认");
   const pick = card.querySelector<HTMLElement>("#check-in")!;
   // Balanced until the editor says otherwise, and the line under it says what that step brings them.
-  expect(pick.textContent).toBe("Balanced");
-  expect(card.querySelector(".transcription-status")?.textContent).toBe("About one in four of the cuts that take words out: the ones Scarlet thinks most likely to be wrong. They go into the video either way and wait in For you until you keep them.");
-  expect((await openOptions(pick)).map(option => option.textContent)).toEqual(["Less", "Balanced", "More"]);
+  expect(pick.textContent).toBe("适中");
+  expect(card.querySelector(".transcription-status")?.textContent).toBe("Scarlet 会从删去台词的剪点中，挑出约四分之一最可能需要调整的剪点请你确认。这些剪辑会先应用到视频，并保留在待审阅列表中，直到你确认保留。");
+  expect((await openOptions(pick)).map(option => option.textContent)).toEqual(["较少", "适中", "较多"]);
   await act(async () => pick.click());
-  await selectOption(pick, "More");
+  await selectOption(pick, "较多");
   expect(save).toHaveBeenCalledExactlyOnceWith({ checkIn: "more" });
-  expect(pick.textContent).toBe("More");
-  expect(card.querySelector(".transcription-status")?.textContent).toContain("About half of the cuts that take words out");
+  expect(pick.textContent).toBe("较多");
+  expect(card.querySelector(".transcription-status")?.textContent).toContain("Scarlet 会从删去台词的剪点中，挑出约一半最可能需要调整的剪点请你确认。");
 });
 
 const typeInto = (field: HTMLInputElement, value: string) => act(async () => {
@@ -180,10 +180,10 @@ const typeInto = (field: HTMLInputElement, value: string) => act(async () => {
 it("shows the settings once Retry gets through after a failed load", async () => {
   vi.spyOn(api, "settings").mockRejectedValueOnce(new Error("Engine unreachable"));
   await open("/settings#advanced");
-  expect(el.textContent).toContain("Couldn’t load server settings");
+  expect(el.textContent).toContain("无法加载服务器设置");
   expect(el.textContent).toContain("Engine unreachable");
-  await act(async () => [...el.querySelectorAll("button")].find(b => b.textContent?.trim() === "Retry")!.click());
-  expect(el.textContent).not.toContain("Couldn’t load server settings");
+  await act(async () => [...el.querySelectorAll("button")].find(b => b.textContent?.trim() === "重试")!.click());
+  expect(el.textContent).not.toContain("无法加载服务器设置");
   expect(el.querySelector("#tr-lang")).not.toBeNull();
 });
 
@@ -236,25 +236,25 @@ it("asks before a tab or the back link drops an unsaved change", async () => {
   await open("/settings#advanced");
   expect(previewHeight().textContent).toContain("540p");
   await selectOption(previewHeight(), "720p");
-  await press("About");
-  expect(asking()).toContain("These settings have unsaved changes.");
-  expect(el.querySelector('[aria-current="true"]')?.textContent).toBe("Advanced");
+  await press("关于");
+  expect(asking()).toContain("当前设置有未保存的更改。");
+  expect(el.querySelector('[aria-current="true"]')?.textContent).toBe("高级");
   // Stay keeps the change where it was.
-  await press("Stay");
+  await press("留在此页");
   expect(asking()).toBe("");
   expect(previewHeight().textContent).toContain("720p");
   // Discard leaves without saving, and the old value is what comes back.
-  await press("About");
-  await press("Discard changes");
-  expect(el.querySelector('[aria-current="true"]')?.textContent).toBe("About");
+  await press("关于");
+  await press("放弃更改");
+  expect(el.querySelector('[aria-current="true"]')?.textContent).toBe("关于");
   expect(save).not.toHaveBeenCalled();
-  await press("Advanced");
+  await press("高级");
   expect(previewHeight().textContent).toContain("540p");
   // Save and leave saves first.
   await selectOption(previewHeight(), "720p");
-  await press("← Projects");
-  expect(asking()).toContain("These settings have unsaved changes.");
-  await press("Save and leave");
+  await press("← 项目");
+  expect(asking()).toContain("当前设置有未保存的更改。");
+  await press("保存并离开");
   expect(save).toHaveBeenCalledWith(expect.objectContaining({ render: expect.objectContaining({ previewHeight: 720 }) }));
   expect(el.textContent).toBe("Project library");
 });
@@ -276,18 +276,18 @@ it("saves a General dropdown as it is chosen, with no Save to press", async () =
   const save = vi.spyOn(api, "updateSettings").mockImplementation(async patch => ({ settings: { ...settings, ...patch } as typeof settings }));
   await open();
   expect(el.querySelector('button[type="submit"]')).toBeNull();
-  await selectOption(transcribeWith(), "CrisperWhisper 2.0 (default)");
+  await selectOption(transcribeWith(), "CrisperWhisper 2.0（默认）");
   expect(save).toHaveBeenCalledExactlyOnceWith({ transcription: expect.objectContaining({ provider: "whispercpp", localModel: "crisperwhisper" }) });
   expect(transcribeWith().textContent).toContain("CrisperWhisper");
   // Put back, it is saved again, and nothing is left to ask about on the way to another tab.
-  await selectOption(transcribeWith(), "OpenAI Whisper (cloud)");
+  await selectOption(transcribeWith(), "OpenAI Whisper（云端）");
   expect(save).toHaveBeenLastCalledWith({ transcription: expect.objectContaining({ provider: "openai" }) });
-  await press("About");
+  await press("关于");
   expect(asking()).toBe("");
-  expect(el.querySelector('[aria-current="true"]')?.textContent).toBe("About");
+  expect(el.querySelector('[aria-current="true"]')?.textContent).toBe("关于");
 });
 
-it.each(["Advanced", "← Projects"])("waits for General to save before going to %s", async destination => {
+it.each(["高级", "← 项目"])("waits for General to save before going to %s", async destination => {
   let finish!: () => void;
   const save = vi.spyOn(api, "updateSettings").mockImplementation(patch => new Promise(resolve => {
     finish = () => {
@@ -297,14 +297,14 @@ it.each(["Advanced", "← Projects"])("waits for General to save before going to
     };
   }));
   await open();
-  await selectOption(transcribeWith(), "CrisperWhisper 2.0 (default)");
+  await selectOption(transcribeWith(), "CrisperWhisper 2.0（默认）");
   expect(save).toHaveBeenCalledOnce();
   await press(destination);
-  expect(el.querySelector('[aria-current="true"]')?.textContent).toBe("General");
-  expect(el.textContent).toContain("Saving…");
+  expect(el.querySelector('[aria-current="true"]')?.textContent).toBe("常规");
+  expect(el.textContent).toContain("正在保存…");
   await act(async () => finish());
   expect(el.querySelector('[aria-current="true"]')?.textContent ?? el.textContent)
-    .toBe(destination === "Advanced" ? destination : "Project library");
+    .toBe(destination === "高级" ? destination : "Project library");
 });
 
 it("shows a General save error if the editor tried to change tabs during the save", async () => {
@@ -313,14 +313,14 @@ it("shows a General save error if the editor tried to change tabs during the sav
     fail = () => reject(new Error("Engine unreachable"));
   }));
   await open();
-  await selectOption(transcribeWith(), "CrisperWhisper 2.0 (default)");
-  await press("Advanced");
+  await selectOption(transcribeWith(), "CrisperWhisper 2.0（默认）");
+  await press("高级");
   await act(async () => fail());
-  expect(el.querySelector('[aria-current="true"]')?.textContent).toBe("General");
+  expect(el.querySelector('[aria-current="true"]')?.textContent).toBe("常规");
   expect(el.querySelector('form [role="alert"]')?.textContent).toBe("Engine unreachable");
   expect(transcribeWith().textContent).toContain("OpenAI Whisper");
-  await press("Advanced");
-  expect(el.querySelector('[aria-current="true"]')?.textContent).toBe("Advanced");
+  await press("高级");
+  expect(el.querySelector('[aria-current="true"]')?.textContent).toBe("高级");
 });
 
 it("shows the bundled fallback for first-install CrisperWhisper and opens its pinned model files through the desktop", async () => {
@@ -328,20 +328,20 @@ it("shows the bundled fallback for first-install CrisperWhisper and opens its pi
   vi.mocked(api.localModelStatus).mockResolvedValue({ state: "ready", selected: "crisperwhisper", active: "whispercpp", fallback: true });
   const browse = vi.spyOn(desktop, "openUrl").mockResolvedValue();
   await open();
-  expect(transcribeWith().textContent).toBe("CrisperWhisper 2.0 (default)");
-  expect(el.querySelector('form [role="status"]')?.textContent).toContain("Using bundled Whisper");
+  expect(transcribeWith().textContent).toBe("CrisperWhisper 2.0（默认）");
+  expect(el.querySelector('form [role="status"]')?.textContent).toContain("正在使用内置 Whisper");
   const guide = el.querySelector<HTMLDetailsElement>("form details")!;
   const summary = guide.querySelector("summary")!;
   expect(guide.open).toBe(false);
-  expect(summary.textContent).toContain("Set up CrisperWhisper");
-  const license = "Commercial use requires a separate license.";
+  expect(summary.textContent).toContain("设置 CrisperWhisper");
+  const license = "商用需要单独授权。";
   expect(el.querySelector("form")?.textContent).toContain(license);
   expect([...guide.children].filter(child => child !== summary).some(child => child.textContent?.includes(license))).toBe(false);
   await act(async () => summary.click());
   expect(guide.open).toBe(true);
   expect(guide.textContent).toContain("Python 3.12");
-  expect(guide.textContent).toContain("downloads the runtime libraries");
-  await press("CrisperWhisper 2.0 large model files");
+  expect(guide.textContent).toContain("下载运行库");
+  await press("CrisperWhisper 2.0 large 模型文件");
   expect(browse).toHaveBeenCalledWith("https://huggingface.co/nyralabs/CrisperWhisper2.0_large/tree/f4334f6e8193f2691212d49b20fa12d370e13896");
 });
 
@@ -353,25 +353,25 @@ it("names the bundled Whisper fallback while its download is still in progress",
   await open();
   expect(transcribeWith().textContent).toContain("CrisperWhisper");
   const status = el.querySelector('form [role="status"]')?.textContent;
-  expect(status).toMatch(/bundled Whisper/i);
-  expect(status).toMatch(/download/i);
+  expect(status).toMatch(/内置 Whisper/);
+  expect(status).toMatch(/下载/);
   expect(status).toContain("35%");
-  expect(status).not.toMatch(/using bundled Whisper/i);
+  expect(status).not.toMatch(/正在使用内置 Whisper/);
 });
 
 it("shows where audio goes when switching between cloud, bundled and custom transcription", async () => {
   vi.spyOn(api, "updateSettings").mockImplementation(async patch => ({ settings: { ...settings, ...patch } }));
   await open();
   const form = el.querySelector("form")!;
-  const cloud = "Audio is sent to OpenAI for transcription.";
-  const local = "Audio stays on this computer.";
+  const cloud = "音频会发送至 OpenAI 进行转写。";
+  const local = "音频保留在这台电脑上。";
   expect(form.textContent).toContain(cloud);
   expect(form.textContent).not.toContain(local);
-  await selectOption(transcribeWith(), "Whisper large-v3-turbo (bundled)");
+  await selectOption(transcribeWith(), "Whisper large-v3-turbo（内置）");
   expect(form.textContent).toContain(local);
   expect(form.textContent).not.toContain(cloud);
-  await selectOption(transcribeWith(), "Custom local model");
-  expect(form.textContent).toContain("Scarlet passes audio to the selected local runtime.");
+  await selectOption(transcribeWith(), "自定义本地模型");
+  expect(form.textContent).toContain("Scarlet 会将音频交给选定的本地运行程序。");
   expect(form.textContent).not.toContain(local);
 });
 
@@ -385,11 +385,11 @@ it("cancels the native folder picker without starting or saving an installation"
   const save = vi.spyOn(api, "updateSettings");
   await open();
   await act(async () => el.querySelector<HTMLElement>("form summary")!.click());
-  await press("Install from folder…");
-  expect(pick).toHaveBeenCalledExactlyOnceWith("Choose the CrisperWhisper model folder");
+  await press("从文件夹安装…");
+  expect(pick).toHaveBeenCalledExactlyOnceWith("选择 CrisperWhisper 模型文件夹");
   expect(install).not.toHaveBeenCalled();
   expect(save).not.toHaveBeenCalled();
-  expect(setupButton("Install from folder…").disabled).toBe(false);
+  expect(setupButton("从文件夹安装…").disabled).toBe(false);
 });
 
 it("can retry an installation error and keeps showing a pending install when General reopens", async () => {
@@ -402,21 +402,21 @@ it("can retry an installation error and keeps showing a pending install when Gen
   await open();
   const expand = () => act(async () => el.querySelector<HTMLElement>("form summary")!.click());
   await expand();
-  await press("Install from folder…");
+  await press("从文件夹安装…");
   expect(el.querySelector("form details [role=alert]")?.textContent).toBe(issue);
-  await press("Retry from folder…");
+  await press("重新选择安装文件夹…");
   expect(install.mock.calls).toEqual([["/models/partial"], ["/models/complete checkpoint"]]);
   expect(el.querySelector("form details [role=alert]")).toBeNull();
-  await press("About");
-  await press("General");
+  await press("关于");
+  await press("常规");
   await expand();
-  const pending = setupButton("Installing CrisperWhisper…");
+  const pending = setupButton("正在安装 CrisperWhisper…");
   expect(pending.disabled).toBe(true);
   await act(async () => pending.click());
   expect(pick).toHaveBeenCalledTimes(2);
   vi.mocked(api.localModelStatus).mockResolvedValue({ state: "ready", selected: "crisperwhisper", active: "crisperwhisper", fallback: false });
   await act(async () => finish());
-  expect(el.querySelector('form [role="status"]')?.textContent).toBe("CrisperWhisper is ready.");
+  expect(el.querySelector('form [role="status"]')?.textContent).toBe("CrisperWhisper 已就绪。");
   expect(pending.disabled).toBe(false);
 });
 
@@ -425,8 +425,8 @@ it("can turn on the local default from a previously disabled transcription provi
   vi.mocked(api.settings).mockResolvedValue({ settings: disabled, transcriptionAvailable: false });
   const save = vi.spyOn(api, "updateSettings").mockImplementation(async patch => ({ settings: { ...disabled, ...patch } }));
   await open();
-  expect(transcribeWith().textContent).toBe("Transcription unavailable");
-  await selectOption(transcribeWith(), "CrisperWhisper 2.0 (default)");
+  expect(transcribeWith().textContent).toBe("转写不可用");
+  await selectOption(transcribeWith(), "CrisperWhisper 2.0（默认）");
   expect(save).toHaveBeenCalledExactlyOnceWith({ transcription: expect.objectContaining({ provider: "whispercpp", localModel: "crisperwhisper" }) });
 });
 
@@ -436,7 +436,7 @@ it("uses the engine's recognized preset for older paths and explains when there 
   const reason = "CrisperWhisper is not installed and the bundled Whisper runtime is unavailable.";
   vi.mocked(api.localModelStatus).mockResolvedValue({ state: "missing", selected: "crisperwhisper", fallback: false, reason });
   await open();
-  expect(transcribeWith().textContent).toBe("CrisperWhisper 2.0 (default)");
+  expect(transcribeWith().textContent).toBe("CrisperWhisper 2.0（默认）");
   expect(el.querySelector('form [role="status"]')?.textContent).toBe(reason);
 });
 
@@ -450,28 +450,28 @@ it("discovers existing custom paths, browses for replacements and saves them acr
   });
   const pick = vi.spyOn(desktop, "pickFile").mockResolvedValueOnce(null).mockResolvedValueOnce("/models/my model.bin").mockResolvedValueOnce("/adapters/my adapter");
   await open();
-  expect(transcribeWith().textContent).toBe("Custom local model");
-  await press("Configure model file and adapter");
+  expect(transcribeWith().textContent).toBe("自定义本地模型");
+  await press("配置模型文件和适配器");
   const model = el.querySelector<HTMLInputElement>("#tr-modelpath")!;
   const adapter = el.querySelector<HTMLInputElement>("#tr-bin")!;
   expect([model.value, adapter.value]).toEqual([paths.whisperModelPath, paths.whisperCppPath]);
   const selectFile = (label: string) => act(async () => el.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`)!.click());
-  await selectFile("Choose model file");
+  await selectFile("选择模型文件");
   expect(saveButton().disabled).toBe(true);
-  await selectFile("Choose model file");
-  await selectFile("Choose adapter executable");
-  expect(pick.mock.calls).toEqual([["Choose model file"], ["Choose model file"], ["Choose adapter executable"]]);
+  await selectFile("选择模型文件");
+  await selectFile("选择适配器程序");
+  expect(pick.mock.calls).toEqual([["选择模型文件"], ["选择模型文件"], ["选择适配器程序"]]);
   expect(save).not.toHaveBeenCalled();
   await act(async () => saveButton().click());
   const replacement = { whisperModelPath: "/models/my model.bin", whisperCppPath: "/adapters/my adapter" };
   expect(save).toHaveBeenCalledWith(expect.objectContaining({ transcription: expect.objectContaining({ ...replacement, localModel: "custom" }) }));
-  await press("General");
-  await selectOption(transcribeWith(), "Whisper large-v3-turbo (bundled)");
+  await press("常规");
+  await selectOption(transcribeWith(), "Whisper large-v3-turbo（内置）");
   expect(save).toHaveBeenLastCalledWith({ transcription: expect.objectContaining({ ...replacement, provider: "whispercpp", localModel: "whispercpp" }) });
-  await selectOption(transcribeWith(), "OpenAI Whisper (cloud)");
+  await selectOption(transcribeWith(), "OpenAI Whisper（云端）");
   expect(save).toHaveBeenLastCalledWith({ transcription: expect.objectContaining({ ...replacement, provider: "openai" }) });
-  await selectOption(transcribeWith(), "Custom local model");
-  await press("Configure model file and adapter");
+  await selectOption(transcribeWith(), "自定义本地模型");
+  await press("配置模型文件和适配器");
   expect(el.querySelector<HTMLInputElement>("#tr-modelpath")?.value).toBe(replacement.whisperModelPath);
   expect(el.querySelector<HTMLInputElement>("#tr-bin")?.value).toBe(replacement.whisperCppPath);
 });
@@ -479,7 +479,7 @@ it("discovers existing custom paths, browses for replacements and saves them acr
 it("puts a General dropdown back and says why when its choice can't be saved", async () => {
   vi.spyOn(api, "updateSettings").mockRejectedValue(new Error("Engine unreachable"));
   await open();
-  await selectOption(transcribeWith(), "CrisperWhisper 2.0 (default)");
+  await selectOption(transcribeWith(), "CrisperWhisper 2.0（默认）");
   expect(transcribeWith().textContent).toContain("OpenAI Whisper");
   expect(el.querySelector('form [role="alert"]')?.textContent).toBe("Engine unreachable");
   // Esc still leaves: nothing here is waiting to be saved.
@@ -498,7 +498,7 @@ it("counts a change that was put back as no change: Save goes dim and leaving do
   // A dropdown, a switch and a number field the same.
   await selectOption(previewHeight(), "720p");
   await selectOption(previewHeight(), "540p");
-  const cleanup = el.querySelector<HTMLButtonElement>('[aria-label="Enable note cleanup"]')!;
+  const cleanup = el.querySelector<HTMLButtonElement>('[aria-label="启用语音备注整理"]')!;
   await act(async () => cleanup.click());
   expect(saveButton().disabled).toBe(false);
   await act(async () => cleanup.click());
@@ -506,16 +506,16 @@ it("counts a change that was put back as no change: Save goes dim and leaving do
   expect(saveButton().disabled).toBe(false);
   await typeInto(concurrency, "2");
   expect(saveButton().disabled).toBe(true);
-  await press("About");
+  await press("关于");
   expect(asking()).toBe("");
-  expect(el.querySelector('[aria-current="true"]')?.textContent).toBe("About");
+  expect(el.querySelector('[aria-current="true"]')?.textContent).toBe("关于");
 });
 
 it("leaves by a tab without asking when nothing is unsaved", async () => {
   await open();
-  await press("About");
+  await press("关于");
   expect(asking()).toBe("");
-  expect(el.querySelector('[aria-current="true"]')?.textContent).toBe("About");
+  expect(el.querySelector('[aria-current="true"]')?.textContent).toBe("关于");
 });
 
 it("says on Models what is true signed in or not: no models until Claude Code or Codex is online", async () => {
@@ -528,14 +528,14 @@ it("says on Models what is true signed in or not: no models until Claude Code or
     expect(signedIn.agents[0]).toMatchObject({ id: "claude", installed: true, loggedIn: true });
     useHostsStore.setState({ status: "ready", error: null, hosts: [{ ...signedIn, online: false }] });
     await open("/settings#models");
-    expect(said()).toBe("Models appear when Claude Code, Codex or Gemini is online. Manage sign-in");
+    expect(said()).toBe("Claude Code、Codex 或 Gemini 在线时会显示可用模型。 管理登录");
     // The same under the reason, when the list of computers couldn't be read.
     await act(async () => useHostsStore.setState({ status: "error", error: "Engine unreachable", hosts: [] }));
     expect(el.querySelector('[role="alert"]')?.textContent).toBe("Engine unreachable");
-    expect(said()).toBe("Models appear when Claude Code, Codex or Gemini is online. Manage sign-in");
+    expect(said()).toBe("Claude Code、Codex 或 Gemini 在线时会显示可用模型。 管理登录");
     // And with nobody signed in, where the link beside it is the way on.
     await act(async () => useHostsStore.setState({ status: "ready", error: null, hosts: [] }));
-    expect(said()).toBe("Models appear when Claude Code, Codex or Gemini is online. Manage sign-in");
+    expect(said()).toBe("Claude Code、Codex 或 Gemini 在线时会显示可用模型。 管理登录");
     expect(el.querySelector('.settings-page section.card p a')?.getAttribute("href")).toBe("/settings#hosts");
   } finally {
     await act(async () => useHostsStore.setState(hosts, true));

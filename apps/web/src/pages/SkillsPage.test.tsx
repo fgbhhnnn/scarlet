@@ -39,11 +39,11 @@ it("loads the skills once, says so while it does, and offers Retry when they can
   await show();
   expect(load).toHaveBeenCalledTimes(1);
   await act(async () => useSkillsStore.setState({ status: "loading" }));
-  expect(container.textContent).toContain("Loading skills…");
+  expect(container.textContent).toContain("正在加载技能…");
   expect(load).toHaveBeenCalledTimes(1);
   await act(async () => useSkillsStore.setState({ status: "error", error: "The engine isn’t answering." }));
   expect(container.querySelector('[role="alert"]')?.textContent).toContain("The engine isn’t answering.");
-  await act(async () => [...container.querySelectorAll("button")].find(b => b.textContent === "Retry")!.click());
+  await act(async () => [...container.querySelectorAll("button")].find(b => b.textContent === "重试")!.click());
   expect(load).toHaveBeenCalledTimes(2);
   // Skills already on screen stay there through a reload that fails.
   await act(async () => useSkillsStore.setState({ skills: [skill("tighten-pauses")] }));
@@ -54,16 +54,17 @@ it("loads the skills once, says so while it does, and offers Retry when they can
 it("groups skills by the category they name, in the app's order, by name within each, with the rest last", async () => {
   useSkillsStore.setState({ status: "ready", error: null, load: vi.fn(), skills: [
     skill("zoom-in", {}, "Picture and graphics"), skill("clean-audio", { enabled: false, description: "" }, "Sound"), skill("balance-voices", {}, "Sound"),
-    skill("house-style", { source: "change:chg_1" }), skill("first-cut", {}, "Getting started"), skill("my-own", {}, "Mine")] });
+    skill("house-style", { source: "change:chg_1" }), skill("first-cut", {}, "Getting started"), skill("my-own", {}, "Mine"),
+    skill("preset", {}, "constructor")] });
   await show();
   // Empty categories aren't drawn. One the app doesn't know comes after its own, and a skill with none is under Other.
-  expect(sections()).toEqual([["Getting started", ["first-cut"]], ["Sound", ["balance-voices", "clean-audio"]], ["Picture and graphics", ["zoom-in"]],
-    ["Other skills", ["house-style"]], ["Mine", ["my-own"]]]);
+  expect(sections()).toEqual([["入门", ["first-cut"]], ["声音", ["balance-voices", "clean-audio"]], ["画面与图形", ["zoom-in"]],
+    ["其他技能", ["house-style"]], ["Mine", ["my-own"]], ["constructor", ["preset"]]]);
   const row = (name: string) => container.querySelector(`a[href="/settings/skills/skl_${name}"]`)!.closest("li")!;
-  expect(row("clean-audio").textContent).toContain("No description");
-  expect(row("clean-audio").querySelector('[role="switch"]')?.getAttribute("aria-label")).toBe("Enable clean-audio");
-  expect(row("house-style").textContent).toContain("from an applied edit");
-  expect(row("zoom-in").textContent).not.toContain("from an applied edit");
+  expect(row("clean-audio").textContent).toContain("暂无说明");
+  expect(row("clean-audio").querySelector('[role="switch"]')?.getAttribute("aria-label")).toBe("启用 clean-audio");
+  expect(row("house-style").textContent).toContain("来自已应用的剪辑");
+  expect(row("zoom-in").textContent).not.toContain("来自已应用的剪辑");
 });
 
 it("says which skill couldn't be turned on or off and why, until the next switch is tried", async () => {
@@ -71,10 +72,10 @@ it("says which skill couldn't be turned on or off and why, until the next switch
   useSkillsStore.setState({ status: "ready", error: null, load: vi.fn(), update, skills: [skill("zoom-in"), skill("clean-audio", { enabled: false })] });
   await show();
   const toggle = (label: string) => act(async () => container.querySelector<HTMLButtonElement>(`[role="switch"][aria-label="${label}"]`)!.click());
-  await toggle("Disable zoom-in");
+  await toggle("停用 zoom-in");
   expect(update).toHaveBeenCalledWith("skl_zoom-in", { enabled: false });
   expect(container.querySelector('[role="alert"]')?.textContent).toBe("zoom-in: The skill file is read-only.");
-  await toggle("Enable clean-audio");
+  await toggle("启用 clean-audio");
   expect(update).toHaveBeenLastCalledWith("skl_clean-audio", { enabled: true });
   expect(container.querySelector('[role="alert"]')).toBeNull();
 });
@@ -82,8 +83,11 @@ it("says which skill couldn't be turned on or off and why, until the next switch
 it("says no skills match a search that finds none, by name or by what the skill does", async () => {
   useSkillsStore.setState({ status: "ready", error: null, load: vi.fn(), skills: [skill("zoom-in", { description: "Punch in on the speaker" }), skill("clean-audio")] });
   await show();
+  const field = container.querySelector<HTMLInputElement>('[aria-label="搜索技能"]')!;
+  expect(field.placeholder).toBe("搜索技能…");
+  expect(container.querySelector('section[aria-label="技能"] h3')?.textContent).toBe("剪辑技能");
+  expect(container.querySelector('a[href="/settings/skills/new"]')?.textContent?.trim()).toBe("新建技能");
   const search = (text: string) => act(async () => {
-    const field = container.querySelector<HTMLInputElement>('[aria-label="Search skills"]')!;
     Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(field, text);
     field.dispatchEvent(new Event("input", { bubbles: true }));
   });
@@ -91,5 +95,5 @@ it("says no skills match a search that finds none, by name or by what the skill 
   expect(sections().flatMap(([, names]) => names)).toEqual(["zoom-in"]);
   await search("colour");
   expect(sections()).toEqual([]);
-  expect(container.textContent).toContain("No skills match");
+  expect(container.textContent).toContain("没有匹配的技能");
 });

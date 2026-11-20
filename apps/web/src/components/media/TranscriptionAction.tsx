@@ -8,8 +8,10 @@ import { absTime } from "../../lib/format";
 import { useProjectStore } from "../../stores/project";
 import { ConfirmDialog, Icon } from "../ui/primitives";
 import { MediaStatusLine } from "./MediaStatusLine";
+import { zh } from "../../lib/zh";
+import { zhMedia, localizedTranscriptionIssue } from "../../lib/zh-media-settings";
 
-const unknownNotice = "Audio may be sent to OpenAI, depending on your transcription settings.";
+const unknownNotice = "音频可能会根据转写设置发送到 OpenAI。";
 
 /** What fixes transcription that can't run: a setting Scarlet can change at once, or the Settings page that holds the choice. */
 type TranscriptionFix = { label: string; to: string } | { label: string; turnOnLocal: true };
@@ -28,13 +30,13 @@ export function useImportTranscription() {
       const tr = settings.transcription;
       const provider = tr.provider;
       const unavailable = provider === "none" || transcriptionAvailable === false;
-      const notice = unavailable ? `${transcriptionIssue ?? "Transcription is unavailable."} Audio will be imported without a transcript.`
-        : provider === "whispercpp" ? "Scarlet transcribes imported audio on this computer."
-        : "Audio from imported files is sent to OpenAI for transcription.";
+      const notice = unavailable ? `${transcriptionIssue ? localizedTranscriptionIssue(transcriptionIssue) : "转写不可用。"} 导入的音频不会生成转写。`
+        : provider === "whispercpp" ? "Scarlet 会在此电脑上转写导入的音频。"
+        : "导入文件的音频会发送到 OpenAI 进行转写。";
       // OpenAI with no key: local transcription is one click away. A local runtime that can't run is set up in Settings.
       const fix: TranscriptionFix | undefined = !unavailable ? undefined
-        : provider === "openai" ? { label: "Use local transcription", turnOnLocal: true }
-        : { label: "Set up transcription", to: tr.localModel === "custom" ? "/settings#advanced" : "/settings" };
+        : provider === "openai" ? { label: "使用本地转写", turnOnLocal: true }
+        : { label: zhMedia.setupTranscription, to: tr.localModel === "custom" ? "/settings#advanced" : "/settings" };
       setPolicy({ notice, fix, local: provider === "whispercpp" && transcriptionAvailable !== false,
         available: transcriptionAvailable ?? (provider === "none" ? false : null) });
     }).catch(() => { if (live) setPolicy({ available: null, notice: unknownNotice }); });
@@ -85,7 +87,7 @@ function RetranscribeIcon({ asset, onClick, blockedReason }: { asset: MediaAsset
   const show = hovered || focused;
   const when = absTime(asset.lastTranscription?.completedAt);
   return <span className="media-retranscribe" onPointerEnter={e => { if (e.pointerType !== "touch") setHovered(true); }} onPointerLeave={() => setHovered(false)}>
-    <button type="button" className="edit-card-icon" aria-label="Re-transcribe" aria-describedby={show ? tipId : undefined}
+    <button type="button" className="edit-card-icon" aria-label="重新转写" aria-describedby={show ? tipId : undefined}
       aria-disabled={blockedReason ? true : undefined} onClick={blockedReason ? undefined : onClick}
       onFocus={() => setFocused(true)} onBlur={() => setFocused(false)} onKeyDown={e => {
         if (e.key === "Escape" && show) {
@@ -95,9 +97,9 @@ function RetranscribeIcon({ asset, onClick, blockedReason }: { asset: MediaAsset
         }
       }}><Icon name="refresh" size={13} /></button>
     {show && <span className="media-transcription-tip" role="tooltip" id={tipId}>
-      <strong>Re-transcribe</strong>
-      <span>{when ? <>Last transcribed <time dateTime={asset.lastTranscription?.completedAt}>{when}</time></> : "Transcription date not recorded"}</span>
-      <span>{asset.lastTranscription?.model || "Model not recorded"}</span>
+      <strong>重新转写</strong>
+      <span>{when ? <>最近转写于 <time dateTime={asset.lastTranscription?.completedAt}>{when}</time></> : "未记录转写日期"}</span>
+      <span>{asset.lastTranscription?.model || "未记录模型"}</span>
       {blockedReason && <span>{blockedReason}</span>}
     </span>}
   </span>;
@@ -106,10 +108,10 @@ function RetranscribeIcon({ asset, onClick, blockedReason }: { asset: MediaAsset
 function ReplaceTranscript({ asset, retry, cloud, start }: { asset: MediaAsset; retry: boolean; cloud: boolean; start: () => Promise<void> }) {
   const [confirming, setConfirming] = useState(false);
   return <>
-    {retry ? <button type="button" className="simple-link" onClick={() => setConfirming(true)}>Retry</button>
+    {retry ? <button type="button" className="simple-link" onClick={() => setConfirming(true)}>{zh.common.retry}</button>
       : <RetranscribeIcon asset={asset} onClick={() => setConfirming(true)} />}
-    {confirming && <ConfirmDialog open onClose={() => setConfirming(false)} title={`Re-transcribe “${asset.name}”?`} confirmLabel="Re-transcribe"
-      body={`Scarlet will use your transcription settings and replace this file’s saved words and timings when the new transcript is ready.${cloud ? " Its audio will be sent to OpenAI." : ""}`}
+    {confirming && <ConfirmDialog open onClose={() => setConfirming(false)} title={`重新转写“${asset.name}”？`} confirmLabel="重新转写"
+      body={`Scarlet 会使用你的转写设置，并在新转写完成后替换此文件中已保存的文字和时间点。${cloud ? " 音频会发送到 OpenAI。" : ""}`}
       onConfirm={start} />}
   </>;
 }
@@ -130,19 +132,19 @@ export function TranscriptLine({ asset, available, cloud = false }: { asset: Med
   if (running || starting) {
     const waiting = running?.progress?.stage === "queued";
     const progress = transcriptionProgressLabel(running?.progress);
-    const text = waiting ? "Waiting to transcribe" : progress ? "Transcribing" : "Transcribing…";
+    const text = waiting ? "等待转写" : progress ? "正在转写" : "正在转写…";
     return <MediaStatusLine name={name} status={{ text, tone: "busy" }}
-      bar={waiting ? undefined : { label: `Transcribing ${name}`, fraction: running?.progress?.fraction, percent: progress }} />;
+      bar={waiting ? undefined : { label: `正在转写 ${name}`, fraction: running?.progress?.fraction, percent: progress }} />;
   }
-  const savedStatus = transcriptId ? { text: "Transcribed", tone: "done" as const } : { text: "No transcript", tone: "idle" as const };
+  const savedStatus = transcriptId ? { text: "已转写", tone: "done" as const } : { text: "暂无转写", tone: "idle" as const };
   if (isPreparingMedia(asset) || (transcriptId && asset.status === "failed")) return transcriptId ? <MediaStatusLine name={name} status={savedStatus} /> : null;
   if (available === false) {
     return <MediaStatusLine name={name} status={savedStatus}>
-      <Link to="/settings" className="simple-link">Set up transcription</Link>
+      <Link to="/settings" className="simple-link">{zhMedia.setupTranscription}</Link>
     </MediaStatusLine>;
   }
   // The pause stopped this run and resume starts it again. It reads like Caching paused, with nothing to retry.
-  if (paused) return <MediaStatusLine name={name} status={{ text: "Transcription paused", tone: "idle" }} />;
+  if (paused) return <MediaStatusLine name={name} status={{ text: "转写已暂停", tone: "idle" }} />;
   async function start() {
     if (pending.current) return;
     pending.current = true;
@@ -157,14 +159,14 @@ export function TranscriptLine({ asset, available, cloud = false }: { asset: Med
       setStarting(false);
     }
   }
-  const failure = error || (latest?.state === "failed" ? latest.error || "Transcription failed." : "");
+  const failure = error || (latest?.state === "failed" ? latest.error ? localizedTranscriptionIssue(latest.error) : "转写失败。" : "");
   const blocked = available === undefined || mediaPaused;
   const status = failure ? { text: failure, tone: "bad" as const } : savedStatus;
-  return <MediaStatusLine name={name} status={mediaPaused && transcriptId && !failure ? { ...status, text: "Transcribed · caching paused" } : status}>
+  return <MediaStatusLine name={name} status={mediaPaused && transcriptId && !failure ? { ...status, text: "已转写 · 缓存已暂停" } : status}>
     {transcriptId && !blocked ? <ReplaceTranscript asset={asset} retry={!!failure} cloud={cloud} start={start} />
-      : transcriptId && !failure ? <RetranscribeIcon asset={asset} blockedReason={mediaPaused ? "Resume caching to re-transcribe this file." : "Checking transcription settings…"} />
+      : transcriptId && !failure ? <RetranscribeIcon asset={asset} blockedReason={mediaPaused ? "恢复媒体处理后可重新转写此文件。" : "正在检查转写设置…"} />
       : <button type="button" className="simple-link" disabled={blocked}
-          title={mediaPaused ? "Resume caching to transcribe this file." : undefined} onClick={() => void start()}>{failure ? "Retry" : "Transcribe"}</button>}
+          title={mediaPaused ? "恢复媒体处理后可转写此文件。" : undefined} onClick={() => void start()}>{failure ? zh.common.retry : zhMedia.transcription}</button>}
   </MediaStatusLine>;
 }
 
@@ -175,10 +177,10 @@ export function TranscriptLine({ asset, available, cloud = false }: { asset: Med
 export function TranscriptionStatus({ asset }: { asset: MediaAsset }) {
   const { running, latest, paused } = useTranscriptionRun(asset);
   const progress = transcriptionProgressLabel(running?.progress);
-  const text = running ? running.progress?.stage === "queued" ? "Waiting to transcribe" : progress ? `Transcribing ${progress}` : "Transcribing…"
-    : isPreparingMedia(asset) ? "Adding"
-    : paused ? "Transcription paused"
-    : latest?.state === "failed" ? "Transcription stopped"
-    : "No transcript";
+  const text = running ? running.progress?.stage === "queued" ? "等待转写" : progress ? `正在转写 ${progress}` : "正在转写…"
+    : isPreparingMedia(asset) ? "正在添加"
+    : paused ? "转写已暂停"
+    : latest?.state === "failed" ? "转写已停止"
+    : "暂无转写";
   return <span>{text}</span>;
 }

@@ -22,7 +22,7 @@ type ModelRefreshAction = ReturnType<typeof useModelRefresh>;
 
 export function ModelRefreshButton({ action }: { action: ModelRefreshAction }) {
   return <button type="button" className="btn-quiet" disabled={action.busy} onClick={() => void action.refresh()}>
-    {action.busy ? "Refreshing…" : "Refresh models"}
+    {action.busy ? "正在刷新…" : "刷新模型"}
   </button>;
 }
 
@@ -30,7 +30,7 @@ export function ModelRefreshFeedback({ action, loadError }: { action: ModelRefre
   const error = action.result && action.result !== "done" ? action.result.error : loadError;
   return <>
     <div role="status" className="flex items-center gap-1 text-xs text-muted">
-      {!action.busy && !error && action.result === "done" && <><Icon name="check" /> Models refreshed</>}
+      {!action.busy && !error && action.result === "done" && <><Icon name="check" /> 模型已刷新</>}
     </div>
     <InlineError>{!action.busy && error}</InlineError>
   </>;

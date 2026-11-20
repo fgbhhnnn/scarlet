@@ -5,6 +5,7 @@ import { usePlayerStore } from "../../stores/player";
 import { MonitorPlayback, PlayerTime } from "../player/MonitorPlayback";
 import { cutFrameUrl } from "./thumbs";
 import type { useEditBefore } from "./EditBeforePreview";
+import { zh } from "../../lib/zh";
 
 /** Compare composed frames at the project playhead. Play always resumes the working edit. */
 export function FramingPreview({ project, timeline, original, duration, before, loading, coarse, onAfter }: {
@@ -27,13 +28,13 @@ export function FramingPreview({ project, timeline, original, duration, before, 
         pause doesn't flash black. */}
     {!playing && frame !== undefined && <div className={`pointer-events-none absolute inset-0 grid place-items-center text-sm text-muted${url && !before ? "" : " bg-black"}`}>
       {url ? <ComparisonFrame key={url} url={url} before={before} /> : before && original.error ?
-        <button type="button" className="btn-ghost pointer-events-auto" onClick={original.retry}>Retry Before frame</button> :
-        <span role="status">{before && !original.timeline ? "Opening Before…" : "No matching frame at this position."}</span>}
+        <button type="button" className="btn-ghost pointer-events-auto" onClick={original.retry}>{zh.ui.review.retryFrame}</button> :
+        <span role="status">{before && !original.timeline ? zh.ui.review.openingBefore : "当前位置没有匹配的画面。"}</span>}
     </div>}
-    {!playing && before && frame === undefined && <div className="absolute inset-0 grid place-items-center bg-black text-sm text-muted">Release to compare this frame.</div>}
+    {!playing && before && frame === undefined && <div className="absolute inset-0 grid place-items-center bg-black text-sm text-muted">松开以比较此画面。</div>}
     {/* Paused, the picture is the composed frame, which says for itself when it is loading. */}
     <MonitorPlayback playing={playing} playable loading={playing && loading} onToggle={() => { onAfter(); player.toggle(); }}
-      playLabel={before ? "Play edited video" : undefined}>
+      playLabel={before ? "播放剪辑后的视频" : undefined}>
       <PlayerTime end={duration} coarse={coarse} />
     </MonitorPlayback>
   </>;
@@ -41,10 +42,10 @@ export function FramingPreview({ project, timeline, original, duration, before, 
 
 function ComparisonFrame({ url, before }: { url: string; before: boolean }) {
   const [status, setStatus] = useState<"loading" | "ready" | "failed">("loading");
-  if (status === "failed") return <button type="button" className="btn-ghost pointer-events-auto" onClick={() => setStatus("loading")}>Retry frame</button>;
+  if (status === "failed") return <button type="button" className="btn-ghost pointer-events-auto" onClick={() => setStatus("loading")}>{zh.ui.review.retryFrame}</button>;
   return <>
-    {status === "loading" && before && <span role="status">Loading frame…</span>}
-    <img src={url} alt={before ? "Frame before the framing edit" : "Frame after the framing edit"}
+    {status === "loading" && before && <span role="status">{zh.ui.review.loadingFrame}</span>}
+    <img src={url} alt={before ? "调整前的画面" : "调整后的画面"}
       className="absolute inset-0 h-full w-full bg-black object-contain" style={{ visibility: status === "ready" ? "visible" : "hidden" }}
       draggable={false} onLoad={() => setStatus("ready")} onError={() => setStatus("failed")} />
   </>;

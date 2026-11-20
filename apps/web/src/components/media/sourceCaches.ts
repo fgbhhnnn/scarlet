@@ -142,13 +142,13 @@ export function cachePercent(cache: Pick<PlaybackCacheStatus, "progress">): stri
 /** A video's cache in a few words, for the Media link's card and the Media panel. While it caches, a percent and no time left. */
 export function cacheLabel(cache: (PlaybackCacheStatus & { queued?: boolean }) | undefined, paused: boolean): { text: string; tone: "ok" | "busy" | "idle" | "bad" } | undefined {
   if (!cache) return undefined;
-  if (cache.state === "ready") return { text: "Cached", tone: "ok" };
-  if (cache.state === "failed") return { text: "Couldn’t cache", tone: "bad" };
-  if (paused && (cache.state === "caching" || cache.queued)) return { text: "Caching paused", tone: "idle" };
+  if (cache.state === "ready") return { text: "已缓存", tone: "ok" };
+  if (cache.state === "failed") return { text: "缓存失败", tone: "bad" };
+  if (paused && (cache.state === "caching" || cache.queued)) return { text: "缓存已暂停", tone: "idle" };
   if (cache.state === "caching") {
     const percent = cachePercent(cache);
-    return { text: percent ? `Caching · ${percent}` : "Caching…", tone: "busy" };
+    return { text: percent ? `正在缓存 · ${percent}` : "正在缓存…", tone: "busy" };
   }
-  if (cache.queued) return { text: "Waiting to cache", tone: "busy" };
-  return { text: "Not cached", tone: "idle" };
+  if (cache.queued) return { text: "等待缓存", tone: "busy" };
+  return { text: "未缓存", tone: "idle" };
 }

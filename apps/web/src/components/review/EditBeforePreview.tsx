@@ -4,6 +4,7 @@ import { appliedReviewChange, makeTimeMap, timelineDuration, withHandles, type C
 import { usePlayerStore } from "../../stores/player";
 import { ChangeClip, type ComparisonPanePlayback } from "./ChangeClip";
 import { useReviewTimeline } from "./useReviewTimeline";
+import { zh } from "../../lib/zh";
 
 /** A replacement shot can have no source frames in common with its predecessor. */
 function savedBeforeRange(change: Change, edit: ThreadEdit, version: string) {
@@ -88,7 +89,7 @@ export function EditBeforePreview({ change, original, passage, active, loading, 
     pause: () => clip.current?.pause(),
   }), [passage.start, passage.end, scale]);
   if (!original.timeline || !range) return <div className="absolute inset-0 grid place-content-center bg-black text-sm text-muted" role="status">
-    {original.error ? <button className="btn-quiet" onClick={original.retry}>Retry Before</button> : "Opening Before…"}
+    {original.error ? <button className="btn-quiet" onClick={original.retry}>{zh.ui.review.retryBefore}</button> : zh.ui.review.openingBefore}
   </div>;
   return <ChangeClip change={change} active={active} loading={loading} clock={clock} previewTimeline={original.timeline}
     playbackRef={clip} onElapsed={follow}

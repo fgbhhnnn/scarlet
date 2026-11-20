@@ -18,7 +18,7 @@ it("shows a release downloading by how much of it is here, then restarts into it
   const root = createRoot(container);
   const poll = () => act(async () => vi.advanceTimersByTimeAsync(5000).then(() => undefined));
   const hint = () => [...container.querySelector("[role=tooltip]")!.firstElementChild!.children].map(line => line.textContent);
-  const on = `You’re on ${__SCARLET_VERSION__}${__SCARLET_REVISION__ ? `, build ${__SCARLET_REVISION__.slice(0, 7)}` : ""}.`;
+  const on = `当前版本为 ${__SCARLET_VERSION__}${__SCARLET_REVISION__ ? `，构建 ${__SCARLET_REVISION__.slice(0, 7)}` : ""}.`;
   enableUpdateStatus("release");
   try {
     await act(async () => { root.render(<UpdateButton />); });
@@ -26,18 +26,18 @@ it("shows a release downloading by how much of it is here, then restarts into it
     // The same control and labels as a build from main: only what it says on hover names a release and its download.
     status.mockResolvedValue({ ready: null, building: download, source: "release" });
     await poll();
-    expect(container.querySelector("[role=status]")!.textContent).toBe("Updating42%");
-    expect(container.querySelector("[role=status]")!.getAttribute("aria-label")).toBe("Updating Scarlet, 42% downloaded");
-    expect(hint()).toEqual(["Updating to version 0.2.0", on,
-      "Scarlet is downloading it in the background. Keep working: this becomes Restart to update when it’s ready."]);
+    expect(container.querySelector("[role=status]")!.textContent).toBe("更新中42%");
+    expect(container.querySelector("[role=status]")!.getAttribute("aria-label")).toBe("正在更新 Scarlet, 42% 已下载");
+    expect(hint()).toEqual(["正在更新至版本 0.2.0", on,
+      "Scarlet 正在后台下载更新。你可以继续编辑，更新就绪后即可重启安装。"]);
     // The figure is the download's own: it doesn't move between reports.
     await act(async () => vi.advanceTimersByTimeAsync(4000).then(() => undefined));
     expect(container.querySelector(".update-button-figure")!.textContent).toBe("42%");
     status.mockResolvedValue({ ready: "0.2.0", building: null, source: "release" });
     await poll();
     const button = container.querySelector("button")!;
-    expect(button.textContent).toBe("Restart to update");
-    expect(hint()).toEqual(["Version 0.2.0 is ready", on, "Restarting installs it and brings you back here. An edit Scarlet is working on picks up where it left off."]);
+    expect(button.textContent).toBe("重启并更新");
+    expect(hint()).toEqual(["版本 0.2.0 已就绪", on, "重启会安装更新并返回此处，Scarlet 正在处理的剪辑会从中断处继续。"]);
     await act(async () => button.click());
     expect(restart).toHaveBeenCalledWith("0.2.0");
   } finally {
@@ -59,9 +59,9 @@ it("checks the release manifest from Settings, not Git", async () => {
     await act(async () => { root.render(<UpdateSettings />); });
     const button = container.querySelector("button")!;
     await act(async () => button.click());
-    expect(container.querySelector("[role=status]")!.textContent).toBe("Version 0.2.0 is available. Scarlet is getting it ready.");
+    expect(container.querySelector("[role=status]")!.textContent).toBe("版本 0.2.0 已发布，Scarlet 正在准备更新。");
     await act(async () => button.click());
-    expect(container.querySelector("[role=status]")!.textContent).toBe("Scarlet is up to date.");
+    expect(container.querySelector("[role=status]")!.textContent).toBe("Scarlet 已是最新版本。");
     expect(check).toHaveBeenCalledTimes(2);
     expect(git).not.toHaveBeenCalled();
   } finally {

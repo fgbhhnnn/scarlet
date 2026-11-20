@@ -380,7 +380,7 @@ fn build_bundle(log_dir: &Path, system: &serde_json::Value, token: Option<&str>)
 /// Ask where to save, then write the bundle there. Returns the saved path, or None when cancelled.
 #[tauri::command]
 pub async fn export_logs(app: AppHandle, state: State<'_, AppState>) -> Result<Option<String>, String> {
-    let Some(path) = crate::commands::pick_destination(&app, "Export logs", &suggested_name()).await? else { return Ok(None) };
+    let Some(path) = crate::commands::pick_destination(&app, "导出日志", &suggested_name()).await? else { return Ok(None) };
     let mut engine = state.engine.status();
     let token = engine.token.take();
     let host = state.host.status().await;

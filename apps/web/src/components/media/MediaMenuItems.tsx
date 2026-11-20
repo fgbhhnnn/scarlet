@@ -1,6 +1,5 @@
 import { useMemo, useRef, useState } from "react";
 import { cachedShare } from "@scarlet/shared";
-import { plural } from "../../lib/format";
 import { mediaProblems, mediaWarningLabel } from "../../lib/transcriptionProgress";
 import { useProjectStore } from "../../stores/project";
 import { MenuItem } from "../shell/WorkspaceNavigation";
@@ -8,6 +7,7 @@ import { Icon } from "../ui/primitives";
 import { ProgressLine } from "../ui/ProgressLine";
 import { cacheLabel, cachePercent, useSourceCaches } from "./sourceCaches";
 import { useMediaProcessing } from "./useMediaProcessing";
+import { zhMedia } from "../../lib/zh-media-settings";
 
 /**
  * What's wrong with the project's media, in a few words, or nothing. A file Scarlet couldn't read or a transcription
@@ -19,7 +19,7 @@ export function useMediaWarning(importFailed = false): string | undefined {
   const media = useProjectStore(s => s.current?.media);
   const tasks = useProjectStore(s => s.current?.tasks);
   const paused = useProjectStore(s => !!s.current?.project.mediaPaused);
-  return useMemo(() => mediaWarningLabel(mediaProblems(tasks ?? [], media ?? [], paused)) ?? (importFailed ? "Some files need attention" : undefined),
+  return useMemo(() => mediaWarningLabel(mediaProblems(tasks ?? [], media ?? [], paused)) ?? (importFailed ? "有文件需要处理" : undefined),
     [tasks, media, paused, importFailed]);
 }
 
@@ -48,12 +48,12 @@ export function useVideoCaching() {
   return {
     listed, paused, active, progress, canPause: !paused && (active || waiting.length > 0),
     /** In a word or two while videos cache: "Caching 30%", or "Caching" until the engine has a figure. */
-    label: !active ? undefined : percent ? `Caching ${percent}` : "Caching",
-    headline: paused ? "Media processing is paused"
+    label: !active ? undefined : percent ? `正在缓存 ${percent}` : zhMedia.caching,
+    headline: paused ? "媒体处理已暂停"
       : !videos.length ? undefined
-      : active && videos.length === 1 ? "Caching for playback"
-      : ready === videos.length ? (videos.length === 1 ? "Video cached for playback" : `All ${videos.length} videos cached for playback`)
-      : `${ready} of ${plural(videos.length, "video")} cached`,
+      : active && videos.length === 1 ? "正在为播放缓存"
+      : ready === videos.length ? (videos.length === 1 ? "视频已缓存，可播放" : `全部 ${videos.length} 个视频已缓存，可播放`)
+      : `${ready}/${videos.length} 个视频已缓存`,
   };
 }
 
@@ -66,9 +66,9 @@ export function MediaButton({ importing, importFailed, onOpen }: { importing: nu
   const button = useRef<HTMLButtonElement>(null);
   const [dismissed, setDismissed] = useState(false);
   const [focused, setFocused] = useState(false);
-  const adding = importing > 0 ? `Adding ${plural(importing, "file")}` : undefined;
-  const transcription = transcribing ? "Transcription in progress" : undefined;
-  const description = [warning, adding ?? label ?? headline, transcription].filter(Boolean).join(". ") || undefined;
+  const adding = importing > 0 ? `正在添加 ${importing} 个文件` : undefined;
+  const transcription = transcribing ? "正在转写" : undefined;
+  const description = [warning, adding ?? label ?? headline, transcription].filter(Boolean).join("。") || undefined;
   const hasCard = !!(warning || adding || headline || transcription || listed.length || processing.available || processing.error);
 
   return <div className="media-hover" data-dismissed={dismissed || undefined} data-escape-owner={(hasCard && focused && !dismissed) || undefined}
@@ -84,25 +84,25 @@ export function MediaButton({ importing, importFailed, onOpen }: { importing: nu
     }}>
     <button ref={button} type="button" className={`btn-quiet simple-media${warning ? " needs-you" : ""}`} aria-haspopup="dialog"
       aria-description={description} onClick={() => { setDismissed(true); onOpen(); }}>
-      Media{warning && <span className="menu-dot" role="img" aria-label={warning} />}
+      {zhMedia.title}{warning && <span className="menu-dot" role="img" aria-label={warning} />}
       {active && <ProgressLine progress={progress} />}
     </button>
     {hasCard && <div className="media-hover-card">
-      <div className="card" role="group" aria-label="Media processing">
+      <div className="card" role="group" aria-label="媒体处理">
         {warning && <span className="text-warn">{warning}</span>}
         {adding && <span role="status">{adding}</span>}
         {headline && <strong role="status">{headline}</strong>}
-        {active && <span className="text-muted">You can edit during caching.</span>}
+        {active && <span className="text-muted">缓存期间仍可编辑。</span>}
         {transcription && <span role="status">{transcription}</span>}
         {listed.slice(0, 5).map(({ media, cache }) => {
           const status = cacheLabel(cache, paused);
           return <div key={media.id} className="media-hover-row">
             <span className="truncate text-muted" title={media.name}>{media.name}</span>
             <span className="text-muted">{status?.text}</span>
-            {!paused && cache.state === "caching" && <progress className="activity-progress" aria-label={`Caching ${media.name}`} max={1} value={cache.progress} />}
+            {!paused && cache.state === "caching" && <progress className="activity-progress" aria-label={`正在缓存 ${media.name}`} max={1} value={cache.progress} />}
           </div>;
         })}
-        {listed.length > 5 && <span className="text-muted">{listed.length - 5} more in Media</span>}
+        {listed.length > 5 && <span className="text-muted">另有 {listed.length - 5} 个，请打开媒体查看</span>}
         {processing.available && <button type="button" className="simple-link aria-disabled:opacity-60" aria-disabled={processing.busy}
           title={processing.description} onClick={() => void processing.toggle()}>
           <Icon name={processing.icon} size={12} />{processing.label}

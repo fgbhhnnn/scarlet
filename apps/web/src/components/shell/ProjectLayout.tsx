@@ -145,14 +145,14 @@ export function ProjectLayout() {
   // A note's link and the history panel show the edit history, so they wait for it.
   const needsHistory = query.has("note") || query.get("panel") === "history";
   const failed = trashedProject?.id === id || (status === "error" && !opened);
-  const waiting = failed ? null : !opened ? "Opening project…" : needsHistory && reviewStatus === "loading" ? "Loading edit history…" : null;
+  const waiting = failed ? null : !opened ? "正在打开项目…" : needsHistory && reviewStatus === "loading" ? "正在加载剪辑历史…" : null;
   // Scarlet reopening its last project is still starting, so the startup screen stays up until the project can show
   // or says why it can't. A project opened after that waits under a line of its own.
   if (waiting) return startup.done ? <Loading label={waiting} /> : <BootSplash />;
   startup.done = true;
   if (trashedProject?.id === id) return <TrashedProjectView key={id} project={trashedProject} />;
-  if (!opened) return <div><Link to="/" className="btn-quiet m-4">← Projects</Link><ErrorState title="Couldn’t open the project" body={error ?? undefined} onRetry={() => void load(id)} /></div>;
-  if (needsHistory && reviewStatus) return <ErrorState title="Couldn’t load edit history" body={reviewError} onRetry={() => void load(id)} />;
+  if (!opened) return <div><Link to="/" className="btn-quiet m-4">← 项目</Link><ErrorState title="无法打开项目" body={error ?? undefined} onRetry={() => void load(id)} /></div>;
+  if (needsHistory && reviewStatus) return <ErrorState title="无法加载剪辑历史" body={reviewError} onRetry={() => void load(id)} />;
 
   return (
     <div className="flex-1 min-h-0 flex flex-col">

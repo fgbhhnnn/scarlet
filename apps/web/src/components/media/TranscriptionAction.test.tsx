@@ -32,18 +32,18 @@ it("says plainly how a file's transcription stands in the transcript column, on 
   const root = createRoot(container);
   try {
     await act(() => root.render(<MemoryRouter><TranscriptionStatus asset={music} /></MemoryRouter>));
-    expect(container.textContent).toBe("No transcript");
+    expect(container.textContent).toBe("暂无转写");
     await act(() => useProjectStore.setState({ current: { ...current, tasks: [failed] } }));
-    expect(container.textContent).toBe("Transcription stopped");
+    expect(container.textContent).toBe("转写已停止");
     expect(container.querySelector("button, a")).toBeNull();
     // An identically named file must not inherit another asset's progress.
     const other = { ...music, id: "other-asset" };
     await act(() => useProjectStore.setState({ current: { ...current, media: [music, other], tasks: [
       { ...failed, context: { mediaId: other.id }, state: "running", error: undefined, progress: { stage: "transcribing", fraction: 0.5 } },
     ] } }));
-    expect(container.textContent).toBe("No transcript");
+    expect(container.textContent).toBe("暂无转写");
     await act(() => useProjectStore.setState({ current: { ...current, tasks: [{ ...failed, state: "running", error: undefined, progress: { stage: "queued", fraction: 0 } }] } }));
-    expect(container.textContent).toBe("Waiting to transcribe");
+    expect(container.textContent).toBe("等待转写");
   } finally {
     await act(() => root.unmount());
   }
@@ -66,7 +66,7 @@ it("reads a transcription the pause stopped as paused in the transcript column t
   try {
     await act(() => root.render(<MemoryRouter><TranscriptionStatus asset={music} /></MemoryRouter>));
     // Nothing failed: the engine starts no transcription until processing is resumed.
-    expect(container.textContent).toBe("Transcription paused");
+    expect(container.textContent).toBe("转写已暂停");
   } finally {
     await act(() => root.unmount());
   }

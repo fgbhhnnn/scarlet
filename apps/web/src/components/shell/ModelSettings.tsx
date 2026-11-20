@@ -7,6 +7,7 @@ import { AGENT_LABEL, onlineAgents, useHostsStore } from "../../stores/hosts";
 import { modelChoices, useModelPreferences, type ModelChoice } from "../../stores/modelPicker";
 import { FavoriteButton } from "../agent/FavoriteButton";
 import { Icon, Loading, SectionTitle, Toggle } from "../ui/primitives";
+import { shellZh } from "../../lib/zh-shell";
 
 interface ScrollCue {
   canScrollUp: boolean;
@@ -26,18 +27,18 @@ function formatScrollCue(activeBelow: number, hiddenBelow: number, totalHidden: 
   const totalBelow = activeBelow + hiddenBelow;
   if (totalBelow > 0) {
     if (activeBelow > 0 && hiddenBelow > 0) {
-      return `${totalBelow} more ${totalBelow === 1 ? "model" : "models"} below · ${hiddenBelow} hidden`;
+      return `下方还有 ${totalBelow} 个模型 · ${hiddenBelow} 个已隐藏`;
     }
     if (hiddenBelow > 0) {
       const someHiddenVisible = hiddenBelow < totalHidden;
-      return `${hiddenBelow}${someHiddenVisible ? " more" : ""} hidden ${hiddenBelow === 1 ? "model" : "models"} below`;
+      return `下方${someHiddenVisible ? "还有" : "有"} ${hiddenBelow} 个已隐藏模型`;
     }
-    return `${activeBelow} more ${activeBelow === 1 ? "model" : "models"} below`;
+    return `下方还有 ${activeBelow} 个模型`;
   }
   if (totalHidden > 0) {
-    return `${totalHidden} hidden ${totalHidden === 1 ? "model" : "models"} below`;
+    return `下方有 ${totalHidden} 个已隐藏模型`;
   }
-  return "More models below";
+  return "向下查看更多模型";
 }
 
 export function ModelSettings({ onSignIn }: { onSignIn?: () => void } = {}) {
@@ -62,9 +63,9 @@ export function ModelSettings({ onSignIn }: { onSignIn?: () => void } = {}) {
   const activeRows = matches.filter(m => !hidden.includes(m.key) && !favorites.includes(m.key));
   const hiddenRows = matches.filter(m => hidden.includes(m.key));
   const sections: { id: "favorites" | "models" | "hidden"; label: string; count?: number; rows: ModelChoice[] }[] = [
-    { id: "favorites" as const, label: "Favorites", rows: favoriteRows },
-    { id: "models" as const, label: "Models", rows: activeRows },
-    { id: "hidden" as const, label: "Hidden", count: hiddenRows.length, rows: hiddenRows },
+    { id: "favorites" as const, label: "收藏", rows: favoriteRows },
+    { id: "models" as const, label: "模型", rows: activeRows },
+    { id: "hidden" as const, label: "隐藏", count: hiddenRows.length, rows: hiddenRows },
   ].filter(section => section.rows.length > 0);
 
   const measureScroll = useCallback(() => {
@@ -146,25 +147,25 @@ export function ModelSettings({ onSignIn }: { onSignIn?: () => void } = {}) {
 
   return (
     <section className="card p-5">
-      <SectionTitle right={<ModelRefreshButton action={refresh} />}>Model picker</SectionTitle>
+      <SectionTitle right={<ModelRefreshButton action={refresh} />}>{shellZh.settings.modelPicker}</SectionTitle>
       <ModelRefreshFeedback action={refresh} loadError={error} />
-      {!choices.length && (status === "loading" ? <Loading label="Reading models…" /> :
+      {!choices.length && (status === "loading" ? <Loading label={shellZh.settings.readingModels} /> :
         // Every model a signed-in agent offers is listed, so none at all means its list couldn't be read.
-        agents.length ? <p className="mt-4 text-[13px] text-muted">Couldn’t read the model list. Refresh models to try again, and update Claude Code, Codex or Gemini if it still fails.</p> :
-        <p className="mt-4 text-[13px] text-muted">Models appear when Claude Code, Codex or Gemini is online. {onSignIn
-          ? <button className="underline" onClick={onSignIn}>Manage sign-in</button>
-          : <Link to="/settings#hosts" className="underline">Manage sign-in</Link>}</p>)}
+        agents.length ? <p className="mt-4 text-[13px] text-muted">无法读取模型列表。请刷新模型后重试，若仍失败请更新 Claude Code、Codex 或 Gemini。</p> :
+        <p className="mt-4 text-[13px] text-muted">Claude Code、Codex 或 Gemini 在线时会显示可用模型。 {onSignIn
+          ? <button className="underline" onClick={onSignIn}>{shellZh.settings.manageSignIn}</button>
+          : <Link to="/settings#hosts" className="underline">{shellZh.settings.manageSignIn}</Link>}</p>)}
       {active && <div className="mt-4">
         <ModelProviders providers={providers} active={active} onChange={id => { setProvider(id); setSearch(""); }} />
         <div className="flex flex-wrap items-center gap-2 py-3">
           <label className="field flex min-w-32 flex-1 items-center gap-2 text-muted">
             <Icon name="search" />
-            <input type="search" className="min-w-0 flex-1 bg-transparent text-fg outline-none" aria-label="Filter models" placeholder={`Filter ${AGENT_LABEL[active]} models…`} value={search} onChange={e => setSearch(e.target.value)} />
+            <input type="search" className="min-w-0 flex-1 bg-transparent text-fg outline-none" aria-label="筛选模型" placeholder={`筛选 ${AGENT_LABEL[active]} 模型…`} value={search} onChange={e => setSearch(e.target.value)} />
           </label>
-          <span className="text-xs text-dim">{visible} of {catalog.length} shown</span>
-          <button className="btn-quiet" aria-label={`${visible ? "Hide" : "Show"} all ${AGENT_LABEL[active]} models`} onClick={() => setVisible(catalog.map(m => m.key), visible === 0)}>{visible ? "Hide all" : "Show all"}</button>
+          <span className="text-xs text-dim">已显示 {visible} / {catalog.length} 个</span>
+          <button className="btn-quiet" aria-label={`${visible ? "隐藏" : "显示"}所有 ${AGENT_LABEL[active]} 模型`} onClick={() => setVisible(catalog.map(m => m.key), visible === 0)}>{visible ? "全部隐藏" : "全部显示"}</button>
         </div>
-        {!matches.length && <p className="py-4 text-[13px] text-muted">No matching models.</p>}
+        {!matches.length && <p className="py-4 text-[13px] text-muted">{shellZh.settings.noModels}</p>}
         {matches.length > 0 && <>
           <div className="relative">
             <div
@@ -189,7 +190,7 @@ export function ModelSettings({ onSignIn }: { onSignIn?: () => void } = {}) {
                               <span className={`truncate text-[13px] ${isHidden ? "text-dim" : "text-fg"}`}>{m.label}</span>
                               {m.model && m.model !== m.label && <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-dim">{m.model}</span>}
                             </div>
-                            <Toggle checked={!isHidden} label={`Show ${AGENT_LABEL[m.agent]} · ${m.label} in selector`} onChange={(v) => setVisible([m.key], v)} />
+                            <Toggle checked={!isHidden} label={`在选择器中显示 ${AGENT_LABEL[m.agent]} · ${m.label}`} onChange={(v) => setVisible([m.key], v)} />
                           </li>
                         );
                       })}
@@ -215,7 +216,7 @@ export function ModelSettings({ onSignIn }: { onSignIn?: () => void } = {}) {
                 <span className={scrollCue.canScrollDown ? "inline-flex" : "inline-flex rotate-180"}>
                   <Icon name="down" size={12} />
                 </span>
-                <span>{scrollCue.canScrollDown ? scrollCueLabel : "Back to top"}</span>
+                <span>{scrollCue.canScrollDown ? scrollCueLabel : "返回顶部"}</span>
               </button>
             </div>
           )}

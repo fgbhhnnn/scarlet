@@ -128,7 +128,7 @@ it("says the recording failed and sends nothing when the recorder breaks part-wa
   now.mockReturnValue(3000);
   // A recorder that fails reports the error, then hands over what it had and stops.
   await act(async () => { device.onerror!(); device.stop(); });
-  expect(recorder).toMatchObject({ state: "error", error: "Recording failed.", recording: false });
+  expect(recorder).toMatchObject({ state: "error", error: "录音失败。", recording: false });
   expect(heard).not.toHaveBeenCalled();
   expect(stopTrack).toHaveBeenCalled();
   expect(lines).toEqual([expect.stringMatching(/^\[error\] .* microphone when=recording$/)]);
@@ -181,9 +181,9 @@ it("throws away a tap too short to be speech, and a recording the editor discard
 });
 
 it.each([
-  ["NotAllowedError", "denied", "Microphone access was denied. Allow the microphone for Scarlet and try again."],
-  ["SecurityError", "denied", "Microphone access was denied. Allow the microphone for Scarlet and try again."],
-  ["NotFoundError", "error", "No microphone found."],
+  ["NotAllowedError", "denied", "麦克风访问被拒绝。请允许 Scarlet 访问麦克风后重试。"],
+  ["SecurityError", "denied", "麦克风访问被拒绝。请允许 Scarlet 访问麦克风后重试。"],
+  ["NotFoundError", "error", "未检测到麦克风。"],
   ["NotReadableError", "error", "The microphone is in use"],
 ] as const)("says why the microphone couldn't be used (%s), and logs the kind of refusal", async (name, state, message) => {
   const lines: string[] = [], levels: string[] = [];
@@ -300,7 +300,7 @@ it("holds the mic's ring still while it records with motion reduced, and follows
 it("names the V key only on the mic that follows it", async () => {
   const el = document.createElement("div");
   const host = createRoot(el);
-  await act(async () => host.render(<><MicButton followHold onResult={result} label="Talk to Scarlet" /><MicButton onResult={result} /></>));
-  expect([...el.querySelectorAll("button")].map(b => b.title)).toEqual(["Talk to Scarlet (hold V)", "Record a voice note"]);
+  await act(async () => host.render(<><MicButton followHold onResult={result} label="对 Scarlet 说" /><MicButton onResult={result} /></>));
+  expect([...el.querySelectorAll("button")].map(b => b.title)).toEqual(["对 Scarlet 说（按住 V）", "录制语音备注"]);
   await act(async () => host.unmount());
 });

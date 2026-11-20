@@ -11,6 +11,7 @@ import { usePlayerStore } from "../../stores/player";
 import { Progress, Spinner } from "../ui/primitives";
 import { MonitorPlayback, PlaybackTime } from "../player/MonitorPlayback";
 import { FramedVideo } from "../player/FramedVideo";
+import { zh } from "../../lib/zh";
 
 const REVIEW_WINDOW_SECONDS = 10;
 
@@ -28,17 +29,17 @@ function Overlay({ render, label, loading, error, retry }: {
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/75 text-[12px] text-center p-4">
       {!render && !loading && !error ? (
-        <span className="text-muted">The {label.toLowerCase()} clip isn't rendered.</span>
+        <span className="text-muted">{label}片段尚未渲染。</span>
       ) : error || render?.state === "failed" || render?.state === "cancelled" ? (
         <>
-          <span className="text-bad font-medium">The {label.toLowerCase()} clip failed to render</span>
+          <span className="text-bad font-medium">{label}片段渲染失败</span>
           <span className="text-muted max-w-sm break-words">{error ?? render?.error}</span>
-          {retry && <button className="btn-ghost" onClick={retry}>Retry preview</button>}
+          {retry && <button className="btn-ghost" onClick={retry}>{zh.ui.review.retryPreview}</button>}
         </>
       ) : (
         <>
           <span className="text-fg inline-flex items-center gap-2">
-            <Spinner className="size-3" /> Rendering {label.toLowerCase()} clip… {render && pct(render.progress)}
+            <Spinner className="size-3" /> 正在渲染{label}片段… {render && pct(render.progress)}
           </span>
           {render && <Progress value={render.progress} className="w-40" />}
         </>
@@ -252,7 +253,7 @@ export function ChangeClip({ change, active = true, loading, clock: pageClock, p
         {(streaming || src) && <FramedVideo key={streaming ? streamKey : key + src} ref={attachVideo} src={streaming ? undefined : src}
           playsInline preload="auto"
           data-waiting={(streaming && active && buffering) || undefined}
-          aria-label="Before" onClick={toggle}
+          aria-label={zh.ui.review.before} onClick={toggle}
           onLoadedMetadata={e => {
             const el = e.currentTarget;
             el.playbackRate = rate;
@@ -274,7 +275,7 @@ export function ChangeClip({ change, active = true, loading, clock: pageClock, p
             else move(el.currentTime);
           }}
           onEnded={() => { move(lastFrame); setPlaying(false); }} />}
-        {!streaming && <Overlay render={render} label="Before" loading={rangeEnd > rangeStart} retry={() => setAttempt(n => n + 1)}
+        {!streaming && <Overlay render={render} label={zh.ui.review.before} loading={rangeEnd > rangeStart} retry={() => setAttempt(n => n + 1)}
           error={loaded?.error} />}
 
       </div>

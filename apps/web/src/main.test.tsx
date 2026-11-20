@@ -53,7 +53,7 @@ it("requires a successful native handshake before loading even a demo", async ()
   try {
     await import("./main");
     await vi.waitFor(() => expect(render).toHaveBeenCalledWith(expect.objectContaining({
-      props: expect.objectContaining({ title: "Scarlet couldn’t start", detail: expect.stringContaining("Native bridge unavailable") }),
+      props: expect.objectContaining({ title: "Scarlet 启动失败", detail: expect.stringContaining("Native bridge unavailable") }),
     })));
     expect(loadEditor).not.toHaveBeenCalled();
     expect(log).toHaveBeenCalledWith([expect.stringContaining("startup-failed name=Error")], "error");

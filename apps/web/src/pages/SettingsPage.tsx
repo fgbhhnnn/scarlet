@@ -15,6 +15,8 @@ import { DesktopAgents, DesktopDiagnostics, ExportLogs } from "../components/she
 import { EditingToolsSettings } from "../components/shell/EditingToolsSettings";
 import { useUiStore } from "../stores/ui";
 import { ErrorState, Field, Icon, InlineError, Loading, Modal, PageHeading, SectionTitle, Spinner, Toggle } from "../components/ui/primitives";
+import { zh } from "../lib/zh";
+import { zhMedia, zhSettings } from "../lib/zh-media-settings";
 
 /**
  * A group of settings as it goes to the engine. A field the editor emptied is undefined here, which JSON leaves out,
@@ -33,10 +35,10 @@ function typedNumber(text: string | undefined, was: number) {
 }
 
 const transcriptionModels: { value: LocalTranscriptionModel | "openai"; label: string }[] = [
-  { value: "crisperwhisper", label: "CrisperWhisper 2.0 (default)" },
-  { value: "whispercpp", label: "Whisper large-v3-turbo (bundled)" },
-  { value: "custom", label: "Custom local model" },
-  { value: "openai", label: "OpenAI Whisper (cloud)" },
+  { value: "crisperwhisper", label: "CrisperWhisper 2.0（默认）" },
+  { value: "whispercpp", label: "Whisper large-v3-turbo（内置）" },
+  { value: "custom", label: "自定义本地模型" },
+  { value: "openai", label: "OpenAI Whisper（云端）" },
 ];
 
 function ServerSettingsForm({ section }: { section: "general" | "advanced" }) {
@@ -85,8 +87,8 @@ function ServerSettingsForm({ section }: { section: "general" | "advanced" }) {
     return () => window.removeEventListener("beforeunload", warn);
   }, [dirty, savingChoice]);
 
-  if (error) return <ErrorState title="Couldn’t load server settings" body={error} onRetry={() => void load()} />;
-  if (!settings) return <Loading label="Loading settings…" />;
+  if (error) return <ErrorState title={zhSettings.loadError} body={error} onRetry={() => void load()} />;
+  if (!settings) return <Loading label={zhSettings.loading} />;
 
   const set = <K extends keyof ServerSettings>(k: K, v: ServerSettings[K]) => setSettings({ ...settings, [k]: v });
   const holdTyped = (field: keyof typeof typed, text: string) => setTyped({ ...typed, [field]: text });
@@ -148,13 +150,13 @@ function ServerSettingsForm({ section }: { section: "general" | "advanced" }) {
             <div className="transcription-heading">
               <span className="transcription-glyph"><Icon name="audio" size={22} /></span>
               <div>
-                <h2 id="transcription-heading">Speech transcription</h2>
-                <p>For dialogue edits, captions and voice notes.</p>
+                <h2 id="transcription-heading">语音转写</h2>
+                <p>用于对白剪辑、字幕和语音备注。</p>
               </div>
             </div>
             <div className="min-w-0">
-              <label className="label" htmlFor="tr-provider">Preferred model</label>
-              <PreferenceSelect id="tr-provider" value={modelChoice} valueLabel={tr.provider === "none" ? "Transcription unavailable" : undefined} disabled={busy} options={transcriptionModels}
+              <label className="label" htmlFor="tr-provider">首选模型</label>
+              <PreferenceSelect id="tr-provider" value={modelChoice} valueLabel={tr.provider === "none" ? "转写不可用" : undefined} disabled={busy} options={transcriptionModels}
                 onChange={value => void choose({ transcription: value === "openai" || value === "none"
                   ? { ...tr, provider: value } : { ...tr, provider: "whispercpp", localModel: value } })} />
             </div>
@@ -164,83 +166,83 @@ function ServerSettingsForm({ section }: { section: "general" | "advanced" }) {
             {localModel === "crisperwhisper" && <TranscriptionGuide crisper />}
             {localModel === "custom" && (
               <Link className="transcription-setup-row" to="/settings#advanced">
-                Configure model file and adapter <Icon name="chevron" size={14} />
+                配置模型文件和适配器 <Icon name="chevron" size={14} />
               </Link>
             )}
           </> : (
             <p className="transcription-status text-muted">
-              {tr.provider === "openai" ? <><Icon name="link" /> Audio is sent to OpenAI for transcription.</> : "Choose a model to turn transcription on."}
+              {tr.provider === "openai" ? <><Icon name="link" /> 音频会发送至 OpenAI 进行转写。</> : "选择模型以启用转写。"}
             </p>
           )}
         </fieldset>
       ) : (
       <fieldset disabled={busy} className="min-w-0 grid sm:grid-cols-2 gap-x-8 gap-y-4">
         <div>
-          <SectionTitle>Transcription</SectionTitle>
+          <SectionTitle>{zhMedia.transcription}</SectionTitle>
           {tr.provider === "openai" && (
-            <Field label="OpenAI model" htmlFor="tr-model">
+            <Field label="OpenAI 模型" htmlFor="tr-model">
               <input id="tr-model" className="field font-mono" value={tr.openaiModel} onChange={(e) => set("transcription", { ...tr, openaiModel: e.target.value })} />
             </Field>
           )}
           {tr.provider === "whispercpp" && localModel === "custom" && <>
             {([
-              ["whisperModelPath", "Model file", "tr-modelpath", "Absolute path to the model file"],
-              ["whisperCppPath", "Adapter executable", "tr-bin", "Bundled whisper-cli"],
+              ["whisperModelPath", "模型文件", "tr-modelpath", "模型文件的绝对路径"],
+              ["whisperCppPath", "适配器程序", "tr-bin", "内置 whisper-cli"],
             ] as const).map(([field, label, id, placeholder]) => (
-              <Field key={field} label={label} htmlFor={id} hint={field === "whisperCppPath" ? "Optional for whisper.cpp models." : "Optional when the adapter loads its own model."}>
+              <Field key={field} label={label} htmlFor={id} hint={field === "whisperCppPath" ? "使用 whisper.cpp 模型时可留空。" : "适配器自行加载模型时可留空。"}>
                 <div className="flex gap-2">
                   <input id={id} className="field min-w-0 flex-1 font-mono" value={tr[field] ?? ""} placeholder={placeholder}
                     onChange={e => set("transcription", { ...tr, localModel: "custom", [field]: e.target.value || undefined })} />
-                  <button type="button" className="btn-quiet" aria-label={`Choose ${label.toLowerCase()}`} onClick={async () => {
+                  <button type="button" className="btn-quiet" aria-label={`选择${label}`} onClick={async () => {
                     try {
-                      const file = await desktop.pickFile(`Choose ${label.toLowerCase()}`);
+                      const file = await desktop.pickFile(`选择${label}`);
                       if (file) setSettings(current => current && ({ ...current, transcription: { ...current.transcription, localModel: "custom", [field]: file } }));
                     } catch (e) { setSaveError(errorMessage(e)); }
-                  }}>Browse…</button>
+                  }}>浏览…</button>
                 </div>
               </Field>
             ))}
             <TranscriptionGuide />
           </>}
-          <Field label="Language" htmlFor="tr-lang" hint="ISO code; empty = auto-detect">
+          <Field label="语言" htmlFor="tr-lang" hint="ISO 语言代码。留空将自动检测语言。">
             <input id="tr-lang" className="field w-24" value={tr.language ?? ""} onChange={(e) => set("transcription", { ...tr, language: e.target.value || undefined })} placeholder="en" />
           </Field>
 
-          <SectionTitle>Note cleanup</SectionTitle>
+          <SectionTitle>语音备注整理</SectionTitle>
           <div className="flex items-center justify-between mb-3">
-            <span className="text-[12.5px]">Turn rambling voice notes into precise instructions</span>
-            <Toggle checked={nc.enabled} onChange={(v) => set("noteCleanup", { ...nc, enabled: v })} label="Enable note cleanup" />
+            <span className="text-[12.5px]">将口语化的语音备注整理成明确的指令</span>
+            <Toggle checked={nc.enabled} onChange={(v) => set("noteCleanup", { ...nc, enabled: v })} label="启用语音备注整理" />
           </div>
           {nc.enabled && (
             <div className="grid grid-cols-2 gap-3 mb-2">
-              <Field label="Provider" htmlFor="nc-provider">
+              <Field label="服务商" htmlFor="nc-provider">
                 <PreferenceSelect id="nc-provider" value={nc.provider}
-                  options={[{ value: "anthropic", label: "Anthropic" }, { value: "openai", label: "OpenAI" }, { value: "gemini", label: "Gemini" }, { value: "none", label: "None" }] as const}
+                  options={[{ value: "anthropic", label: "Anthropic" }, { value: "openai", label: "OpenAI" }, { value: "gemini", label: "Gemini" }, { value: "none", label: "无" }] as const}
                   onChange={value => set("noteCleanup", { ...nc, provider: value })} />
               </Field>
-              <Field label="Model" htmlFor="nc-model">
+              <Field label={zhSettings.models} htmlFor="nc-model">
                 <input id="nc-model" className="field font-mono" value={nc.model ?? ""} onChange={(e) => set("noteCleanup", { ...nc, model: e.target.value || undefined })} placeholder={nc.provider === "gemini" ? "gemini-2.5-flash" : nc.provider === "openai" ? "gpt-4o-mini" : "claude-haiku-4-5"} />
               </Field>
             </div>
           )}
         </div>
         <div>
-          <SectionTitle>Render</SectionTitle>
+          <SectionTitle>渲染</SectionTitle>
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Handle seconds" htmlFor="rd-handle" hint="Context on each side of an edit’s preview">
+            <Field label="预览上下文时长（秒）" htmlFor="rd-handle" hint="预览时在剪辑点前后各保留的时长。">
               <input id="rd-handle" type="number" step="0.5" min="0" className="field" value={typed.handleSeconds ?? rd.handleSeconds} onChange={(e) => holdTyped("handleSeconds", e.target.value)} />
             </Field>
-            <Field label="Preview height" htmlFor="rd-height">
+            <Field label="预览高度" htmlFor="rd-height">
               <PreferenceSelect id="rd-height" value={rd.previewHeight}
                 options={[360, 480, 540, 720, 1080].map(value => ({ value, label: value + "p" }))}
                 onChange={value => set("render", { ...rd, previewHeight: value })} />
             </Field>
-            <Field label="Concurrency" htmlFor="rd-conc">
+            <Field label="并发数" htmlFor="rd-conc">
               <input id="rd-conc" type="number" min="1" max="16" className="field" value={typed.concurrency ?? rd.concurrency} onChange={(e) => holdTyped("concurrency", e.target.value)} />
             </Field>
-            <Field label="Hardware acceleration" htmlFor="rd-hw" hint="Auto uses hardware encoding when available. None encodes in software.">
+            <Field label="硬件加速" htmlFor="rd-hw" hint="自动模式在可用时使用硬件编码。关闭时使用软件编码。">
               <PreferenceSelect id="rd-hw" value={rd.hwaccel}
-                options={(["auto", "none", "nvenc", "qsv", "videotoolbox"] as const).map(value => ({ value, label: value }))}
+                options={(["auto", "none", "nvenc", "qsv", "videotoolbox"] as const).map(value => ({ value, label: { auto: "自动", none: "关闭", nvenc: "NVENC", qsv: "QSV", videotoolbox: "VideoToolbox" }[value] }))}
                 onChange={value => set("render", { ...rd, hwaccel: value })} />
             </Field>
           </div>
@@ -249,19 +251,19 @@ function ServerSettingsForm({ section }: { section: "general" | "advanced" }) {
       )}
       {section === "advanced" && <div className="flex justify-end gap-2 mt-2">
         <button type="submit" className="btn-primary" disabled={!dirty || busy}>
-          {busy && <Spinner className="size-3" />} Save
+          {busy && <Spinner className="size-3" />} {zh.common.save}
         </button>
       </div>}
-      {savingChoice && <p role="status" className="mt-2 text-xs text-muted">Saving…</p>}
+      {savingChoice && <p role="status" className="mt-2 text-xs text-muted">正在保存…</p>}
       <InlineError>{saveError}</InlineError>
     </form>
-    <Modal open={section === "advanced" && leaving.state === "blocked"} onClose={() => { if (!busy) leaving.reset?.(); }} title="Save your settings?" footer={<>
-      <button className="btn-ghost" disabled={busy} onClick={() => leaving.reset?.()}>Stay</button>
-      <button className="btn-ghost" disabled={busy} onClick={() => leaving.proceed?.()}>Discard changes</button>
+    <Modal open={section === "advanced" && leaving.state === "blocked"} onClose={() => { if (!busy) leaving.reset?.(); }} title="保存设置？" footer={<>
+      <button className="btn-ghost" disabled={busy} onClick={() => leaving.reset?.()}>留在此页</button>
+      <button className="btn-ghost" disabled={busy} onClick={() => leaving.proceed?.()}>放弃更改</button>
       <button className="btn-primary" disabled={busy} onClick={() => void save().then(saved => { if (saved) leaving.proceed?.(); })}>
-        {busy && <Spinner className="size-3" />} Save and leave</button>
+        {busy && <Spinner className="size-3" />} 保存并离开</button>
     </>}>
-      <p>These settings have unsaved changes.</p>
+      <p>当前设置有未保存的更改。</p>
       <InlineError>{saveError}</InlineError>
     </Modal>
     </>
@@ -269,12 +271,12 @@ function ServerSettingsForm({ section }: { section: "general" | "advanced" }) {
 }
 
 const tabs = [
-  { id: "general", label: "General", to: "/settings" },
-  { id: "models", label: "Models", to: "/settings#models" },
-  { id: "tools", label: "Tools & skills", to: "/settings/skills" },
-  { id: "usage", label: "Usage", to: "/settings#usage" },
-  { id: "advanced", label: "Advanced", to: "/settings#advanced" },
-  { id: "about", label: "About", to: "/settings#about" },
+  { id: "general", label: zhSettings.general, to: "/settings" },
+  { id: "models", label: zhSettings.models, to: "/settings#models" },
+  { id: "tools", label: zhSettings.tools, to: "/settings/skills" },
+  { id: "usage", label: zhSettings.usage, to: "/settings#usage" },
+  { id: "advanced", label: zhSettings.advanced, to: "/settings#advanced" },
+  { id: "about", label: zhSettings.about, to: "/settings#about" },
 ];
 // Old links to tabs that were folded into another one.
 const movedTabs: Record<string, string> = { "#tools": "/settings/skills", "#storage": "/settings#usage", "#actions": "/settings/skills" };
@@ -306,22 +308,22 @@ export function SettingsPage() {
   }, [navigate, returnTo]);
   if (movedTabs[hash]) return <Navigate replace to={movedTabs[hash]} />;
   const tab = skills ? "tools" : tabs.find(t => t.to === `/settings${hash}`)?.id ?? "general";
-  const backLabel = returnTo ? "Back to project" : "Projects";
+  const backLabel = returnTo ? zh.shell.backToProject : zh.common.projects;
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="page-wrap settings-page space-y-5">
-        <PageHeading title="Settings">
+        <PageHeading title={zh.common.settings}>
           <Link className="btn-quiet" to={returnTo ?? "/"} replace={!!returnTo} aria-label={backLabel} aria-keyshortcuts="Escape" title={`${backLabel} (Esc)`}>
             ← {backLabel}
           </Link>
-          <nav className="control-tabs" aria-label="Settings sections">
+          <nav className="control-tabs" aria-label="设置分类">
             {tabs.map((t) => (
               <Link key={t.id} to={t.to} aria-current={tab === t.id} className={`rounded-md px-3 py-1.5 text-[13px] ${tab === t.id ? "bg-raised text-fg" : "text-muted hover:text-fg"}`}>
                 {t.label}
               </Link>
             ))}
           </nav>
-          <button className="btn-quiet" title="Shortcut: ?" onClick={() => setShortcutsOpen(true)}>Keyboard shortcuts</button>
+          <button className="btn-quiet" title="快捷键：?" onClick={() => setShortcutsOpen(true)}>键盘快捷键</button>
           <WindowActions inSettings />
         </PageHeading>
         {tab === "general" && (

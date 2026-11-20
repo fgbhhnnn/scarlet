@@ -10,16 +10,16 @@ export function StartupRecovery({ title, detail, showLogs = false }: { title: st
       await desktop.openPath(logDir);
       setFeedback("");
     } catch (error) {
-      setFeedback(`Couldn’t open logs. ${error instanceof Error ? error.message : String(error)}`);
+      setFeedback(`无法打开日志。${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
   async function copyDiagnostics() {
     try {
       await navigator.clipboard.writeText(`${title}\n${detail}`);
-      setFeedback("Diagnostics copied.");
+      setFeedback("已复制诊断信息。");
     } catch {
-      setFeedback("Select the error message above and copy it manually.");
+      setFeedback("请选中上方的错误信息并手动复制。");
     }
   }
 
@@ -29,8 +29,8 @@ export function StartupRecovery({ title, detail, showLogs = false }: { title: st
         <h1 className="text-lg font-semibold">{title}</h1>
         <p role="status" className="text-muted whitespace-pre-wrap break-words select-text">{detail}</p>
         <div className="flex flex-wrap gap-2">
-          {showLogs && <button className="btn-ghost" onClick={openLogs}>Open logs</button>}
-          <button className="btn-ghost" onClick={copyDiagnostics}>Copy diagnostics</button>
+          {showLogs && <button className="btn-ghost" onClick={openLogs}>打开日志</button>}
+          <button className="btn-ghost" onClick={copyDiagnostics}>复制诊断信息</button>
         </div>
         {feedback && <p role="status" className="text-muted">{feedback}</p>}
       </section>

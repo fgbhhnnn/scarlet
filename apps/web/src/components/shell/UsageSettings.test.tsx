@@ -20,12 +20,12 @@ it("counts the runs once under the token total", async () => {
     await act(async () => root.render(<UsageSettings />));
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
     // It used to read "900 input · 300 output · 42 runs. 42 agent runs since …".
-    expect(container.querySelector('[aria-label="Token usage"] h3')!.textContent).toBe("Tokens");
-    const summary = container.querySelector('[aria-label="Token usage"] p')!.textContent!;
-    expect(summary.startsWith("900 input · 300 output. 42 runs since ")).toBe(true);
+    expect(container.querySelector('[aria-label="令牌用量"] h3')!.textContent).toBe("令牌");
+    const summary = container.querySelector('[aria-label="令牌用量"] p')!.textContent!;
+    expect(summary.startsWith("900 输入 · 300 输出。自 ")).toBe(true);
     expect(summary.match(/\b42\b/g)).toHaveLength(1);
     // A row has no sentence after it, so its runs stay in its breakdown.
-    expect(container.querySelector('[aria-label="By provider"]')!.textContent).toContain("900 input · 300 output · 3 runs");
+    expect(container.querySelector('[aria-label="按服务商"]')!.textContent).toContain("900 输入 · 300 输出 · 3 次运行");
   } finally {
     await act(async () => root.unmount());
     vi.restoreAllMocks();

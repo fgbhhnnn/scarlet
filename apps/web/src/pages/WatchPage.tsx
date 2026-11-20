@@ -1,3 +1,4 @@
+import { zh } from "../lib/zh";
 import { createPortal } from "react-dom";
 import { useCallback, useEffect, useId, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode, type Ref } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
@@ -114,13 +115,13 @@ function PlaybackSpeed({ playable }: { playable: boolean }) {
     if (e.detail > 0 && e.target instanceof Element) e.target.closest("button")?.blur();
   }}>
     <button type="button" className="btn-icon playback-speed-trigger" ref={trigger}
-      aria-label={`Playback speed, ${rate}×`} title="Playback speed" aria-expanded={open} aria-controls={open ? panelId : undefined}
+      aria-label={`播放速度, ${rate}×`} title="播放速度" aria-expanded={open} aria-controls={open ? panelId : undefined}
       onClick={() => setOpen(shown => !shown)}>{rate}×<Icon name="down" size={10} /></button>
-    {open && <div className="playback-speed-panel" id={panelId} role="group" aria-label="Playback speed" data-escape-owner>
-      <button type="button" className="btn-icon" aria-label="Decrease playback speed" aria-keyshortcuts="Shift+L" title="Decrease playback speed (Shift L)"
+    {open && <div className="playback-speed-panel" id={panelId} role="group" aria-label="播放速度" data-escape-owner>
+      <button type="button" className="btn-icon" aria-label="降低播放速度" aria-keyshortcuts="Shift+L" title="降低播放速度 (Shift L)"
         disabled={!playable || rate <= MIN_RATE} onClick={() => stepPlaybackRate(-1)}>−</button>
       <output>{rate}×</output>
-      <button type="button" className="btn-icon" aria-label="Increase playback speed" aria-keyshortcuts="L" title="Increase playback speed (L)"
+      <button type="button" className="btn-icon" aria-label="提高播放速度" aria-keyshortcuts="L" title="提高播放速度 (L)"
         disabled={!playable || rate >= MAX_RATE} onClick={() => stepPlaybackRate(1)}>+</button>
     </div>}
   </div>;
@@ -157,7 +158,7 @@ export function ImportPreview({ projectId, preparing, onMedia }: { projectId: st
     {frame && frame.path === path && <img src={frame.url} alt="" className="absolute inset-0 w-full h-full object-contain" />}
     <div className="relative w-full max-w-sm rounded-lg border border-white/15 bg-black/85 px-4 py-3 text-fg">
       <ImportProgress localImport={localImport} upload={upload} preparing={preparing} />
-      {!localImport && !upload && preparing && <button className="btn-quiet mt-1" onClick={onMedia}>View media</button>}
+      {!localImport && !upload && preparing && <button className="btn-quiet mt-1" onClick={onMedia}>查看素材</button>}
     </div>
   </div>;
 }
@@ -189,7 +190,7 @@ function SelectedCutFrame({ url, time, fps }: { url: string; time: number; fps: 
       video?.removeEventListener("canplay", ready);
     };
   }, [url, time, fps]);
-  return needed && <img src={url} alt="Selected edit frame" draggable={false}
+  return needed && <img src={url} alt="选中剪辑的画面" draggable={false}
     className="pointer-events-none absolute inset-0 h-full w-full object-contain opacity-0"
     onLoad={e => { e.currentTarget.style.opacity = "1"; }} />;
 }
@@ -299,7 +300,7 @@ function CutSide({ project, timeline, url, window, parkedAt, active, fps, label,
       } } : undefined} />;
   }
   return <CutStream project={project} timeline={timeline} version={timeline.version} joins={joins}
-    proposed={label === "Proposed draft"} onStart={noop} parkedAt={parkedAt} />;
+    proposed={label === zh.ui.player.draft} onStart={noop} parkedAt={parkedAt} />;
 }
 
 export function CutPreview({ threadView, workingCache, draftVersion, draft, draftFailed, openingJoin, cutLoadError, onRetryDraft, source, autoPlaySource, hasCut, change, spot, approval = false, playChange, active,
@@ -732,7 +733,7 @@ export function CutPreview({ threadView, workingCache, draftVersion, draft, draf
       try { await stage.current.requestFullscreen(); } catch { setExpanded(true); }
     } else setExpanded(true);
   }
-  const view = draftVersion ? "Proposed edit" : source ? "Source preview" : hasCut ? "Working edit" : "Footage";
+  const view = draftVersion ? "剪辑建议" : source ? "素材预览" : hasCut ? "当前成片" : "素材";
 
   return (
     <section ref={stage} className="cut-preview" aria-label={view} data-expanded={expanded || undefined}>
@@ -748,20 +749,20 @@ export function CutPreview({ threadView, workingCache, draftVersion, draft, draf
             {before && (showBefore || allowStandby) && <div key={`before ${key}`} className="absolute inset-0 bg-black" inert={!showBefore} data-parked={!showBefore || undefined}
               style={{ zIndex: showBefore ? 1 : 0 }} aria-hidden={!showBefore || undefined}>
               <CutSide project={current.project} timeline={before} url={beforeUrl} window={beforeWindow}
-                label={draftVersion ? "Proposed draft" : "The current edit"} fps={settings.fps} active={active} parkedAt={!showBefore ? leadIn : undefined} />
+                label={draftVersion ? zh.ui.player.draft : zh.ui.player.current} fps={settings.fps} active={active} parkedAt={!showBefore ? leadIn : undefined} />
             </div>}
             {edited && (showAfter || allowStandby) && <div key="after" className="absolute inset-0 bg-black" inert={!showAfter} data-parked={!showAfter || undefined}
               style={{ zIndex: showAfter ? 1 : 0 }} aria-hidden={!showAfter || undefined}>
               <CutSide key={edited.joined.version} project={current.project} timeline={edited.joined.timeline} url={edited.url} window={afterWindow}
-                joins={edited.joined.clock} label={edited.url ? "The current edit" : "Proposed draft"} fps={settings.fps} active={active}
+                joins={edited.joined.clock} label={edited.url ? zh.ui.player.current : zh.ui.player.draft} fps={settings.fps} active={active}
                 parkedAt={!showAfter ? edited.joined.clock.toMedia(leadIn) : undefined} />
             </div>}
             {!showBefore && !showAfter && <div key="cover" className="absolute inset-0 z-10 bg-black" />}
           </div>)}
           {!paired && (openingJoin || (draftVersion && !draft && !fullVideoUrl && !joined) ? <div className="absolute inset-0 grid place-content-center gap-2 text-sm text-muted" role="status">
-            {draftFailed ? <>Couldn’t open this version.<button className="btn-ghost" onClick={onRetryDraft}>Retry</button></>
-              : !openingJoin && "Opening the suggestion…"}
-          </div> : fullVideoUrl ? <CachedVideo key={fullVideoUrl} url={fullVideoUrl} label={source?.name ?? (draftVersion ? "Proposed draft" : "The current edit")}
+            {draftFailed ? <>无法打开此版本。<button className="btn-ghost" onClick={onRetryDraft}>{zh.common.retry}</button></>
+              : !openingJoin && "正在打开剪辑建议…"}
+          </div> : fullVideoUrl ? <CachedVideo key={fullVideoUrl} url={fullVideoUrl} label={source?.name ?? (draftVersion ? zh.ui.player.draft : zh.ui.player.current)}
             hidden={false} active={active} autoPlay={!!source && autoPlaySource} joins={joined?.clock} />
           : joined ? <div className="absolute inset-0">
             <CutStream key={joined.version} project={current.project} timeline={joined.timeline} version={joined.version} joins={joined.clock} proposed onStart={noop} />
@@ -778,7 +779,7 @@ export function CutPreview({ threadView, workingCache, draftVersion, draft, draf
           {!source && <CaughtUpOnMonitor />}
           {cutLoadError && <div className="absolute inset-x-0 top-0 z-10 flex items-center justify-center gap-2 bg-black/75 p-2 text-sm">
             <span role="alert" title={cutLoadError.reason}>{cutLoadError.message}</span>
-            <button type="button" className="btn-quiet" onClick={cutLoadError.retry}>Retry</button>
+            <button type="button" className="btn-quiet" onClick={cutLoadError.retry}>{zh.common.retry}</button>
           </div>}
           {playingBefore && originalChange && selectedPassage ? <EditBeforePreview key={threadView?.request}
             change={originalChange} original={original} passage={selectedPassage} active={active} loading={loading}
@@ -792,7 +793,7 @@ export function CutPreview({ threadView, workingCache, draftVersion, draft, draf
           </MonitorPlayback>}
           {(source || cut || change || draftVersion) && <div className="monitor-controls">
             <PlaybackSpeed playable={playable} />
-            <button className="btn-icon" onClick={e => { if (e.detail) e.currentTarget.blur(); void toggleFullscreen(); }} aria-label={expanded ? "Exit full screen" : "Full screen"} title={expanded ? "Exit full screen" : "Full screen"}>
+            <button className="btn-icon" onClick={e => { if (e.detail) e.currentTarget.blur(); void toggleFullscreen(); }} aria-label={expanded ? "退出全屏" : "全屏"} title={expanded ? "退出全屏" : "全屏"}>
               <Icon name="fullscreen" size={15} />
             </button>
           </div>}

@@ -5,6 +5,7 @@ import type { JoinClock } from "../../lib/joinClock";
 import { parkVideo } from "./parkVideo";
 import { FramedVideo } from "./FramedVideo";
 import type { CutPlaybackWindow } from "../review/usePrepareNextCut";
+import { zh } from "../../lib/zh";
 
 /** The completed preview uses one seekable local file and the same timeline clock. */
 export function CachedVideo({ url, label, hidden, active, autoPlay, joins, parkedAt, fps = 30, windowed }: { url: string; label: string; hidden: boolean; active: boolean; autoPlay: boolean; joins?: JoinClock; parkedAt?: number; fps?: number;
@@ -70,6 +71,6 @@ export function CachedVideo({ url, label, hidden, active, autoPlay, joins, parke
         if (active && !hidden && resume.current) player.play();
         resume.current = false;
       }} />
-    {failed && <button className="absolute inset-0 m-auto h-fit w-fit btn-ghost" onClick={() => { setFailed(false); video.current?.load(); }}>Retry cached video</button>}
+    {failed && <button className="absolute inset-0 m-auto h-fit w-fit btn-ghost" onClick={() => { setFailed(false); video.current?.load(); }}>{zh.ui.player.retryCached}</button>}
   </div>;
 }

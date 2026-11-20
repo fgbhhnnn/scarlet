@@ -2,13 +2,14 @@ import { useEffect, useRef } from "react";
 import { MAX_RECORD_SECONDS, useRecorder, type RecorderResult } from "../../lib/recorder";
 import { useUiStore } from "../../stores/ui";
 import { Icon } from "../ui/primitives";
+import { zhAgent } from "../../lib/zh-agent";
 
 /**
  * Mic toggle. Click toggles recording; holding V (uiStore.voiceHold) records
  * push-to-talk style when `followHold` is set. Shows a red dot and elapsed
  * time while recording and auto-stops at the 2 minute cap.
  */
-export function MicButton({ onResult, onStart, onRecording, onError, disabled, disabledReason, followHold = false, label = "Record a voice note" }: { onResult: (r: RecorderResult) => void; onStart?(): void; onRecording?(on: boolean): void; onError?(message: string): void; disabled?: boolean; disabledReason?: string; followHold?: boolean; label?: string }) {
+export function MicButton({ onResult, onStart, onRecording, onError, disabled, disabledReason, followHold = false, label = zhAgent.record }: { onResult: (r: RecorderResult) => void; onStart?(): void; onRecording?(on: boolean): void; onError?(message: string): void; disabled?: boolean; disabledReason?: string; followHold?: boolean; label?: string }) {
   const rec = useRecorder(onResult);
   useEffect(() => { if (rec.error) onError?.(rec.error); }, [onError, rec.error]);
   const hold = useUiStore((s) => s.voiceHold);
@@ -69,14 +70,14 @@ export function MicButton({ onResult, onStart, onRecording, onError, disabled, d
 
   const unsupported = rec.state === "unsupported";
   const isDisabled = disabled || unsupported;
-  const title = unsupported ? "Scarlet can’t record audio on this computer" : disabled ? disabledReason : rec.recording ? "Stop recording" : followHold ? `${label} (hold V)` : label;
+  const title = unsupported ? "Scarlet 无法在此电脑上录音" : disabled ? disabledReason : rec.recording ? "停止录音" : followHold ? `${label}（按住 V）` : label;
 
   return (
     <div className="flex items-center gap-2">
       <button
         ref={button}
         type="button"
-        aria-label={rec.recording ? "Stop recording" : label}
+        aria-label={rec.recording ? "停止录音" : label}
         aria-pressed={rec.recording}
         title={title}
         disabled={isDisabled}
@@ -92,7 +93,7 @@ export function MicButton({ onResult, onStart, onRecording, onError, disabled, d
           <span className="text-dim">/ {MAX_RECORD_SECONDS / 60}:00</span>
         </span>
       )}
-      {rec.state === "requesting" && <span className="text-[12px] text-muted">Waiting for microphone…</span>}
+      {rec.state === "requesting" && <span className="text-[12px] text-muted">{zhAgent.waitingMic}</span>}
       {rec.error && !rec.recording && !onError && (
         <span role="alert" className="text-[12px] text-bad max-w-[260px] leading-tight">
           {rec.error}

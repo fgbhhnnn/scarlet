@@ -27,13 +27,13 @@ it("counts restarts and running tasks in words, not with (s)", async () => {
   };
   try {
     const one = await shown();
-    expect(one).toMatch(/pid 10\s*1 restart(?!s|\()/);
-    expect(one).toContain("Running 1 task: tsk_1");
+    expect(one).toMatch(/进程 ID 10\s*已重启 1 次/);
+    expect(one).toContain("正在运行 1 个任务：tsk_1");
     engine = { ...engine, restarts: 3 };
     host = { ...host, running: ["tsk_1", "tsk_2"] };
     const several = await shown();
-    expect(several).toContain("3 restarts");
-    expect(several).toContain("Running 2 tasks: tsk_1, tsk_2");
+    expect(several).toContain("已重启 3 次");
+    expect(several).toContain("正在运行 2 个任务：tsk_1、tsk_2");
     expect(one + several).not.toContain("(s)");
   } finally {
     delete (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__;
@@ -58,10 +58,10 @@ it("names Claude Code, Codex and Gemini in the sign-in card's sentence as its ro
   try {
     await act(async () => root.render(<DesktopAgents />));
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
-    expect(container.querySelector("h3")?.textContent).toBe("Sign in");
-    expect(container.querySelector("p")?.textContent).toBe("Choose Claude Code, Codex or Gemini. Install it if needed, then sign in with your subscription.");
+    expect(container.querySelector("h3")?.textContent).toBe("登录");
+    expect(container.querySelector("p")?.textContent).toBe("选择 Claude Code、Codex 或 Gemini。安装后使用你的订阅账号登录。");
     expect([...container.querySelectorAll("li")].map(row => [row.querySelector("div > div")?.textContent, row.querySelector("button")?.textContent]))
-      .toEqual([["Claude Code", "Sign in with Claude"], ["Codex", "Sign in with ChatGPT"], ["Gemini", "Sign in with Google"]]);
+      .toEqual([["Claude Code", "使用 Claude 登录"], ["Codex", "使用 ChatGPT 登录"], ["Gemini", "使用 Google 登录"]]);
     expect(container.textContent).not.toMatch(/assistant|\bAI\b|Connect/);
   } finally {
     await act(async () => root.unmount());

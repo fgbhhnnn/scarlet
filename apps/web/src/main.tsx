@@ -59,11 +59,11 @@ async function launch() {
     appLog("app", "startup-failed", { name: errorName(error), error: withoutAddresses(describeUiError(error)).slice(0, 2000) }, { level: "error" });
     const view = await opening.catch(() => undefined);
     if (!view) {
-      root.textContent = "Scarlet couldn’t start. Close Scarlet and open it again.";
+      root.textContent = "Scarlet 启动失败。请关闭后重新打开。";
       return;
     }
-    view.render(<StartupRecovery title="Scarlet couldn’t start"
-      detail={`${error instanceof Error ? error.message : String(error)}\nClose Scarlet and open it again.`} />);
+    view.render(<StartupRecovery title="Scarlet 启动失败"
+      detail={`${error instanceof Error ? error.message : String(error)}\n请关闭 Scarlet 后重新打开。`} />);
   }
 }
 

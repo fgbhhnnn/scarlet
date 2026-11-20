@@ -1,7 +1,8 @@
 import { useHotkeys } from "../../lib/hotkeys";
+import { zhReview } from "../../lib/zhReview";
 
 /** The same decisions and shortcuts for every edit: Revise (R), and Apply (A) for a proposal or Keep (K) for an applied edit. */
-export function ReviewActions({ approve, revise, disabled, approvalDisabled, approveLabel = "Apply", approveKey = "A" }: {
+export function ReviewActions({ approve, revise, disabled, approvalDisabled, approveLabel = zhReview.actions.apply, approveKey = "A" }: {
   approve?: () => void; revise: () => void; disabled?: boolean; approvalDisabled?: boolean; approveLabel?: string; approveKey?: string;
 }) {
   useHotkeys(event => {
@@ -11,7 +12,7 @@ export function ReviewActions({ approve, revise, disabled, approvalDisabled, app
     if (action) { event.preventDefault(); action(); }
   });
   return <div className="review-actions">
-    <button type="button" className="btn-ghost" data-key="R" data-log-control="revise-edit" aria-keyshortcuts="R" title="Revise (R)" disabled={disabled} onClick={revise}>Revise</button>
+    <button type="button" className="btn-ghost" data-key="R" data-log-control="revise-edit" aria-keyshortcuts="R" title={`${zhReview.actions.revise} (R)`} disabled={disabled} onClick={revise}>{zhReview.actions.revise}</button>
     {approve && <button type="button" className="btn-primary" data-key={approveKey} data-log-control={approveKey === "K" ? "keep-edit" : approveKey === "D" ? "mark-done" : "apply-edit"} aria-keyshortcuts={approveKey} title={`${approveLabel} (${approveKey})`}
       disabled={disabled || approvalDisabled} onClick={e => {
         // The button stays for the next edit. Clicked, it lets go of the focus (WebView2 leaves it there), or Space

@@ -4,6 +4,7 @@ import { player } from "../../lib/player";
 import { usePlayerStore } from "../../stores/player";
 import { usePictureMarksStore, type MarkedFrame } from "../../stores/pictureMarks";
 import { Icon } from "../ui/primitives";
+import { zh } from "../../lib/zh";
 
 /** True when a freehand mark loops close to where it started, so clicking inside the loop also grabs it. */
 function isClosedDraw(mark: PictureMark): boolean {
@@ -73,15 +74,15 @@ interface MarkToolTip {
 }
 
 const TOOLS: { tool: PictureMarkKind; label: string; key: string; description: string; icon: "pencil" | "box" | "point" }[] = [
-  { tool: "draw", label: "Draw", key: "D", description: "Draw freehand on the video to highlight something for your next message.", icon: "pencil" },
-  { tool: "box", label: "Box", key: "B", description: "Drag a box around an area on the video for your next message.", icon: "box" },
-  { tool: "point", label: "Point", key: "P", description: "Drop a pin on a specific spot in the video for your next message.", icon: "point" },
+  { tool: "draw", label: "画笔", key: "D", description: "在视频上自由绘制，突出标记并用于下一条消息。", icon: "pencil" },
+  { tool: "box", label: "框选", key: "B", description: "在视频上拖出区域，用于下一条消息。", icon: "box" },
+  { tool: "point", label: "标点", key: "P", description: "在视频中的具体位置放置标记，用于下一条消息。", icon: "point" },
 ];
 
 const UNDO_KEY = typeof navigator !== "undefined" && navigator.userAgent.includes("Macintosh") ? "⌘Z" : "Ctrl+Z";
 const ACTIONS: Record<"undo" | "clear", MarkToolTip> = {
-  undo: { id: "undo", label: "Undo", key: UNDO_KEY, description: "Remove the last mark from this frame." },
-  clear: { id: "clear", label: "Clear marks", description: "Remove all marks from this frame." },
+  undo: { id: "undo", label: zh.ui.player.undo, key: UNDO_KEY, description: "移除这一帧的最后一个标记。" },
+  clear: { id: "clear", label: zh.ui.player.clearMarks, description: "移除这一帧的所有标记。" },
 };
 
 /** How far apart, in fractions of the frame, the points kept along a line drawn by hand are. */
@@ -336,7 +337,7 @@ export function PictureMarkTools({ projectId, enabled, onStart }: { projectId: s
   });
 
   return <div className="picture-mark-anchor">
-    <div className="picture-mark-tools" role="toolbar" aria-label="Mark the picture">
+    <div className="picture-mark-tools" role="toolbar" aria-label={zh.ui.player.markPicture}>
       {TOOLS.map(t => {
         const item: MarkToolTip = { id: t.tool, label: t.label, key: t.key, description: t.description };
         return <span key={t.tool} {...wrap(item)}>
@@ -347,12 +348,12 @@ export function PictureMarkTools({ projectId, enabled, onStart }: { projectId: s
       })}
       <i className="picture-mark-sep" aria-hidden="true" />
       <span {...wrap(ACTIONS.undo)}>
-        <button type="button" className="picture-mark-tool" aria-label="Undo" disabled={!count}
+        <button type="button" className="picture-mark-tool" aria-label={ACTIONS.undo.label} disabled={!count}
           aria-describedby={tip?.id === ACTIONS.undo.id ? tipId : undefined} {...focusProps(ACTIONS.undo)}
           onClick={e => { if (e.detail) e.currentTarget.blur(); store.undo(projectId); }}><Icon name="undo" size={15} /></button>
       </span>
       <span {...wrap(ACTIONS.clear)}>
-        <button type="button" className="picture-mark-tool" aria-label="Clear marks" disabled={!count}
+        <button type="button" className="picture-mark-tool" aria-label={ACTIONS.clear.label} disabled={!count}
           aria-describedby={tip?.id === ACTIONS.clear.id ? tipId : undefined} {...focusProps(ACTIONS.clear)}
           onClick={e => { if (e.detail) e.currentTarget.blur(); store.clear(projectId); }}><Icon name="x" size={15} /></button>
       </span>

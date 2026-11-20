@@ -57,7 +57,7 @@ export function QueueTray({ items, hint, waits, rewording, onRemove, onReword, o
   const listed = many && (open || !!rewording);
   const marker = (first: boolean, expanded: boolean) => {
     if (first && !expanded && waits) return <span className="queue-next is-waiting">{waits}</span>;
-    return <span className="queue-next">{first ? "Next" : ""}</span>;
+    return <span className="queue-next">{first ? "下一项" : ""}</span>;
   };
   // Every row in the open list starts in the same place, and the heading says what the next request waits for.
   const row = (item: QueuedRequest, first: boolean, expanded = false) => {
@@ -67,17 +67,17 @@ export function QueueTray({ items, hint, waits, rewording, onRemove, onReword, o
       {marker(first, expanded)}
       {item.target && <span className="queue-target">{item.target}</span>}
       <span className={reword && !editing ? "queue-text is-rewordable" : "queue-text"} onClick={editing ? undefined : reword}>{item.text}</span>
-      {first && onStart && !editing && <button type="button" className="queue-start" aria-label={`Start now: ${item.text}`}
-        title="Start now, before your calls" onClick={() => onStart(item.id)}><Icon name="play" size={10} /></button>}
-      {reword && <button type="button" className="queue-reword" aria-pressed={editing} aria-label={`Reword: ${item.text}`}
-        title={editing ? "Leave as it was (Esc)" : "Reword"} onClick={reword}><Icon name="pencil" size={11} /></button>}
-      <button type="button" className="queue-remove" aria-label={`Remove from the queue: ${item.text}`} title="Remove from the queue"
+      {first && onStart && !editing && <button type="button" className="queue-start" aria-label={`立即开始：${item.text}`}
+        title="立即开始，跳过等待审阅" onClick={() => onStart(item.id)}><Icon name="play" size={10} /></button>}
+      {reword && <button type="button" className="queue-reword" aria-pressed={editing} aria-label={`改写：${item.text}`}
+        title={editing ? "保留原文（Esc）" : "改写"} onClick={reword}><Icon name="pencil" size={11} /></button>}
+      <button type="button" className="queue-remove" aria-label={`从队列移除：${item.text}`} title="从队列移除"
         onClick={() => onRemove(item.id)}><Icon name="x" size={11} /></button>
     </div>;
   };
-  const paused = <span className="queue-paused">Editing paused</span>;
-  const count = isPaused ? <span>{paused}{items.length ? ` · ${items.length} queued` : ""}</span>
-    : <span>{items.length} queued{waits && <span className="queue-waits"> · {waits}</span>}</span>;
+  const paused = <span className="queue-paused">剪辑已暂停</span>;
+  const count = isPaused ? <span>{paused}{items.length ? ` · ${items.length} 项排队中` : ""}</span>
+    : <span>{items.length} 项排队中{waits && <span className="queue-waits"> · {waits}</span>}</span>;
   const first = items[0];
   const heading = !first ? <div className="queue-editing-status">{paused}</div>
     : (listed && rewording) || (isPaused && !many) ? <div className="queue-head">{count}</div>
@@ -86,20 +86,20 @@ export function QueueTray({ items, hint, waits, rewording, onRemove, onReword, o
         {marker(true, false)}
         {first.target && <span className="queue-target">{first.target}</span>}
         <span className="queue-text" title={first.text}>{first.text}</span>
-        <span className="queue-count">{items.length} queued</span>
+        <span className="queue-count">{items.length} 项排队中</span>
       </>}
       <span className="queue-chevron"><Icon name="chevron" size={12} /></span>
     </button> : row(first, true);
-  return <div className={listed ? "queue-tray is-open" : "queue-tray"} ref={tray} role="group" aria-label={items.length ? "Queued requests" : "Project editing"} data-log-private title={!listed ? hint : undefined}>
+  return <div className={listed ? "queue-tray is-open" : "queue-tray"} ref={tray} role="group" aria-label={items.length ? "排队中的请求" : "项目剪辑"} data-log-private title={!listed ? hint : undefined}>
     {(listed || (isPaused && first && !many)) && <div className="queue-list">{items.map((item, i) => row(item, i === 0, true))}</div>}
     {action ? <div className="queue-footer">
       {heading}<button type="button" className="queue-editing-action" aria-disabled={pending || undefined}
-        title="Resume editing. Paused work picks up first, where it left off."
+        title="恢复剪辑，优先继续暂停的任务。"
         onClick={async () => {
           if (pending) return;
           setPending(true);
           try { await action(); } finally { setPending(false); }
-        }}><Icon name="play" />Resume</button>
+        }}><Icon name="play" />恢复</button>
     </div> : heading}
   </div>;
 }

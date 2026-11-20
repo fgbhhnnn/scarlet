@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { isPreparingMedia } from "../../lib/upload";
 import { useProjectStore } from "../../stores/project";
 import { useSourceCaches } from "./sourceCaches";
+import { zh } from "../../lib/zh";
 
 export function useMediaProcessing() {
   const projectId = useProjectStore(s => s.current?.id);
@@ -19,7 +20,7 @@ export function useMediaProcessing() {
   const pending = useRef(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const label = paused ? "Resume" : "Pause";
+  const label = paused ? zh.project.resume : zh.project.pause;
   const working = !paused && (preparing || caching || transcribing);
   const available = paused || working || busy;
 
@@ -32,7 +33,7 @@ export function useMediaProcessing() {
       await useProjectStore.getState().updateProject({ mediaPaused: !paused }, projectId);
       return true;
     } catch {
-      setError(`Couldn’t ${label.toLowerCase()} media processing. Try again.`);
+      setError(`${label}媒体处理失败，请重试。`);
       return false;
     } finally {
       pending.current = false;
@@ -40,5 +41,5 @@ export function useMediaProcessing() {
     }
   }
 
-  return { label, description: `${label} media processing`, icon: paused ? "play" as const : "pause" as const, available, busy, error, toggle };
+  return { label, description: paused ? zh.project.resumeMedia : zh.project.pauseMedia, icon: paused ? "play" as const : "pause" as const, available, busy, error, toggle };
 }

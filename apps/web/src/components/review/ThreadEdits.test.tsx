@@ -58,8 +58,8 @@ it("asks for the versions again when the head moved while they were on their way
   await act(async () => deliver({ versions: data.versions! }));
   expect(asked).toHaveBeenCalledTimes(2);
   expect(useProjectStore.getState().current!.versions).toEqual(after);
-  await click(container.querySelector('[aria-label="More for this thread"]')!);
-  expect(menuItems()).toEqual(["Undo these edits", "File this thread"]);
+  await click(container.querySelector('[aria-label="更多对话操作"]')!);
+  expect(menuItems()).toEqual(["撤销这些剪辑", "归档此对话"]);
 });
 
 it("undoes every applied change in the thread from its menu, newest first, and files the thread", async () => {
@@ -68,12 +68,12 @@ it("undoes every applied change in the thread from its menu, newest first, and f
   useProjectStore.setState({ current: data, status: "ready", historyEdit, setThreadDone });
   await act(async () => root.render(<ThreadAction projectId={PRJ} thread={thread} edits={threadEditList(thread)} onPlay={() => {}} />));
   const item = (text: string) => [...container.querySelectorAll<HTMLElement>('[role="menuitem"]')].find(i => i.textContent?.trim() === text)!;
-  await click(container.querySelector('[aria-label="More for this thread"]')!);
-  await click(item("Undo these edits"));
+  await click(container.querySelector('[aria-label="更多对话操作"]')!);
+  await click(item("撤销这些剪辑"));
   const applied = thread.changes.filter(c => c.state === "approved").map(c => c.appliedVersion ?? c.toVersion).reverse();
   expect(historyEdit.mock.calls).toEqual(applied.map(version => [version, "revert"]));
-  await click(container.querySelector('[aria-label="More for this thread"]')!);
-  await click(item("File this thread"));
+  await click(container.querySelector('[aria-label="更多对话操作"]')!);
+  await click(item("归档此对话"));
   expect(setThreadDone).toHaveBeenCalledWith(thread.id, true, expect.any(String));
 });
 
@@ -86,7 +86,7 @@ it("leaves the menu out where it is turned off, and still says what it reported"
   // A thread filed earlier still says so.
   const filed = { ...data, project: { ...data.project, completedThreads: { [thread.id]: JSON.stringify([thread.tasks.at(-1)?.id, thread.changes.at(-1)?.id, thread.updatedAt]) } } };
   await act(async () => { useProjectStore.setState({ current: filed }); });
-  expect(container.textContent).toBe("Filed");
+  expect(container.textContent).toBe("已归档");
 });
 
 it("reads a request's edits again for a new working cut only while they are needed, and keeps the last ones meanwhile", async () => {

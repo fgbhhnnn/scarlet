@@ -95,7 +95,7 @@ it("asks for no frame of a link, which is no file on this computer, and shows it
   await importing("https://example.com/Interview.mov");
   await act(async () => {});
   expect(container.textContent).toContain("Interview.mov");
-  expect(container.textContent).toContain("Downloading…");
+  expect(container.textContent).toContain("正在下载…");
   // The engine would answer 404 for a path it can't find, and the log would keep a failed request for each such link.
   expect(fetched).not.toHaveBeenCalled();
   expect(requests()).toEqual([]);

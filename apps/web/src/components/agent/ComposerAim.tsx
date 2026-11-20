@@ -52,7 +52,7 @@ export function ComposerAim({ items, disabled, disabledReason }: {
     };
   }, [open]);
 
-  const showLabel = `Show ${additional.map(item => item.name).join(" and ")}`;
+  const showLabel = `显示 ${additional.map(item => item.name).join("、")}`;
   const clear = (item: AimItem) => <button type="button" className="composer-aim-clear" disabled={disabled}
     title={disabled ? disabledReason : item.clearLabel} aria-label={item.clearLabel} aria-description={disabled ? disabledReason : undefined}
     onClick={() => { setOpen(false); item.onClear(); }}>
@@ -62,7 +62,7 @@ export function ComposerAim({ items, disabled, disabledReason }: {
   return <div ref={group} className="composer-aim" onPointerEnter={() => setHovered(true)} onPointerLeave={() => setHovered(false)}
     onFocus={() => setFocused(true)}
     onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocused(false); }}>
-    <span className="composer-aim-name" title={`About ${primary.name}`}>{primary.displayName ?? primary.name}</span>
+    <span className="composer-aim-name" title={`关于 ${primary.name}`}>{primary.displayName ?? primary.name}</span>
     {additional.length > 0 && <button ref={trigger} type="button" className="composer-aim-button"
       aria-label={showLabel} title={showLabel}
       aria-expanded={open} aria-controls={open ? id : undefined}

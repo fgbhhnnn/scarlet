@@ -74,7 +74,7 @@ it("keeps a queued request's words out of the log when its row is pressed or rem
   await act(async () => host.querySelector<HTMLElement>(".queue-row .queue-text")!.click());
   const log = written().join("\n");
   expect(log.match(/\[action\]/g)).toHaveLength(3);
-  expect(log).toContain('in="Queued requests"');
+  expect(log).toContain('in=排队中的请求');
   expect(log).not.toMatch(/salary|boss/);
   await act(async () => root.unmount());
   vi.unstubAllGlobals();

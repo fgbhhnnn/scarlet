@@ -33,13 +33,13 @@ const named = (text: string) => buttons().find(b => b.textContent === text)!;
 
 it("names each decision and its key on hover, and takes the key from anywhere on the page", async () => {
   await show();
-  expect(buttons().map(b => [b.textContent, b.getAttribute("aria-keyshortcuts"), b.title])).toEqual([["Revise", "R", "Revise (R)"], ["Apply", "A", "Apply (A)"]]);
+  expect(buttons().map(b => [b.textContent, b.getAttribute("aria-keyshortcuts"), b.title])).toEqual([["修改", "R", "修改 (R)"], ["应用", "A", "应用 (A)"]]);
   await press("r");
   await press("A");
   expect([revise.mock.calls.length, approve.mock.calls.length]).toEqual([1, 1]);
   // An applied edit is kept, with K. A is no longer a decision there.
-  await show({ approveLabel: "Keep", approveKey: "K" });
-  expect(named("Keep").title).toBe("Keep (K)");
+  await show({ approveLabel: "保留", approveKey: "K" });
+  expect(named("保留").title).toBe("保留 (K)");
   await press("a");
   expect(approve).toHaveBeenCalledTimes(1);
   await press("k");
@@ -78,12 +78,12 @@ it("decides once for a held key, and not at all while typing or while the decisi
 
 it("shows Revise alone for a revision with nothing to approve", async () => {
   await act(async () => root.render(<ReviewActions revise={revise} />));
-  expect(buttons().map(b => b.textContent)).toEqual(["Revise"]);
+  expect(buttons().map(b => b.textContent)).toEqual(["修改"]);
 });
 
 it("lets go of the focus when the decision is clicked, and keeps it when pressed by keyboard", async () => {
-  await show({ approveLabel: "Keep", approveKey: "K" });
-  const keep = named("Keep");
+  await show({ approveLabel: "保留", approveKey: "K" });
+  const keep = named("保留");
   // Enter or Space on the focused button reaches it as a click with no count. Tab goes on from there.
   keep.focus();
   await act(async () => { keep.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, detail: 0 })); });
@@ -94,7 +94,7 @@ it("lets go of the focus when the decision is clicked, and keeps it when pressed
   await act(async () => { keep.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, detail: 1 })); });
   expect(approve).toHaveBeenCalledTimes(2);
   expect(document.activeElement).not.toBe(keep);
-  expect(named("Keep")).toBe(keep);
+  expect(named("保留")).toBe(keep);
 });
 
 it("shows the R, K and A shortcuts inside review action buttons via workspace.css", async () => {
@@ -103,12 +103,12 @@ it("shows the R, K and A shortcuts inside review action buttons via workspace.cs
   expect(match).not.toBeNull();
   const selector = match![1]!.trim();
 
-  await show({ approveLabel: "Apply", approveKey: "A" });
-  expect(named("Revise").matches(selector)).toBe(true);
-  expect(named("Apply").matches(selector)).toBe(true);
+  await show({ approveLabel: "应用", approveKey: "A" });
+  expect(named("修改").matches(selector)).toBe(true);
+  expect(named("应用").matches(selector)).toBe(true);
 
-  await show({ approveLabel: "Keep", approveKey: "K" });
-  expect(named("Keep").matches(selector)).toBe(true);
+  await show({ approveLabel: "保留", approveKey: "K" });
+  expect(named("保留").matches(selector)).toBe(true);
 
   const approveBtn = document.createElement("button");
   approveBtn.setAttribute("data-key", "A");

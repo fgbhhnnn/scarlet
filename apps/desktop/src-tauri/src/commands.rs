@@ -312,15 +312,15 @@ pub(crate) async fn pick_destination(app: &AppHandle, title: &str, file_name: &s
     let (tx, rx) = tokio::sync::oneshot::channel::<Option<FilePath>>();
     let mut picker = app.dialog().file().set_title(title).set_file_name(file_name);
     if file_name.ends_with(".mp4") {
-        picker = picker.add_filter("MP4 video", &["mp4"]);
+        picker = picker.add_filter("MP4 视频", &["mp4"]);
     } else if file_name.ends_with(".zip") {
-        picker = picker.add_filter("Zip archive", &["zip"]);
+        picker = picker.add_filter("ZIP 压缩包", &["zip"]);
     } else if file_name.ends_with(".otio") {
-        picker = picker.add_filter("OpenTimelineIO timeline", &["otio"]);
+        picker = picker.add_filter("OpenTimelineIO 时间线", &["otio"]);
     } else if file_name.ends_with(".srt") {
-        picker = picker.add_filter("SubRip captions", &["srt"]);
+        picker = picker.add_filter("SubRip 字幕", &["srt"]);
     } else if file_name.ends_with(".vtt") {
-        picker = picker.add_filter("WebVTT captions", &["vtt"]);
+        picker = picker.add_filter("WebVTT 字幕", &["vtt"]);
     }
     picker.save_file(move |p| { let _ = tx.send(p); });
     rx.await.map_err(|e| e.to_string())?.map(|picked| picked.into_path().map_err(|e| e.to_string())).transpose()
@@ -332,7 +332,7 @@ pub struct ExportChoice { ticket: u64, path: String }
 #[tauri::command]
 pub async fn choose_video_export(app: AppHandle, destinations: State<'_, ExportDestinations>, file_name: String) -> Result<Option<ExportChoice>, String> {
     use std::hash::{BuildHasher, Hasher};
-    let Some(path) = pick_destination(&app, "Export", &file_name).await? else { return Ok(None) };
+    let Some(path) = pick_destination(&app, "导出", &file_name).await? else { return Ok(None) };
     // Random, so a ticket recorded before a restart never names a later choice. 53 bits survive JavaScript.
     let ticket = std::collections::hash_map::RandomState::new().build_hasher().finish() >> 11;
     let shown = path.to_string_lossy().into_owned();
@@ -555,12 +555,12 @@ fn media_filters(mac: bool) -> &'static [(&'static str, &'static [&'static str])
         return &[];
     }
     &[
-        ("Media", &[
+        ("媒体文件", &[
             "mp4", "mov", "m4v", "mkv", "webm", "avi", "mts", "m2ts", "ts", "mxf", "3gp", "3g2", "wmv", "asf", "mpg", "mpeg", "flv", "ogv",
             "wav", "mp3", "aac", "m4a", "flac", "aif", "aiff", "caf", "ogg", "opus", "wma", "ac3", "eac3", "amr",
             "png", "jpg", "jpeg", "webp", "gif", "heic", "heif", "avif", "bmp", "tif", "tiff",
         ]),
-        ("All files", &["*"]),
+        ("所有文件", &["*"]),
     ]
 }
 
@@ -569,7 +569,7 @@ fn media_filters(mac: bool) -> &'static [(&'static str, &'static [&'static str])
 #[tauri::command]
 pub async fn pick_files(app: AppHandle) -> Result<Vec<String>, String> {
     let (tx, rx) = tokio::sync::oneshot::channel::<Option<Vec<FilePath>>>();
-    let mut picker = app.dialog().file().set_title("Add files");
+    let mut picker = app.dialog().file().set_title("添加文件");
     for (name, extensions) in media_filters(cfg!(target_os = "macos")) {
         picker = picker.add_filter(*name, extensions);
     }
@@ -1032,6 +1032,6 @@ mod tests {
         for name in footage {
             assert!(panel_takes(&others[..1], name), "Media hides {name}");
         }
-        assert!(others.iter().any(|(name, extensions)| *name == "All files" && *extensions == ["*"]));
+        assert!(others.iter().any(|(name, extensions)| *name == "所有文件" && *extensions == ["*"]));
     }
 }

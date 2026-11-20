@@ -17,15 +17,15 @@ it("opens native logs while the engine is offline and can copy an error without 
   const button = (label: string) => [...container.querySelectorAll("button")].find(b => b.textContent === label);
   try {
     await act(async () => root.render(<StartupRecovery title="Reconnecting" detail="Engine stopped" showLogs />));
-    await act(async () => button("Open logs")!.click());
+    await act(async () => button("打开日志")!.click());
     expect(open).toHaveBeenCalledWith("/fixture/logs");
     info.mockClear();
     await act(async () => root.render(<StartupRecovery title="Scarlet couldn’t start" detail="Bridge unavailable" />));
-    expect(button("Open logs")).toBeUndefined();
-    await act(async () => button("Copy diagnostics")!.click());
+    expect(button("打开日志")).toBeUndefined();
+    await act(async () => button("复制诊断信息")!.click());
     expect(copy).toHaveBeenCalledWith("Scarlet couldn’t start\nBridge unavailable");
     expect(info).not.toHaveBeenCalled();
-    expect(container.textContent).toContain("Diagnostics copied.");
+    expect(container.textContent).toContain("已复制诊断信息。");
   } finally {
     await act(async () => root.unmount());
     vi.restoreAllMocks();

@@ -3,6 +3,7 @@ import { useEffect, useId, useState, useSyncExternalStore, type ReactNode } from
 import { desktop } from "../../lib/desktop";
 import { buildPercent, refreshUpdateStatus, useUpdateStatus } from "../../lib/updateStatus";
 import { changesSince, parseChangelog, plainChange } from "../../lib/changelog";
+import { shellZh } from "../../lib/zh-shell";
 
 const RING = 2 * Math.PI * 5;
 const build = (revision: string) => <span className="font-mono">{revision.slice(0, 7)}</span>;
@@ -48,12 +49,12 @@ function UpdateHint({ id, revision, title, children }: { id: string; revision: s
   const news = useChanges(revision);
   return <span id={id} role="tooltip" className="update-hint"><span>
     <span className="text-fg">{title}</span>
-    <span>You’re on {__SCARLET_VERSION__}{__SCARLET_REVISION__ && <>, build {build(__SCARLET_REVISION__)}</>}.</span>
+    <span>当前版本为 {__SCARLET_VERSION__}{__SCARLET_REVISION__ && <>，构建 {build(__SCARLET_REVISION__)}</>}.</span>
     {children}
     {news.length > 0 && <span className="update-hint-news">
-      <span className="text-fg">What’s new</span>
+      <span className="text-fg">{shellZh.changelog.whatsNew}</span>
       <ul>{news.slice(0, MOST_CHANGES).map(change => <li key={change}>{plainChange(change)}</li>)}</ul>
-      {news.length > MOST_CHANGES && <span>And {news.length - MOST_CHANGES} more in Settings › About once it’s installed.</span>}
+      {news.length > MOST_CHANGES && <span>安装后可在「设置 → 关于」查看其余 {news.length - MOST_CHANGES} 项更新。</span>}
     </span>}
   </span></span>;
 }
@@ -92,7 +93,7 @@ export function UpdateButton() {
   async function install() {
     if (!ready || restart.restarting) return;
     if (!window.dispatchEvent(new Event("beforeunload", { cancelable: true }))) {
-      setRestart({ error: "Save your changes before restarting.", about: ready });
+      setRestart({ error: "请先保存更改再重启。", about: ready });
       return;
     }
     setRestart({ restarting: true, error: "" });
@@ -106,31 +107,31 @@ export function UpdateButton() {
     }
   }
 
-  if (restarting || (ready && !showProgress)) return <aside className="update-control update-corner" aria-label="Scarlet update"
+  if (restarting || (ready && !showProgress)) return <aside className="update-control update-corner" aria-label={shellZh.updates.update}
     onPointerLeave={() => { if (error) setRestart({ error: "" }); }} onBlur={() => { if (error) setRestart({ error: "" }); }}>
     <button type="button" className="update-button" disabled={restarting} onClick={install}
       aria-describedby={ready && !error ? hint : undefined}>
       <span className="update-button-dot" aria-hidden="true" />
-      {restarting ? "Restarting…" : "Restart to update"}
+      {restarting ? "正在重启…" : "重启并更新"}
     </button>
     {error ? <span role="alert" className="update-button-error">{error}</span>
-      : ready && <UpdateHint id={hint} revision={ready} title={release ? <>Version {ready} is ready</> : <>Build {build(ready)} is ready</>}>
-        <span>Restarting installs it and brings you back here. An edit Scarlet is working on picks up where it left off.</span>
+      : ready && <UpdateHint id={hint} revision={ready} title={release ? <>版本 {ready} 已就绪</> : <>构建 {build(ready)} 已就绪</>}>
+        <span>重启会安装更新并返回此处，Scarlet 正在处理的剪辑会从中断处继续。</span>
       </UpdateHint>}
   </aside>;
   if (!building) return null;
   const percent = buildPercent(building, now);
-  return <aside className="update-control update-corner" aria-label="Scarlet update">
-    <span role="status" className="update-button" aria-label={`Updating Scarlet, ${percent}% ${release ? "downloaded" : "built"}`} aria-describedby={hint}>
+  return <aside className="update-control update-corner" aria-label={shellZh.updates.update}>
+    <span role="status" className="update-button" aria-label={`正在更新 Scarlet, ${percent}% ${release ? "已下载" : "已构建"}`} aria-describedby={hint}>
       <svg className="update-button-ring" viewBox="0 0 14 14" aria-hidden="true">
         <circle cx="7" cy="7" r="5" />
         <circle cx="7" cy="7" r="5" strokeDasharray={RING} strokeDashoffset={RING * (1 - percent / 100)} />
       </svg>
-      Updating
+      更新中
       <span className="update-button-figure">{percent}%</span>
     </span>
-    <UpdateHint id={hint} revision={building.revision} title={release ? <>Updating to version {building.revision}</> : <>Updating to build {build(building.revision)}</>}>
-      <span>Scarlet is {release ? "downloading" : "building"} it in the background. Keep working: this becomes Restart to update when it’s ready.</span>
+    <UpdateHint id={hint} revision={building.revision} title={release ? <>正在更新至版本 {building.revision}</> : <>正在更新至构建 {build(building.revision)}</>}>
+      <span>Scarlet 正在后台{release ? "下载" : "构建"}更新。你可以继续编辑，更新就绪后即可重启安装。</span>
     </UpdateHint>
   </aside>;
 }

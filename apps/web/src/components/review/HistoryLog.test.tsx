@@ -46,26 +46,26 @@ const page = (from: number): ActivityEntry[] => Array.from({ length: 200 }, (_, 
 it("retries a history that didn't load, and keeps the loaded entries when an older page fails", async () => {
   const read = vi.spyOn(api, "activity").mockRejectedValueOnce(new Error("The engine is restarting"));
   await act(async () => root.render(<HistoryLog />));
-  expect(container.textContent).toContain("Couldn’t load the history: The engine is restarting");
+  expect(container.textContent).toContain("无法加载历史记录：The engine is restarting");
   // Retry asks again, and the log arrives.
   read.mockResolvedValueOnce({ activity: page(0) });
-  await click(button("Retry")!);
+  await click(button("重试")!);
   expect(read).toHaveBeenCalledTimes(2);
   expect(entries()).toBe(200);
-  expect(container.textContent).not.toContain("Couldn’t load");
+  expect(container.textContent).not.toContain("无法加载");
 
   // An older page fails: the log stays, and the reason sits beside Show older, which asks again.
   read.mockRejectedValueOnce(new Error("Lost the connection"));
-  await click(button("Show older")!);
+  await click(button("显示更早记录")!);
   expect(entries()).toBe(200);
-  expect(button("Show older")!.parentElement!.textContent).toContain("Couldn’t load older history: Lost the connection");
+  expect(button("显示更早记录")!.parentElement!.textContent).toContain("无法加载更早历史记录：Lost the connection");
   read.mockResolvedValueOnce({ activity: page(200).slice(0, 50) });
-  await click(button("Show older")!);
+  await click(button("显示更早记录")!);
   expect(read).toHaveBeenLastCalledWith(PRJ, expect.objectContaining({ beforeId: "act_199" }));
   expect(entries()).toBe(250);
-  expect(container.textContent).not.toContain("Couldn’t load");
+  expect(container.textContent).not.toContain("无法加载");
   // That page was the last one.
-  expect(button("Show older")).toBeUndefined();
+  expect(button("显示更早记录")).toBeUndefined();
 });
 
 it("keeps every entry's words one colour, with a small mark before the ones approved, put back or gone wrong", async () => {

@@ -6,14 +6,15 @@ import { useProjectStore } from "../../stores/project";
 import { useAgentAvailability } from "../agent/AgentChip";
 import { Field, InlineError, Modal } from "../ui/primitives";
 import { PreferenceSelect } from "../ui/PreferenceSelect";
+import { zh } from "../../lib/zh";
 
 const SHAPES: Array<{ value: MakeShortsRequest["aspect"]; label: string }> = [
-  { value: "9:16", label: "Vertical · 9:16" },
-  { value: "1:1", label: "Square · 1:1" },
-  { value: "4:5", label: "Portrait · 4:5" },
+  { value: "9:16", label: "竖屏 · 9:16" },
+  { value: "1:1", label: "方形 · 1:1" },
+  { value: "4:5", label: "人像 · 4:5" },
 ];
-const LENGTHS = [30, 60, 90, 180].map(value => ({ value, label: `Under ${value < 120 ? `${value} s` : `${value / 60} min`} each` }));
-const COUNTS = [1, 2, 3, 4, 5].map(value => ({ value, label: value === 1 ? "1" : `Up to ${value}` }));
+const LENGTHS = [30, 60, 90, 180].map(value => ({ value, label: `每条不超过 ${value < 120 ? `${value} 秒` : `${value / 60} 分钟`}` }));
+const COUNTS = [1, 2, 3, 4, 5].map(value => ({ value, label: value === 1 ? "1" : `最多 ${value} 条` }));
 
 /**
  * Make shorts, from the ⋯ menu: what the editor wants, in a form, since it makes new projects. Each short is a project
@@ -47,24 +48,24 @@ export function MakeShortsSheet({ onClose }: { onClose(): void }) {
       setBusy(false);
     }
   };
-  return <Modal open title="Make shorts" width={600} onClose={() => { if (!busy) onClose(); }} footer={<>
-    <button type="button" className="btn-ghost" disabled={busy} onClick={onClose}>Cancel</button>
-    <button type="submit" form="make-shorts" className="btn-primary" disabled={busy || empty}>{busy ? "Making shorts…" : "Make shorts"}</button>
+  return <Modal open title={zh.workspace.makeShorts} width={600} onClose={() => { if (!busy) onClose(); }} footer={<>
+    <button type="button" className="btn-ghost" disabled={busy} onClick={onClose}>{zh.common.cancel}</button>
+    <button type="submit" form="make-shorts" className="btn-primary" disabled={busy || empty}>{busy ? "正在制作短视频…" : zh.workspace.makeShorts}</button>
   </>}>
     <form id="make-shorts" onSubmit={event => { event.preventDefault(); void submit(); }}>
       <fieldset disabled={busy} className="min-w-0">
         <div className="grid grid-cols-1 gap-x-3 sm:grid-cols-2">
-          <Field label="How many" htmlFor="shorts-count"><PreferenceSelect id="shorts-count" value={count} onChange={setCount} options={COUNTS} /></Field>
-          <Field label="Shape" htmlFor="shorts-shape"><PreferenceSelect id="shorts-shape" value={aspect} onChange={setAspect} options={SHAPES} /></Field>
-          <Field label="Length" htmlFor="shorts-length"><PreferenceSelect id="shorts-length" value={maxSeconds} onChange={setMaxSeconds} options={LENGTHS} /></Field>
-          <Field label="Captions" htmlFor="shorts-captions">
+          <Field label="数量" htmlFor="shorts-count"><PreferenceSelect id="shorts-count" value={count} onChange={setCount} options={COUNTS} /></Field>
+          <Field label="画幅" htmlFor="shorts-shape"><PreferenceSelect id="shorts-shape" value={aspect} onChange={setAspect} options={SHAPES} /></Field>
+          <Field label="时长" htmlFor="shorts-length"><PreferenceSelect id="shorts-length" value={maxSeconds} onChange={setMaxSeconds} options={LENGTHS} /></Field>
+          <Field label="字幕" htmlFor="shorts-captions">
             <PreferenceSelect id="shorts-captions" value={captions ? "on" : "off"} onChange={value => setCaptions(value === "on")}
-              options={[{ value: "on", label: "On" }, { value: "off", label: "Off" }]} />
+              options={[{ value: "on", label: "开启" }, { value: "off", label: "关闭" }]} />
           </Field>
         </div>
-        <p className="text-dim text-[11.5px] mt-1">Makes a new project for each short, starting from this video’s finished edit. This video isn’t changed.</p>
+        <p className="text-dim text-[11.5px] mt-1">每条短视频都会创建一个新项目，基于当前视频的成片生成，原视频不会改变。</p>
       </fieldset>
     </form>
-    <InlineError>{empty ? "There’s no video to make shorts from yet." : error}</InlineError>
+    <InlineError>{empty ? "当前还没有可制作短视频的视频。" : error}</InlineError>
   </Modal>;
 }

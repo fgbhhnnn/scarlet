@@ -39,7 +39,7 @@ export function ConnectionStatus() {
     <span
       role="status"
       className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[12px] ${reconnecting ? "bg-warn/10 text-warn" : "bg-bad/10 text-bad"}`}
-      title="Live updates from the Scarlet engine (previews, progress, notes). Your work is saved either way."
+      title="Scarlet 引擎会实时更新预览、进度和备注。连接中断时也会保存你的工作。"
     >
       <Dot tone={reconnecting ? "warn" : "bad"} pulse={reconnecting} />
       {reconnecting ? zh.shell.reconnecting : zh.shell.offline}

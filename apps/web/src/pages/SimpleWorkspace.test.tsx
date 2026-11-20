@@ -112,7 +112,7 @@ const reviewModes = (scope: Element) => [...scope.querySelectorAll(".simple-revi
 ]);
 /** Most tests work on the rows. Expand list disclosures without previewing a finished request's single edit. */
 const openEdits = async () => {
-  for (const toggle of container.querySelectorAll<HTMLElement>('[aria-label="Edits"] :is(.simple-pass-toggle[aria-expanded="false"], .simple-review-tab:not(.simple-pass-need)[aria-pressed="false"])')) await click(toggle);
+  for (const toggle of container.querySelectorAll<HTMLElement>('[aria-label="剪辑"] :is(.simple-pass-toggle[aria-expanded="false"], .simple-review-tab:not(.simple-pass-need)[aria-pressed="false"])')) await click(toggle);
 };
 const showFolded = () => act(async () => root.render(<MemoryRouter><SimpleWorkspace /></MemoryRouter>));
 const show = async () => { await showFolded(); await openEdits(); };
@@ -143,7 +143,7 @@ const openHead = () => container.querySelector<HTMLElement>(".cut-transport > .e
 const transcriptLink = () => openHead()!.querySelector<HTMLButtonElement>(".edit-card-words")!;
 const transcriptName = () => [transcriptLink().textContent, transcriptLink().getAttribute("aria-label"), transcriptLink().getAttribute("title")];
 /** The icon on a cut's card that plays it with the cut footage: whether it's lit, and what hovering says. */
-const compareButton = (scope: Element) => scope.querySelector<HTMLButtonElement>('button[aria-label="Before"]')!;
+const compareButton = (scope: Element) => scope.querySelector<HTMLButtonElement>('button[aria-label="剪辑前"]')!;
 const beforeIcon = (card: Element) => { const b = compareButton(card); return b && [b.textContent, b.getAttribute("aria-label"), b.getAttribute("aria-pressed"), b.getAttribute("title")]; };
 /** The tag in the message box: what the next message revises or answers. None is a new edit. */
 const boxTag = () => composer.props!.targetTag;
@@ -154,10 +154,10 @@ it("shows every request as one chat, oldest first", async () => {
   await show();
   const expected = buildThreads(data).sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt)).map(t => t.title);
   expect(turns().map(s => s.getAttribute("aria-label"))).toEqual(expected);
-  expect(container.querySelector('[aria-label="Suggestion"]')).toBeNull();
+  expect(container.querySelector('[aria-label="剪辑建议"]')).toBeNull();
   // The simple player keeps the picture, the classic timeline (stills, waveform, ruler), Before/After and speed. The header stays out.
   expect(container.querySelector(".timeline-panel .timeline-filmstrip")).not.toBeNull();
-  expect(container.querySelector('.watch-monitor > .monitor-controls button[title="Playback speed"]')?.textContent).toBe("1×");
+  expect(container.querySelector('.watch-monitor > .monitor-controls button[title="播放速度"]')?.textContent).toBe("1×");
   expect(container.querySelector(".cut-heading")).toBeNull();
 });
 
@@ -170,8 +170,8 @@ it("draws no diamond for a caption on the timeline, which marks only what needs 
   expect(container.querySelector(".timeline-ruler")?.textContent).not.toBe("");
   expect(container.querySelector(".timeline-markers, .timeline-marker")).toBeNull();
   // The zoom is in the row under the timeline, with the playhead's time: nothing on the timeline itself is a button.
-  const controls = container.querySelectorAll(".timeline-foot > [aria-label='Timeline zoom'] :is(button, input)");
-  expect([...controls].map(control => control.getAttribute("aria-label"))).toEqual(["Zoom out", "Zoom", "Zoom in"]);
+  const controls = container.querySelectorAll(".timeline-foot > [aria-label='时间线缩放'] :is(button, input)");
+  expect([...controls].map(control => control.getAttribute("aria-label"))).toEqual(["缩小", "缩放", "放大"]);
   expect(container.querySelector(".timeline-foot .timeline-clock")).not.toBeNull();
   expect(container.querySelectorAll(".timeline-track button")).toHaveLength(0);
 });
@@ -191,8 +191,8 @@ it("loads full steps only for live requests and upgrades a queued request when w
 
 it("opens the speed stepper from the monitor button and steps the speed with L, round from the fastest to the slowest, with the stepper closed", async () => {
   await show();
-  const trigger = container.querySelector<HTMLButtonElement>('.monitor-controls button[title="Playback speed"]')!;
-  const panel = () => container.querySelector<HTMLElement>('[role="group"][aria-label="Playback speed"]');
+  const trigger = container.querySelector<HTMLButtonElement>('.monitor-controls button[title="播放速度"]')!;
+  const panel = () => container.querySelector<HTMLElement>('[role="group"][aria-label="播放速度"]');
   const slider = container.querySelector<HTMLElement>(".timeline-slider")!;
   const key = (target: HTMLElement, init: KeyboardEventInit) => act(async () => {
     target.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, cancelable: true, ...init }));
@@ -239,7 +239,7 @@ it("opens the speed stepper from the monitor button and steps the speed with L, 
   check(2);
   expect(panel()).toBeNull();
   await click(trigger);
-  expect(panel()!.querySelector<HTMLButtonElement>('[aria-label="Increase playback speed"]')!.disabled).toBe(true);
+  expect(panel()!.querySelector<HTMLButtonElement>('[aria-label="提高播放速度"]')!.disabled).toBe(true);
   await act(async () => { document.body.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })); });
   expect(panel()).toBeNull();
   await click(trigger);
@@ -330,11 +330,11 @@ it("turns the Before clip's play button while its stream waits for a section, an
     expect(shows()).toEqual(["Play", "icon"]);
     // Playing, it runs into footage that isn't in yet: the button turns until the picture is back.
     await click(button());
-    expect(shows()).toEqual(["Pause", "icon"]);
+    expect(shows()).toEqual(["暂停", "icon"]);
     await act(async () => { video.dispatchEvent(new Event("waiting")); vi.advanceTimersByTime(180); });
-    expect(shows()).toEqual(["Pause", "spinner"]);
+    expect(shows()).toEqual(["暂停", "spinner"]);
     await act(async () => { video.dispatchEvent(new Event("playing")); });
-    expect(shows()).toEqual(["Pause", "icon"]);
+    expect(shows()).toEqual(["暂停", "icon"]);
   } finally { vi.useRealTimers(); }
 });
 
@@ -356,7 +356,7 @@ const markers = () => vi.spyOn(api, "threadEdits").mockImplementation(async (_pr
     { changeId: "chg_approved_2", spot: 2, label: "wrap", range: { start: 11.5, end: 16 }, previous: [], check: CHECK, summary: SUMMARY },
   ] }));
 /** The open edit's card on top of the timeline: what it changed and its decisions. Its chat row stays one line. */
-const editPanel = () => container.querySelector<HTMLElement>('[aria-label="Applied edit"]');
+const editPanel = () => container.querySelector<HTMLElement>('[aria-label="已应用的剪辑"]');
 const openTitle = () => container.querySelector('.simple-edit[aria-current="true"] .simple-edit-title')?.textContent;
 const press = (key: string) => act(async () => { window.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true })); });
 /** Zooms settle at once, as they do with reduced motion, so a test knows what the timeline shows when it reads it. */
@@ -397,7 +397,7 @@ it("counts an earlier request's edit this request found a doubt about as one tha
   // What the request made leaves it out. What needs the editor counts it, and opens it.
   expect(turn.querySelector(".simple-made")?.textContent).toBe("Made 3 edits: music bed, captions, wrap.");
   const need = () => turn.querySelector<HTMLButtonElement>(".simple-pass-need");
-  expect(need()?.getAttribute("title")).toBe("1 needs you");
+  expect(need()?.getAttribute("title")).toBe("1 项待审阅");
   await click(need()!);
   await act(async () => {});
   expect(openTitle()).toBe("Carry the quotation into the reaction");
@@ -418,7 +418,7 @@ it("lists a thread's edits once, numbered, and opens one with its decisions unde
   expect(turn.querySelector(".simple-made")?.textContent).toBe("Made 3 edits: music bed, captions, wrap.");
   expect([...turn.querySelectorAll(".simple-made b")].map(b => b.textContent)).toEqual(["3"]);
   expect(turn.querySelector(".simple-made-line button")).toBeNull();
-  expect(reviewModes(turn)).toEqual([["For you", "true"], ["See all", "false"]]);
+  expect(reviewModes(turn)).toEqual([["待审阅", "true"], ["查看全部", "false"]]);
   expect(turn.querySelector(".simple-review-tab-count")?.textContent).toBe("1");
   expect(turn.querySelector(".simple-review-tabs + .simple-edits")).not.toBeNull();
   expect([...turn.querySelectorAll(".simple-edits .simple-edit-title")].map(r => r.textContent)).toEqual(["wrap"]);
@@ -428,7 +428,7 @@ it("lists a thread's edits once, numbered, and opens one with its decisions unde
   expect(rows().map(r => r.querySelector(".simple-edit-title")?.textContent)).toEqual(["music bed", "captions", "wrap"]);
   expect(rows().map(r => r.querySelector(".edit-badge")?.textContent)).toEqual(["1", "2", "3"]);
   expect(turn.querySelector(".simple-suggest")).toBeNull();
-  expect(reviewModes(turn)).toEqual([["For you", "false"], ["See all", "true"]]);
+  expect(reviewModes(turn)).toEqual([["待审阅", "false"], ["查看全部", "true"]]);
 
   await click(rows()[1]!);
   await act(async () => {});
@@ -448,7 +448,7 @@ it("lists a thread's edits once, numbered, and opens one with its decisions unde
   expect(panel.firstElementChild?.matches(".edit-card-bar")).toBe(true);
   expect(panel.querySelector(".edit-card-bar > .edit-card-title:first-child")?.textContent).toBe("captions");
   expect(panel.querySelector(".edit-card-nav, .preference-select")).toBeNull();
-  expect(beforeIcon(panel)).toEqual(["", "Before", "false", "Play Before (\\)"]);
+  expect(beforeIcon(panel)).toEqual(["", "剪辑前", "false", "播放剪辑前 (\\)"]);
   expect(panel.querySelectorAll(".edit-card-side button")).toHaveLength(1);
   expect(compareButton(panel).querySelector("svg")).not.toBeNull();
   expect(panel.querySelector(".edit-card-count")).toBeNull();
@@ -458,7 +458,7 @@ it("lists a thread's edits once, numbered, and opens one with its decisions unde
   expect(turns().some(t => t.hidden)).toBe(false);
   expect(container.querySelector(".simple-open")).toBeNull();
   expect([...panel.querySelectorAll(".edit-card-acts button")].map(b => [b.textContent, b.getAttribute("aria-keyshortcuts"), b.getAttribute("title")]))
-    .toEqual([["Revise", "R", "Revise (R)"], ["Keep", "K", "Keep (K)"], ["", null, "Reject edit"]]);
+    .toEqual([["修改", "R", "修改 (R)"], ["保留", "K", "保留 (K)"], ["", null, "Reject edit"]]);
   expect(panel.querySelector(".edit-card-acts > .review-actions + .edit-card-reject")?.getAttribute("aria-label")).toBe("Reject edit");
   expect(panel.querySelector(".thread-transcript")).toBeNull();
   expect(boxTag()).toBe("Edit at 0:00");
@@ -470,7 +470,7 @@ it("lists a thread's edits once, numbered, and opens one with its decisions unde
   expect(panel.textContent).not.toMatch(/Applied|at \d/);
   // The keys show on hover, not in boxes.
   expect([...panel.querySelectorAll(".review-actions button")].map(b => [b.textContent, b.getAttribute("aria-keyshortcuts"), b.getAttribute("title")]))
-    .toEqual([["Revise", "R", "Revise (R)"], ["Keep", "K", "Keep (K)"]]);
+    .toEqual([["修改", "R", "修改 (R)"], ["保留", "K", "保留 (K)"]]);
   expect(panel.querySelector(".simple-key")).toBeNull();
   expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing “captions” at 0:00");
   expect(container.querySelector(".simple-timeline-band")).not.toBeNull();
@@ -486,7 +486,7 @@ it("lists a thread's edits once, numbered, and opens one with its decisions unde
   tooLong.mockRestore();
   expect(openTitle()).toBe("wrap");
   // A flagged edit says its place among the ones still to check.
-  expect(editPanel()!.querySelector(".edit-card-count")?.textContent).toBe("1 of 1");
+  expect(editPanel()!.querySelector(".edit-card-count")?.textContent).toBe("1 / 1");
   expect([note().className, note().getAttribute("aria-expanded"), note().title]).toEqual(["edit-card-title is-clipped", "false", SUMMARY]);
   await click(note());
   expect([note().className, note().getAttribute("aria-expanded")]).toEqual(["edit-card-title is-open", "true"]);
@@ -497,11 +497,11 @@ it("lists a thread's edits once, numbered, and opens one with its decisions unde
   expect(note().textContent).toBe(SUMMARY);
   expect(note().children).toHaveLength(0);
   expect([...editPanel()!.children].map(c => c.className)).toEqual(["edit-card-bar"]);
-  expect(editPanel()!.querySelector(".edit-card-bar")!.textContent).not.toContain("Check");
+  expect(editPanel()!.querySelector(".edit-card-bar")!.textContent).not.toContain("检查");
   expect(rows()[2]!.querySelector(".edit-badge")?.classList.contains("is-check")).toBe(true);
 
   // Keep records the review and, on See all, moves on to the next unkept edit in the list (wrapping to music bed).
-  await click(buttonIn(editPanel()!, "Keep")!);
+  await click(buttonIn(editPanel()!, "保留")!);
   expect(openTitle()).toBe("music bed");
   expect(rows()[2]!.querySelector(".edit-badge")?.classList.contains("is-kept")).toBe(true);
   expect(rows()[2]!.querySelector(".edit-badge svg")).not.toBeNull();
@@ -624,7 +624,7 @@ it("steps between a request's edits with the arrow keys, sideways or up and down
   await click(need()!);
   await act(async () => {});
   expect(openTitle()).toBe("wrap");
-  expect(turn.querySelector(".simple-edits")?.getAttribute("aria-label")).toBe("Edits that need you");
+  expect(turn.querySelector(".simple-edits")?.getAttribute("aria-label")).toBe("待确认的剪辑");
   expect(rows().map(r => [r.querySelector(".edit-badge")?.textContent, r.querySelector(".simple-edit-title")?.textContent])).toEqual([["3", "wrap"]]);
   // The link beside it still lists every edit, and "needs you" brings back just the one.
   await click(seeAll(turn)!);
@@ -657,7 +657,7 @@ it("keeps a reframe's card open, on the side it was on, when → or a press on t
       { changeId: "chg_approved_2", spot: 0, label: "Camera full screen", kind: "reframe" as const, range: { start: 2, end: 4 }, previous: [] }] }));
   vi.spyOn(api, "timeline").mockImplementation(async (_, version = "head") => ({ timeline: { ...data.timeline!, version } }));
   await show();
-  await click(buttonIn(turnFor("chg_approved_2"), "See edit")!);
+  await click(buttonIn(turnFor("chg_approved_2"), "查看剪辑")!);
   await act(async () => {});
   expect(openTitle()).toBe("Camera full screen");
   // It plays from two seconds ahead of the edit, as a cut does. Before holds the frame as it was framed before the edit.
@@ -696,7 +696,7 @@ const beforeClipReady = () => {
 };
 const appliedRows = () => [...turnFor("chg_approved_2").querySelectorAll<HTMLButtonElement>(".simple-edits .simple-edit")];
 /** Which side the open edit's switch shows. */
-const sideShown = () => compareButton(editPanel()!).getAttribute("aria-pressed") === "true" ? "Before" : "After";
+const sideShown = () => compareButton(editPanel()!).getAttribute("aria-pressed") === "true" ? "Before" : "剪辑后";
 const beforeClip = () => container.querySelector<HTMLVideoElement>('.watch-monitor video[aria-label="Before"]')!;
 const playhead = () => Math.round(usePlayerStore.getState().time * 100) / 100;
 const monitorClock = () => container.querySelector(".watch-monitor .monitor-clock")?.textContent;
@@ -739,7 +739,7 @@ it("keeps an edit that isn't a cut on Before through a skip or a press inside it
   await click(appliedRows()[1]!);
   await act(async () => {});
   // It plays from two seconds ahead of the edit, as a cut does: its passage runs 0:02–0:13.
-  expect([sideShown(), monitorClock()]).toEqual(["After", "0:02 / 0:16"]);
+  expect([sideShown(), monitorClock()]).toEqual(["剪辑后", "0:02 / 0:16"]);
   await click(compareButton(editPanel()!));
   await act(async () => {});
   await beforeStarts();
@@ -772,14 +772,14 @@ it("keeps an edit that isn't a cut on Before through a skip or a press inside it
   expect([sideShown(), playhead(), beforeClip() === played]).toEqual(["Before", 2, false]);
   // The same icon returns to After. The shortcut switches back to Before.
   await click(compareButton(editPanel()!));
-  expect([sideShown(), beforeClip()]).toEqual(["After", null]);
+  expect([sideShown(), beforeClip()]).toEqual(["剪辑后", null]);
   await press("\\");
-  expect(beforeIcon(editPanel()!)).toEqual(["", "Before", "true", "Back to After (\\)"]);
+  expect(beforeIcon(editPanel()!)).toEqual(["", "剪辑前", "true", "返回剪辑后 (\\)"]);
   // The next edit opens on After, and so does this one when the editor comes back to it.
   await press("ArrowDown");
-  expect([openTitle(), sideShown()]).toEqual(["wrap", "After"]);
+  expect([openTitle(), sideShown()]).toEqual(["wrap", "剪辑后"]);
   await press("ArrowUp");
-  expect([openTitle(), sideShown()]).toEqual(["captions", "After"]);
+  expect([openTitle(), sideShown()]).toEqual(["captions", "剪辑后"]);
 });
 
 it("goes to After at a point picked outside the passage on Before, where Before has nothing to show, and carries on as Before was", async () => {
@@ -791,8 +791,8 @@ it("goes to After at a point picked outside the passage on Before, where Before 
   // video plays from there once the pointer is up.
   let down: unknown;
   await pressTimeline(1.5, () => { down = [sideShown(), video.paused]; });
-  expect(down).toEqual(["After", true]);
-  expect([openTitle(), sideShown(), playhead(), video.paused]).toEqual(["captions", "After", 1.5, false]);
+  expect(down).toEqual(["剪辑后", true]);
+  expect([openTitle(), sideShown(), playhead(), video.paused]).toEqual(["captions", "剪辑后", 1.5, false]);
   expect(beforeClip()).toBeNull();
   // Before has played to 0:10.5. → lands at 0:15.5, past the passage's end: After again, playing on from that point.
   await click(compareButton(editPanel()!));
@@ -800,21 +800,21 @@ it("goes to After at a point picked outside the passage on Before, where Before 
   await beforeStarts();
   await beforePlayedTo(8.5);
   await skipKey("ArrowRight");
-  expect([openTitle(), sideShown(), playhead(), video.paused]).toEqual(["captions", "After", 15.5, false]);
+  expect([openTitle(), sideShown(), playhead(), video.paused]).toEqual(["captions", "剪辑后", 15.5, false]);
   // Paused on Before, a skip out of the passage leaves After paused at that point.
   await click(compareButton(editPanel()!));
   await act(async () => {});
   await beforeStarts();
   await press(" ");
   await skipKey("ArrowLeft");
-  expect([sideShown(), playhead(), video.paused]).toEqual(["After", 0, true]);
+  expect([sideShown(), playhead(), video.paused]).toEqual(["剪辑后", 0, true]);
   // And a press on the timeline outside it, once the pointer is up.
   await click(compareButton(editPanel()!));
   await act(async () => {});
   await beforeStarts();
   await press(" ");
   await pressTimeline(1);
-  expect([sideShown(), playhead(), video.paused]).toEqual(["After", 1, true]);
+  expect([sideShown(), playhead(), video.paused]).toEqual(["剪辑后", 1, true]);
   // A clip that played to the passage's end and stopped there wasn't paused by the editor: a press outside the
   // passage plays After from the point picked, as the same press does once After has run to the passage's end.
   await click(compareButton(editPanel()!));
@@ -823,8 +823,8 @@ it("goes to After at a point picked outside the passage on Before, where Before 
   await beforePlayedTo(11);
   expect([sideShown(), beforeClip().paused, playhead()]).toEqual(["Before", true, 12.97]);
   await pressTimeline(1, () => { down = [sideShown(), video.paused]; });
-  expect(down).toEqual(["After", true]);
-  expect([openTitle(), sideShown(), playhead(), video.paused]).toEqual(["captions", "After", 1, false]);
+  expect(down).toEqual(["剪辑后", true]);
+  expect([openTitle(), sideShown(), playhead(), video.paused]).toEqual(["captions", "剪辑后", 1, false]);
 });
 
 it("aims a new edit at a pick on Before and After once the editor has taken the revision tag off", async () => {
@@ -845,7 +845,7 @@ it("aims a new edit at a pick on Before and After once the editor has taken the 
   // Space pauses After there, which writes the time into the box; the skip then moves the time written in.
   await press(" ");
   await skipKey("ArrowRight", true);
-  expect([sideShown(), playhead(), pointTag(), useUiStore.getState().agentDraft]).toEqual(["After", 3, [undefined, false], "0:03 "]);
+  expect([sideShown(), playhead(), pointTag(), useUiStore.getState().agentDraft]).toEqual(["剪辑后", 3, [undefined, false], "0:03 "]);
 });
 
 it("goes to After at the point picked while Before is still opening, since there is no clip to move", async () => {
@@ -859,7 +859,7 @@ it("goes to After at the point picked while Before is still opening, since there
   await act(async () => {});
   expect([sideShown(), container.querySelector('.watch-monitor [role="status"]:not(.simple-on-video)')?.textContent]).toEqual(["Before", "Opening Before…"]);
   await skipKey("ArrowRight");
-  expect([openTitle(), sideShown(), playhead()]).toEqual(["captions", "After", 7]);
+  expect([openTitle(), sideShown(), playhead()]).toEqual(["captions", "剪辑后", 7]);
 });
 
 it("leaves the playhead to the Before clip while it shows, stops it with the video, and takes the video to where it got to", async () => {
@@ -931,22 +931,22 @@ it("steps ↑ and ↓ among the flagged edits from one that still waits, and thr
   // "2 need you" lists just the two and opens the first: its card leads with its place among them.
   await click(turn.querySelector(".simple-pass-need")!);
   await act(async () => {});
-  expect([openTitle(), cardCount(), turn.querySelector(".simple-edits")?.getAttribute("aria-label")]).toEqual(["music bed", "1 of 2", "Edits that need you"]);
+  expect([openTitle(), cardCount(), turn.querySelector(".simple-edits")?.getAttribute("aria-label")]).toEqual(["music bed", "1 / 2", "待确认的剪辑"]);
   // ↓ goes to the next one that still waits, over the settled edit between them, and the list keeps a row lit.
   await press("ArrowDown");
-  expect([openTitle(), cardCount()]).toEqual(["wrap", "2 of 2"]);
+  expect([openTitle(), cardCount()]).toEqual(["wrap", "2 / 2"]);
   // That is the last of them: ↓ stays, and ↑ goes back.
   await press("ArrowDown");
-  expect([openTitle(), cardCount()]).toEqual(["wrap", "2 of 2"]);
+  expect([openTitle(), cardCount()]).toEqual(["wrap", "2 / 2"]);
   await press("ArrowUp");
-  expect([openTitle(), cardCount()]).toEqual(["music bed", "1 of 2"]);
+  expect([openTitle(), cardCount()]).toEqual(["music bed", "1 / 2"]);
   // With every edit listed the arrows step through them all, the settled one too.
   await click(seeAll(turn)!);
-  expect(turn.querySelector(".simple-edits")?.getAttribute("aria-label")).toBe("Edits in this thread");
+  expect(turn.querySelector(".simple-edits")?.getAttribute("aria-label")).toBe("此对话的剪辑");
   await press("ArrowDown");
   expect([openTitle(), cardCount()]).toEqual(["captions", undefined]);
   await press("ArrowDown");
-  expect([openTitle(), cardCount()]).toEqual(["wrap", "2 of 2"]);
+  expect([openTitle(), cardCount()]).toEqual(["wrap", "2 / 2"]);
   await press("ArrowUp");
   expect(openTitle()).toBe("captions");
 });
@@ -964,22 +964,22 @@ it("counts and steps through a flagged edit made in several places as one edit, 
   const turn = turnFor("chg_approved_2");
   const need = () => turn.querySelector(".simple-pass-need")?.getAttribute("title");
   // Two edits need the editor, on two rows: the captions, in both places, and the wrap.
-  expect(need()).toBe("2 need you");
+  expect(need()).toBe("2 项待审阅");
   await click(turn.querySelector(".simple-pass-need")!);
   await act(async () => {});
   expect([...turn.querySelectorAll(".simple-edits .simple-edit-title")].map(t => t.textContent)).toEqual(["captions", "wrap"]);
-  expect([openTitle(), cardCount()]).toEqual(["captions", "1 of 2"]);
+  expect([openTitle(), cardCount()]).toEqual(["captions", "1 / 2"]);
   // ↓ goes to the next edit, not to the captions' other place, and ↑ comes back.
   await press("ArrowDown");
-  expect([openTitle(), cardCount()]).toEqual(["wrap", "2 of 2"]);
+  expect([openTitle(), cardCount()]).toEqual(["wrap", "2 / 2"]);
   await press("ArrowUp");
-  expect([openTitle(), cardCount()]).toEqual(["captions", "1 of 2"]);
+  expect([openTitle(), cardCount()]).toEqual(["captions", "1 / 2"]);
   // Keep keeps the captions in both places and moves on to the wrap, the one edit still waiting.
   expect(api.recordEditReview).not.toHaveBeenCalled();
   await press("k");
   expect(vi.mocked(api.recordEditReview).mock.calls).toEqual([[PRJ, { changeId: "chg_approved_2", spot: 0, decision: "keep" }]]);
   await act(async () => {});
-  expect([openTitle(), cardCount(), need()]).toEqual(["wrap", "1 of 1", "1 needs you"]);
+  expect([openTitle(), cardCount(), need()]).toEqual(["wrap", "1 / 1", "1 项待审阅"]);
 });
 
 it("takes back the last Keep with ⌘Z, then the one before, and says in the timeline's bottom row what the next ⌘Z takes back", async () => {
@@ -1003,11 +1003,11 @@ it("takes back the last Keep with ⌘Z, then the one before, and says in the tim
   // Nothing to take back yet: the bottom row is the clock and the zoom.
   expect(label()).toBeNull();
   await undoKey();
-  expect([openTitle(), need()]).toEqual(["captions", "2 need you"]);
+  expect([openTitle(), need()]).toEqual(["captions", "2 项待审阅"]);
 
   await press("k");
   await act(async () => {});
-  expect([openTitle(), need()]).toEqual(["wrap", "1 needs you"]);
+  expect([openTitle(), need()]).toEqual(["wrap", "1 项待审阅"]);
   // The label says what ⌘Z takes back, with its key beside it, and names the edit on hover.
   expect([label()?.textContent, label()?.dataset.key, label()?.title]).toEqual(["Undo Keep", "⌘Z", "Undo Keep of Edit at 0:00 (⌘Z)"]);
   await press("k");
@@ -1017,7 +1017,7 @@ it("takes back the last Keep with ⌘Z, then the one before, and says in the tim
   // ⌘Z takes back the wrap's Keep: it waits on the editor again, open on the card, and the engine hears so.
   await undoKey();
   await act(async () => {});
-  expect([openTitle(), cardCount(), need()]).toEqual(["wrap", "1 of 1", "1 needs you"]);
+  expect([openTitle(), cardCount(), need()]).toEqual(["wrap", "1 / 1", "1 项待审阅"]);
   expect(unkeep.mock.calls).toEqual([[PRJ, { threadId: threadWith("chg_approved_2").id, edits: [{ changeId: "chg_approved_2", spot: 2 }] }]]);
   expect(label()?.textContent).toBe("Undo Keep");
   // Words being written keep their own ⌘Z.
@@ -1025,12 +1025,12 @@ it("takes back the last Keep with ⌘Z, then the one before, and says in the tim
   typing.value = "Lower the";
   container.append(typing);
   await undoKey(typing);
-  expect(need()).toBe("1 needs you");
+  expect(need()).toBe("1 项待审阅");
   typing.remove();
   // The label does what ⌘Z does: the captions' Keep goes too, and nothing is left to take back.
   await click(label()!);
   await act(async () => {});
-  expect([openTitle(), need()]).toEqual(["captions", "2 need you"]);
+  expect([openTitle(), need()]).toEqual(["captions", "2 项待审阅"]);
   expect(label()).toBeNull();
 });
 
@@ -1039,7 +1039,7 @@ it("steps ↓ from a flagged edit sent back for revision to the next one that wa
   await showFolded();
   await click(turnFor("chg_approved_2").querySelector(".simple-pass-need")!);
   await act(async () => {});
-  expect([openTitle(), cardCount()]).toEqual(["music bed", "1 of 2"]);
+  expect([openTitle(), cardCount()]).toEqual(["music bed", "1 / 2"]);
   // The editor sends the first one back. It stays open with no card, and its row stays in the list of what needs them.
   const base = buildDb().tasks.find(t => t.id === "task_done")!;
   const now = new Date().toISOString();
@@ -1049,7 +1049,7 @@ it("steps ↓ from a flagged edit sent back for revision to the next one that wa
   expect(editPanel()).toBeNull();
   // ↓ goes on to the other one that waits, over the settled edit between them.
   await press("ArrowDown");
-  expect([openTitle(), cardCount()]).toEqual(["wrap", "1 of 1"]);
+  expect([openTitle(), cardCount()]).toEqual(["wrap", "1 / 1"]);
 });
 
 it("steps among a pass's flagged cuts with its lists closed, where the timeline marks only those", async () => {
@@ -1063,16 +1063,16 @@ it("steps among a pass's flagged cuts with its lists closed, where the timeline 
   const need = () => pass.querySelector<HTMLElement>(".simple-pass-need")!;
   await click(need());
   await act(async () => {});
-  expect([openTitle(), cardCount()]).toEqual([undefined, "1 of 2"]);
+  expect([openTitle(), cardCount()]).toEqual([undefined, "1 / 2"]);
   expect(pass.querySelector(".simple-pass-list [aria-current='true'] .simple-pass-label")?.textContent).toBe("music bed");
   await press("ArrowDown");
   expect(pass.querySelector(".simple-pass-list [aria-current='true'] .simple-pass-label")?.textContent).toBe("wrap");
-  expect(cardCount()).toBe("2 of 2");
+  expect(cardCount()).toBe("2 / 2");
   // Pressed again the list stays: the cut stays open and the arrows still go to the other one that waits.
   await click(need());
-  expect(pass.querySelector(".simple-pass-list")?.getAttribute("aria-label")).toBe("Edits that need you");
+  expect(pass.querySelector(".simple-pass-list")?.getAttribute("aria-label")).toBe("待确认的剪辑");
   await press("ArrowUp");
-  expect([editPanel()?.querySelector(".edit-card-title")?.textContent, cardCount()]).toEqual(["music bed. The bed may sit too loud under the intro", "1 of 2"]);
+  expect([editPanel()?.querySelector(".edit-card-title")?.textContent, cardCount()]).toEqual(["music bed. The bed may sit too loud under the intro", "1 / 2"]);
   // Every edit listed: the arrows go through them all.
   await click(seeAll(pass)!);
   await act(async () => {});
@@ -1100,16 +1100,16 @@ it("lists what needs the editor for a flagged edit opened from the timeline, so 
   };
   // The list of what needs the editor is open without a click. The first flagged edit's amber dot opens it, in that
   // list: its card leads with "1 of 2", so the arrows stay among those two.
-  expect(listed()).toBe("Edits that need you");
+  expect(listed()).toBe("待确认的剪辑");
   await pressDot("1");
-  expect([openTitle(), cardCount(), listed(), turn.querySelector(".simple-pass-need")?.getAttribute("title")]).toEqual(["music bed", "1 of 2", "Edits that need you", "2 need you"]);
+  expect([openTitle(), cardCount(), listed(), turn.querySelector(".simple-pass-need")?.getAttribute("title")]).toEqual(["music bed", "1 / 2", "待确认的剪辑", "2 项待审阅"]);
   await press("ArrowDown");
-  expect([openTitle(), cardCount()]).toEqual(["wrap", "2 of 2"]);
+  expect([openTitle(), cardCount()]).toEqual(["wrap", "2 / 2"]);
   // The card closed, the list of what needs the editor stays, and an edit that needs nothing opens with every edit listed.
   await press("Escape");
-  expect([editPanel(), listed()]).toEqual([null, "Edits that need you"]);
+  expect([editPanel(), listed()]).toEqual([null, "待确认的剪辑"]);
   await pressDot("2");
-  expect([openTitle(), cardCount(), listed()]).toEqual(["captions", undefined, "Edits in this thread"]);
+  expect([openTitle(), cardCount(), listed()]).toEqual(["captions", undefined, "此对话的剪辑"]);
 });
 
 it("keeps the edit open and zoomed when the timeline is clicked outside the passage it plays", async () => {
@@ -1122,7 +1122,7 @@ it("keeps the edit open and zoomed when the timeline is clicked outside the pass
   const band = () => container.querySelector(".simple-timeline-band");
   expect(band()).not.toBeNull();
   // Home goes to the start of the zoomed view, before the passage: the passage stretches back to it instead of closing the edit.
-  const slider = container.querySelector<HTMLElement>('[aria-label="Position in the video"]')!;
+  const slider = container.querySelector<HTMLElement>('[aria-label="视频位置"]')!;
   await act(async () => { slider.dispatchEvent(new KeyboardEvent("keydown", { key: "Home", bubbles: true })); });
   expect(openTitle()).toBe("wrap");
   // The timeline turned back a page to follow the playhead, so the edit's band is out of view. It draws nothing there:
@@ -1164,10 +1164,10 @@ it("reviews only the edits Scarlet flagged, then leaves nothing to press", async
   await click(turn.querySelector(".simple-pass-need")!);
   await act(async () => {});
   expect(openTitle()).toBe("wrap");
-  await click(buttonIn(editPanel()!, "Keep")!);
+  await click(buttonIn(editPanel()!, "保留")!);
   expect(editPanel()).toBeNull();
   expect(turn.querySelector(".simple-pass-need")).toBeNull();
-  expect(buttonIn(turn, "Done")).toBeUndefined();
+  expect(buttonIn(turn, "完成")).toBeUndefined();
 });
 
 it("gives the timeline to the latest request when its edit lands, though the editor looked at an earlier one while Scarlet worked", async () => {
@@ -1199,7 +1199,7 @@ it("gives the timeline to the latest request when its edit lands, though the edi
   await event(d => ({ ...d, changes: d.changes.map(c => c.id === "chg_later" ? { ...later.change, taskId: "task_later" } : c),
     tasks: d.tasks.map(t => t.id === "task_later" ? { ...t, state: "done" as const, finishedAt: new Date().toISOString(), changeIds: ["chg_later"] } : t) }));
   await act(async () => {});
-  expect(turnFor("chg_later").querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 needs you");
+  expect(turnFor("chg_later").querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 项待审阅");
   expect(numbered()).toEqual([["3", "check"], ["1", "check"]]);
 });
 
@@ -1438,7 +1438,7 @@ it("stops asking for a look at a flagged edit once its revision is queued", asyn
   const turn = turnFor("chg_approved_2");
   const wrap = turn.querySelectorAll<HTMLElement>(".simple-edits .simple-edit")[2]!;
   expect(wrap.querySelector(".edit-badge")?.classList.contains("is-check")).toBe(false);
-  expect(wrap.querySelector(".simple-edit-check")?.textContent).toBe("Revising…");
+  expect(wrap.querySelector(".simple-edit-check")?.textContent).toBe("正在修改…");
   expect(wrap.getAttribute("aria-label")).toBe("Edit 3: wrap, revising");
   expect(turn.querySelector(".simple-review-tab-count")).toBeNull();
   const dots = [...container.querySelectorAll<HTMLElement>(".simple-timeline-mark.is-numbered")];
@@ -1461,7 +1461,7 @@ it("says Revising… on the row of an edit the editor had kept while Scarlet rev
   // The version they kept is on its way out: its row says so, as any edit's does while it is revised (2026-11-10: a kept
   // edit's row went on reading as kept, with its amount, while Scarlet revised it).
   const wrap = [...container.querySelectorAll<HTMLElement>(".simple-edits .simple-edit")].find(r => r.getAttribute("aria-label")?.startsWith("Edit 3: wrap"))!;
-  expect([wrap.getAttribute("aria-label"), wrap.querySelector(".simple-edit-check")?.textContent]).toEqual(["Edit 3: wrap, revising", "Revising…"]);
+  expect([wrap.getAttribute("aria-label"), wrap.querySelector(".simple-edit-check")?.textContent]).toEqual(["Edit 3: wrap, revising", "正在修改…"]);
 });
 
 it("takes the card off an edit sent back for revision until its new version lands, which asks for a look again", async () => {
@@ -1473,7 +1473,7 @@ it("takes the card off an edit sent back for revision until its new version land
   await click(wrap());
   await act(async () => {});
   expect(editPanel()!.querySelector(".edit-card-title")?.textContent).toBe(SUMMARY);
-  expect(editPanel()!.querySelector(".edit-card-count")?.textContent).toBe("1 of 1");
+  expect(editPanel()!.querySelector(".edit-card-count")?.textContent).toBe("1 / 1");
   const tag = boxTag();
   // The editor sends it back. Its note and decisions are about the version on its way out, so the card goes; the edit
   // stays open, with the message box still aimed at it, and its row says Scarlet is on it.
@@ -1488,7 +1488,7 @@ it("takes the card off an edit sent back for revision until its new version land
   expect(container.querySelector(".cut-transport > .edit-card")).toBeNull();
   expect(boxTag()).toBe(tag);
   expect(wrap().getAttribute("aria-current")).toBe("true");
-  expect(wrap().querySelector(".simple-edit-check")?.textContent).toBe("Revising…");
+  expect(wrap().querySelector(".simple-edit-check")?.textContent).toBe("正在修改…");
   // Keep has nothing to keep meanwhile.
   await press("k");
   expect(wrap().getAttribute("aria-label")).toBe("Edit 3: wrap, revising");
@@ -1508,12 +1508,12 @@ it("takes the card off an edit sent back for revision until its new version land
   await act(async () => {});
   await act(async () => {});
   expect(editPanel()!.querySelector(".edit-card-title")?.textContent).toBe("Kept the wrap's last word");
-  expect(editPanel()!.querySelector(".edit-card-count")?.textContent).toBe("1 of 1");
-  expect(container.querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 needs you");
+  expect(editPanel()!.querySelector(".edit-card-count")?.textContent).toBe("1 / 1");
+  expect(container.querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 项待审阅");
   // Its row is amber again, as v2, and says it came back revised.
   expect([wrap().getAttribute("aria-label"), wrap().querySelector(".simple-edit-title small")?.textContent, wrap().querySelector(".simple-edit-check")?.textContent])
-    .toEqual(["Edit 3: wrap, check", "v2", "Revised"]);
-  await click(buttonIn(editPanel()!, "Keep")!);
+    .toEqual(["Edit 3: wrap, check", "v2", "已修改"]);
+  await click(buttonIn(editPanel()!, "保留")!);
   expect(container.querySelector(".simple-pass-need")).toBeNull();
 });
 
@@ -1531,7 +1531,7 @@ it("marks the latest request's edits from the start, amber where one asks for a 
   expect(turns().map(t => t.getAttribute("aria-label")).at(-1)).toBe(threadWith("chg_approved_2").title);
   // Nothing has been opened. The timeline is already on the latest request, numbered as its list in the chat.
   expect(editPanel()).toBeNull();
-  expect(turnFor("chg_approved_2").querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 needs you");
+  expect(turnFor("chg_approved_2").querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 项待审阅");
   expect(numbered()).toEqual([["1", undefined], ["2", undefined], ["3", "check"]]);
 });
 
@@ -1559,10 +1559,10 @@ it("opens a located review check where it needs a look, then replays the edit fr
   // the times are on hover.
   // The note leaves out the time Scarlet wrote, which a later save may have moved.
   const checkButton = () => editPanel()!.querySelector<HTMLButtonElement>("button.edit-card-length.is-check");
-  expect([checkButton()?.textContent, checkButton()?.title]).toEqual(["Check", "Play the part to check, 0:10"]);
+  expect([checkButton()?.textContent, checkButton()?.title]).toEqual(["检查", "Play the part to check, 0:10"]);
   expect(editPanel()?.querySelector(".edit-card-title")?.textContent).toBe(`${says} ${reason}`);
   expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing “Assembled the opening and demos” at 0:10");
-  expect(container.querySelector(".simple-timeline-cut.is-check")?.textContent).toBe("Check");
+  expect(container.querySelector(".simple-timeline-cut.is-check")?.textContent).toBe("检查");
   expect(dot()?.style.left).toBe("50%");
   expect(previews).toHaveBeenLastCalledWith({ start: 8, end: 13 }, expect.any(Number), undefined, false);
   // Pressed, it plays that part again from its top.
@@ -1571,10 +1571,10 @@ it("opens a located review check where it needs a look, then replays the edit fr
   expect(seek).toHaveBeenLastCalledWith(8, true);
   expect(play).toHaveBeenCalled();
 
-  await click(buttonIn(editPanel()!, "Keep")!);
+  await click(buttonIn(editPanel()!, "保留")!);
   expect(api.recordEditReview).toHaveBeenCalledWith(PRJ, { changeId, spot: 0, decision: "keep" });
   expect(turn.querySelector(".simple-pass-need")).toBeNull();
-  await click(buttonIn(turn, "See edit")!);
+  await click(buttonIn(turn, "查看剪辑")!);
   expect(previews).toHaveBeenLastCalledWith({ start: 0, end: 16 }, expect.any(Number), undefined, false);
 }, 15_000);
 
@@ -1708,9 +1708,9 @@ it("flags a request's applied edit while Scarlet still works on it, and follows 
   await showFolded();
   const fade = () => container.querySelector<HTMLElement>('.unit[data-run="task_fade"]')!;
   const flag = () => fade().querySelector(".simple-pass-need")?.getAttribute("title");
-  expect(turnFor(earlier.id).querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 needs you");
+  expect(turnFor(earlier.id).querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 项待审阅");
   // For you counts flagged edits while Scarlet is still at work.
-  expect(flag()).toBe("1 needs you");
+  expect(flag()).toBe("1 项待审阅");
   expect(numbered()).toEqual([["3", "check"], ["1", "check"]]);
   await click(fade().querySelector(".simple-pass-need")!);
   expect(fade().querySelector(".simple-edit-title")?.textContent).toBe("outro fade");
@@ -1724,11 +1724,11 @@ it("flags a request's applied edit while Scarlet still works on it, and follows 
   await event(d => ({ ...d, changes: [...d.changes, final], project: { ...d.project, head: final.toVersion },
     timeline: { ...d.timeline!, version: final.toVersion }, tasks: d.tasks.map(t => ({ ...t, changeIds: [...t.changeIds, final.id] })) }));
   // While the new list loads, the flag the editor saw stays.
-  expect(flag()).toBe("1 needs you");
+  expect(flag()).toBe("1 项待审阅");
   await event(d => ({ ...d, tasks: d.tasks.map(t => ({ ...t, state: "done", finishedAt: new Date().toISOString() })) }));
-  expect(flag()).toBe("1 needs you");
+  expect(flag()).toBe("1 项待审阅");
   await release();
-  expect(flag()).toBe("1 needs you");
+  expect(flag()).toBe("1 项待审阅");
   expect(fade().querySelector(".simple-edit-title")?.textContent).toBe("shorter fadev2");
   expect(fade().querySelector(".edit-badge.is-check")).not.toBeNull();
 });
@@ -1745,10 +1745,10 @@ it("flags an edit an earlier attempt applied while its resumed request runs", as
   data = { ...data, changes: [prior, change], tasks: [first, resumed], notes: [] };
   useProjectStore.setState({ current: data });
   await showFolded();
-  expect(container.querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 needs you");
+  expect(container.querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 项待审阅");
   expect(numbered()).toEqual([["1", "check"]]);
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === resumed.id ? { ...t, state: "cancelled" } : t) }));
-  expect(container.querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 needs you");
+  expect(container.querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 项待审阅");
   expect(numbered()).toEqual([["1", "check"]]);
 });
 
@@ -1784,20 +1784,20 @@ it("shows review flags saved on already applied edits without a new timeline ver
   await act(async () => useProjectStore.getState().applyEvent({ type: "change.updated", projectId: PRJ, change: {
     ...owned, taskId: task.id, updatedAt: at, flags: [{ spot: 2, check: CHECK, taskId: task.id, at }],
   } }));
-  expect(need()?.getAttribute("title")).toBe("1 needs you");
+  expect(need()?.getAttribute("title")).toBe("1 项待审阅");
   expect(numbered()).toContainEqual(["3", "check"]);
 
   await act(async () => useProjectStore.getState().applyEvent({ type: "change.updated", projectId: PRJ, change: {
     ...earlier, updatedAt: at, flags: [{ spot: 0, check: "Black gap and overlapping lines", taskId: task.id, at }],
   } }));
-  expect(need()?.getAttribute("title")).toBe("2 need you");
+  expect(need()?.getAttribute("title")).toBe("2 项待审阅");
   expect(turnFor(earlier.id).querySelector(".simple-pass-need")).toBeNull();
   await click(need()!);
   expect(openTitle()).toBe("Carry the quotation into the reaction");
   expect(editPanel()?.textContent).toContain("Black gap and overlapping lines");
   await act(async () => useProjectStore.getState().applyEvent({ type: "task.updated", projectId: PRJ,
     task: { ...task, state: "done", finishedAt: at } }));
-  expect(need()?.getAttribute("title")).toBe("2 need you");
+  expect(need()?.getAttribute("title")).toBe("2 项待审阅");
   expect(openTitle()).toBe("Carry the quotation into the reaction");
 });
 
@@ -1818,7 +1818,7 @@ it("marks a new request's edits when it arrives, wherever the editor had been be
   const later = laterRequest().change;
   await act(async () => { data = { ...data, changes: [...data.changes, later] }; useProjectStore.setState({ current: data }); });
   await act(async () => {});
-  expect(turnFor("chg_later").querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 needs you");
+  expect(turnFor("chg_later").querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 项待审阅");
   expect(numbered()).toEqual([["3", "check"], ["1", "check"]]);
 });
 
@@ -1842,7 +1842,7 @@ it("goes back to the latest request once the request the editor went to has noth
   await click(earlier.querySelector(".simple-pass-need")!);
   await act(async () => {});
   expect(openTitle()).toBe("wrap");
-  await click(buttonIn(editPanel()!, "Keep")!);
+  await click(buttonIn(editPanel()!, "保留")!);
   await act(async () => {});
   expect(editPanel()).toBeNull();
   expect(numbered()).toEqual([["1", "check"]]);
@@ -1853,7 +1853,7 @@ it("keeps the message box aimed at an edit while Scarlet works in that request, 
   await show();
   await click(turnFor("chg_approved_2").querySelectorAll(".simple-edits .simple-edit")[1]!);
   await act(async () => {});
-  await click(buttonIn(editPanel()!, "Revise")!);
+  await click(buttonIn(editPanel()!, "修改")!);
   const target = () => container.querySelector(".simple-target")?.textContent;
   expect(target()).toContain("Revising “captions” at 0:00");
   await act(async () => useUiStore.getState().setAgentDraft("Make the captions smaller"));
@@ -1877,8 +1877,8 @@ it("keeps the message box aimed at an edit while Scarlet works in that request, 
   expect(target()).toContain("Revising “captions” at 0:00");
   // Closing the edit leaves the question Scarlet asked first as what the next message answers.
   await press("Escape");
-  expect(target()).toContain("Answering");
-  expect(boxTag()).toBe("Answer");
+  expect(target()).toContain("正在回答");
+  expect(boxTag()).toBe("回答");
   // The request is stopped while the answer is written: there is no question left to answer and nothing is open, so
   // the words start a new edit, as the box does then. No tag says they reply to that request.
   await act(async () => useUiStore.getState().setAgentDraft("About 20% smaller"));
@@ -1897,17 +1897,17 @@ it("keeps the box on Answer when a revision sent before it lands", async () => {
   await show();
   await click(turnFor("chg_approved_2").querySelectorAll(".simple-edits .simple-edit")[1]!);
   await act(async () => {});
-  await click(buttonIn(editPanel()!, "Revise")!);
+  await click(buttonIn(editPanel()!, "修改")!);
   const target = () => container.querySelector(".simple-target")?.textContent;
   expect(target()).toContain("Revising “captions” at 0:00");
   // The revision is on its way when the editor turns to Scarlet's question in the same request.
   const landed = composer.props!.onSent!;
-  await click(buttonIn(turnFor("chg_approved_2"), "Answer")!);
-  expect(target()).toContain("Answering");
+  await click(buttonIn(turnFor("chg_approved_2"), "回答")!);
+  expect(target()).toContain("正在回答");
   // The answer goes to the question: the box no longer carries the edit, which would make it a revision of that edit.
   expect(useUiStore.getState().agentContext).toBeNull();
   await act(async () => landed());
-  expect(target()).toContain("Answering");
+  expect(target()).toContain("正在回答");
   // The answer itself, sent from there, lets the box follow the chat again: the edit that's still open.
   await act(async () => composer.props!.onSent!());
   expect(target()).toContain("Revising “captions” at 0:00");
@@ -1923,23 +1923,23 @@ it("answers Scarlet's question with the next message when nothing is open, until
     summary: null, changeIds: [], question: "Smaller by how much?", context: { changeId: "chg_approved_2", message: "Carry on" } }] };
   useProjectStore.setState({ current: data });
   await show();
-  const answer = () => buttonIn(container, "Answer")!;
+  const answer = () => buttonIn(container, "回答")!;
   const target = () => container.querySelector(".simple-target")?.textContent;
   // With no cut or edit open, the box is already on the question, and its tag says so.
   expect(target()).toBe("Answering “" + threadWith("chg_approved_2").title + "”");
-  expect(boxTag()).toBe("Answer");
+  expect(boxTag()).toBe("回答");
   expect(useUiStore.getState().draftOwner).toBe(JSON.stringify([PRJ, threadWith("chg_approved_2").id]));
   // The conversation is whole: nothing is hidden to show the question.
   expect(turns().some(t => t.hidden)).toBe(false);
   // Answer on the question means the same, and the box stays there through a message landing while the question stands.
   await click(answer());
   await act(async () => composer.props!.onSent!());
-  expect(target()).toContain("Answering");
+  expect(target()).toContain("正在回答");
   // Taking the tag off makes the next message a new edit. The line for screen readers says so, and nothing shows above the box.
   useUiStore.setState({ composerFocus: 0 });
   await act(async () => composer.props!.onClearTarget!());
   expect(boxTag()).toBeUndefined();
-  expect(target()).toContain("Starting a new edit");
+  expect(target()).toContain("发起新剪辑");
   expect(useUiStore.getState().draftOwner).toBe(JSON.stringify([PRJ, null]));
   // The box is built again for its new aim. The caret goes back into it, so what is typed next is the message and
   // not A, S, R or K on whatever card is open.
@@ -1994,15 +1994,15 @@ it("stops aiming the message box at a request that is no longer in the project",
   await show();
   await click(turnFor("chg_approved_2").querySelectorAll(".simple-edits .simple-edit")[1]!);
   await act(async () => {});
-  await click(buttonIn(editPanel()!, "Revise")!);
+  await click(buttonIn(editPanel()!, "修改")!);
   expect(container.querySelector(".simple-target")?.textContent).toContain("Revising “captions” at 0:00");
   const gone = threadWith("chg_approved_2");
   expect(useUiStore.getState().draftOwner).toBe(JSON.stringify([PRJ, gone.id]));
   await event(d => ({ ...d, changes: d.changes.filter(c => !gone.changes.includes(c)), tasks: d.tasks.filter(t => !gone.tasks.includes(t)) }));
   // The box moves on to what's next, Scarlet's question in another request, not a draft kept for a request that isn't there.
-  expect(container.querySelector(".simple-target")?.textContent).toContain("Answering");
+  expect(container.querySelector(".simple-target")?.textContent).toContain("正在回答");
   expect(useUiStore.getState().draftOwner).not.toBe(JSON.stringify([PRJ, gone.id]));
-  expect(boxTag()).toBe("Answer");
+  expect(boxTag()).toBe("回答");
 });
 
 it("leaves the message box where it is now aimed when an earlier message lands", async () => {
@@ -2013,7 +2013,7 @@ it("leaves the message box where it is now aimed when an earlier message lands",
   await act(async () => {});
   await click(turnFor("chg_approved_2").querySelectorAll(".simple-edits .simple-edit")[1]!);
   await act(async () => {});
-  await click(buttonIn(editPanel()!, "Revise")!);
+  await click(buttonIn(editPanel()!, "修改")!);
   const target = () => container.querySelector(".simple-target")?.textContent;
   expect(target()).toContain("Revising “captions” at 0:00");
   // That message is on its way when the editor aims the box at a call of the pass.
@@ -2041,7 +2041,7 @@ it("rejects one applied edit with the × after Keep, asking Scarlet to put back 
   expect([rejectIcon().textContent, rejectIcon().title]).toEqual(["", "Reject edit"]);
   await click(rejectIcon());
   // On its way: the × says so, and another press sends nothing more.
-  expect([rejectIcon().disabled, rejectIcon().title]).toEqual([true, "Rejecting…"]);
+  expect([rejectIcon().disabled, rejectIcon().title]).toEqual([true, "正在拒绝…"]);
   await click(rejectIcon());
   expect(createTask).toHaveBeenCalledTimes(1);
   expect(createTask).toHaveBeenCalledWith(PRJ, expect.objectContaining({
@@ -2077,7 +2077,7 @@ it("leaves the edit the editor stepped to open when a rejection sent from the ed
   await act(async () => {});
   expect(openTitle()).toBe("music bed");
   await click(rejectIcon());
-  // ↓ goes on to the next edit while the request is on its way. That edit's × is its own: ready, not "Rejecting…".
+  // ↓ goes on to the next edit while the request is on its way. That edit's × is its own: ready, not "正在拒绝…".
   await press("ArrowDown");
   expect(openTitle()).toBe("captions");
   expect([rejectIcon().disabled, rejectIcon().title]).toEqual([false, "Reject edit"]);
@@ -2101,7 +2101,7 @@ const landVersion = (version: string) => {
   useProjectStore.setState({ current: data });
 };
 /** The card of an edit just rejected, or opened again from its row: its note and Rejected, with nothing to decide. */
-const rejectedCard = () => container.querySelector<HTMLElement>('.cut-transport > .edit-card[aria-label="Rejected edit"]');
+const rejectedCard = () => container.querySelector<HTMLElement>('.cut-transport > .edit-card[aria-label="已拒绝的剪辑"]');
 const rejectedSays = () => rejectedCard() && [rejectedCard()!.querySelector(".edit-card-length")!.textContent, rejectedCard()!.querySelectorAll("button").length];
 const leavingBand = () => container.querySelector(".simple-timeline-band.is-leaving, .simple-timeline-cut.is-leaving");
 
@@ -2131,7 +2131,7 @@ it("puts a rejected cut back on the engine at once, with no request to Scarlet, 
   expect(vi.mocked(api.recordEditReview).mock.calls).toEqual([[PRJ, { changeId: "chg_approved_2", spot: 1, decision: "undo" }]]);
   // It leaves the timeline and nothing else moves: its band fades in place and its card stays, saying Rejected, with
   // no decisions. The video without it has landed, and the card is still where it was.
-  expect([rejectedSays(), !!leavingBand(), editPanel(), rejectedCard()!.textContent]).toEqual([["Rejected", 0], true, null, expect.stringContaining("captions")]);
+  expect([rejectedSays(), !!leavingBand(), editPanel(), rejectedCard()!.textContent]).toEqual([["已拒绝", 0], true, null, expect.stringContaining("captions")]);
   // It doesn't go on by itself, however long the editor looks.
   vi.useFakeTimers();
   try {
@@ -2139,12 +2139,12 @@ it("puts a rejected cut back on the engine at once, with no request to Scarlet, 
   } finally {
     vi.useRealTimers();
   }
-  expect([rejectedSays(), !!leavingBand()]).toEqual([["Rejected", 0], true]);
+  expect([rejectedSays(), !!leavingBand()]).toEqual([["已拒绝", 0], true]);
   expect(container.querySelector(".timeline-foot .timeline-undo-button")!.textContent).toBe("Undo Reject");
   // ↓ is the editor going on, to the edit after where it was.
   await press("ArrowDown");
   expect([openTitle(), leavingBand(), rejectedCard()]).toEqual(["wrap", null, null]);
-  expect(buttonIn(editPanel()!, "Keep")).not.toBeUndefined();
+  expect(buttonIn(editPanel()!, "保留")).not.toBeUndefined();
   await act(async () => { window.dispatchEvent(new KeyboardEvent("keydown", { key: "z", metaKey: true, bubbles: true, cancelable: true })); });
   await act(async () => {});
   expect(historyEdit.mock.calls).toEqual([["ver_back", "revert"]]);
@@ -2165,11 +2165,11 @@ it("opens a rejected edit as the video plays it now when the editor presses play
   await act(async () => {});
   await click(rejectIcon());
   await act(async () => {});
-  expect([rejectedSays(), !!leavingBand()]).toEqual([["Rejected", 0], true]);
+  expect([rejectedSays(), !!leavingBand()]).toEqual([["已拒绝", 0], true]);
   // Play is the video as it runs now: the edit opens as its row opens it, on the footage that was put back.
   await act(async () => { usePlayerStore.setState({ playing: true }); });
   await act(async () => {});
-  expect([rejectedSays(), leavingBand(), container.querySelector(".simple-timeline-band, .simple-timeline-cut")?.textContent]).toEqual([["Rejected", 0], null, "Rejected"]);
+  expect([rejectedSays(), leavingBand(), container.querySelector(".simple-timeline-band, .simple-timeline-cut")?.textContent]).toEqual([["已拒绝", 0], null, "已拒绝"]);
   await press("Escape");
   expect(rejectedCard()).toBeNull();
 });
@@ -2184,7 +2184,7 @@ it("leaves the edit the editor went to open when they step on from one just reje
   await act(async () => {});
   await click(rejectIcon());
   await act(async () => {});
-  expect(rejectedSays()).toEqual(["Rejected", 0]);
+  expect(rejectedSays()).toEqual(["已拒绝", 0]);
   await press("ArrowUp");
   expect([openTitle(), leavingBand(), rejectedCard()]).toEqual(["music bed", null, null]);
 });
@@ -2210,7 +2210,7 @@ it("rejects just the edit a moment's card is named for, and stays on what is lef
   // One × is one edit: the one the card was named for, not the three of its moment.
   expect(rejectEdits.mock.calls.map(call => (call as unknown as [string, string, { spot: number; label: string }[]])[2].map(e => [e.spot, e.label]))).toEqual([[[4, "Cube inset"]]]);
   // Its card stays and says Rejected. The two that are left are still one moment, on a row of its own.
-  expect([rejectedSays(), openPassRow()]).toEqual([["Rejected", 0], "Cube inset"]);
+  expect([rejectedSays(), openPassRow()]).toEqual([["已拒绝", 0], "Cube inset"]);
   expect(listRows().map(row => [rowText(row), row.querySelector(".simple-pass-more")?.textContent ?? "", row.matches(".is-rejected")]))
     .toEqual([["captions", "", false], ["Cube reveal", "+ zoom", false], ["Cube inset", "", true], ["wrap", "", false]]);
   // ↓ goes to what is left of the moment, whole, named for what leads it now.
@@ -2241,7 +2241,7 @@ it("keeps a rejected edit's row in the list with a × and Rejected, counts it no
   // In the video's order, between the edits either side: no number, a ×, its own words, and Rejected where its amount was.
   expect(rows.map(row => [row.querySelector(".edit-badge")!.textContent, row.querySelector(".simple-edit-title")!.textContent,
     row.querySelector(".simple-edit-value")?.textContent ?? "", row.disabled]))
-    .toEqual([["1", "music bed", expect.any(String), false], ["", "captions", "Rejected", false], ["2", "wrap", expect.any(String), false]]);
+    .toEqual([["1", "music bed", expect.any(String), false], ["", "captions", "已拒绝", false], ["2", "wrap", expect.any(String), false]]);
   expect(rows[1]!.matches(".is-rejected")).toBe(true);
   expect(rows[1]!.getAttribute("aria-label")).toBe("captions, rejected");
   expect(rows[1]!.querySelector(".edit-badge.is-rejected svg")).not.toBeNull();
@@ -2256,8 +2256,8 @@ it("keeps a rejected edit's row in the list with a × and Rejected, counts it no
   await click(gone());
   await act(async () => {});
   expect([gone().getAttribute("aria-current"), openTitle(), editPanel()]).toEqual(["true", "captions", null]);
-  expect([rejectedSays(), rejectedCard()!.textContent]).toEqual([["Rejected", 0], expect.stringContaining("captions")]);
-  expect(container.querySelector(".simple-timeline-band, .simple-timeline-cut")?.textContent).toBe("Rejected");
+  expect([rejectedSays(), rejectedCard()!.textContent]).toEqual([["已拒绝", 0], expect.stringContaining("captions")]);
+  expect(container.querySelector(".simple-timeline-band, .simple-timeline-cut")?.textContent).toBe("已拒绝");
   // ↑ and ↓ step from where it was to the edits either side, and Esc closes it.
   await press("ArrowDown");
   expect(openTitle()).toBe("wrap");
@@ -2268,7 +2268,7 @@ it("keeps a rejected edit's row in the list with a × and Rejected, counts it no
   await click(gone());
   await act(async () => {});
   await press("Escape");
-  expect([container.querySelector('[aria-label="Rejected edit"]'), openTitle()]).toEqual([null, undefined]);
+  expect([container.querySelector('[aria-label="已拒绝的剪辑"]'), openTitle()]).toEqual([null, undefined]);
 });
 
 it("says on the edit's card why Reject edit couldn't be sent, and leaves the edit open", async () => {
@@ -2281,7 +2281,7 @@ it("says on the edit's card why Reject edit couldn't be sent, and leaves the edi
   await click(rejectIcon());
   expect(createTask).toHaveBeenCalledTimes(1);
   expect(openTitle()).toBe("captions");
-  expect(buttonIn(editPanel()!, "Keep")).not.toBeUndefined();
+  expect(buttonIn(editPanel()!, "保留")).not.toBeUndefined();
   expect(openHead()!.querySelector('.edit-card-acts .simple-error[role="alert"]')?.textContent).toBe("Scarlet can’t take requests right now.");
   expect([rejectIcon().disabled, rejectIcon().title]).toEqual([false, "Reject edit"]);
   expect(api.recordEditReview).not.toHaveBeenCalled();
@@ -2304,7 +2304,7 @@ it("names a graphic's card Graphic, with Revise, Keep and Reject edit and nothin
   const panel = editPanel()!;
   expect(panel.querySelector(".edit-card-length.is-kind")?.textContent).toBe("Graphic");
   expect([...panel.querySelectorAll(".edit-card-acts button")].map(b => [b.textContent, b.getAttribute("aria-label"), b.getAttribute("aria-keyshortcuts"), b.getAttribute("title")]))
-    .toEqual([["Revise", null, "R", "Revise (R)"], ["Keep", null, "K", "Keep (K)"], ["", "Reject edit", null, "Reject edit"]]);
+    .toEqual([["修改", null, "R", "修改 (R)"], ["保留", null, "K", "保留 (K)"], ["", "Reject edit", null, "Reject edit"]]);
   // T is no key of the card's.
   await press("t");
   expect(createTask).not.toHaveBeenCalled();
@@ -2330,11 +2330,11 @@ it("opens a marker Scarlet left for the editor as a to-do: what to add first, no
   // With no Before to show, the version before it isn't read.
   const earlier = data.changes.find(c => c.id === "chg_approved_2")!.fromVersion;
   expect(timeline.mock.calls.filter(([, version]) => version === earlier)).toEqual([]);
-  expect(panel.querySelector(".edit-card-length.is-kind")?.textContent).toBe("To do");
+  expect(panel.querySelector(".edit-card-length.is-kind")?.textContent).toBe("待办");
   // Nothing in the video changed there, so there's no Before to play and nothing to reject.
   expect(panel.querySelector(".review-compare, .edit-card-before, .edit-card-reject")).toBeNull();
   expect([...panel.querySelectorAll(".edit-card-acts button")].map(b => [b.textContent, b.getAttribute("title")]))
-    .toEqual([["Revise", "Revise (R)"], ["Done", "Done (D)"]]);
+    .toEqual([["修改", "修改 (R)"], ["完成", "完成 (D)"]]);
   await press("u");
   expect(createTask).not.toHaveBeenCalled();
   // Done records it as Keep does, so it no longer waits on the editor.
@@ -2388,9 +2388,9 @@ it("lists every edit of a long list from its one link, with no second link to th
   await act(async () => {});
   const turn = turnFor("chg_approved_2");
   const rows = () => [...turn.querySelectorAll<HTMLButtonElement>(".simple-edits .simple-edit")];
-  // "See all" opens all twelve: the list is its rows and nothing else, with no fold after the first few. It is a tab
+  // "查看全部" opens all twelve: the list is its rows and nothing else, with no fold after the first few. It is a tab
   // under the sentence, where For you and See all sit when something waits on the editor.
-  expect([seeAll(turn)?.textContent, seeAll(turn)?.className, turn.querySelector(".simple-pass-toggle")]).toEqual(["See all", "simple-review-tab", null]);
+  expect([seeAll(turn)?.textContent, seeAll(turn)?.className, turn.querySelector(".simple-pass-toggle")]).toEqual(["查看全部", "simple-review-tab", null]);
   await click(seeAll(turn)!);
   expect(rows().map(r => r.querySelector(".edit-badge")?.textContent)).toEqual(many.map((_, i) => String(i + 1)));
   expect(turn.querySelectorAll(".simple-edits > *")).toHaveLength(12);
@@ -2408,19 +2408,19 @@ it("opens a suggestion in the card on top of the timeline, with Before and After
   await show();
   await click(suggestion("chg_ready"));
   await act(async () => {});
-  const decide = container.querySelector('[aria-label="Suggestion"]')!;
+  const decide = container.querySelector('[aria-label="剪辑建议"]')!;
   expect(decide.classList.contains("edit-card")).toBe(true);
   expect(container.querySelector(".simple-stage > .player-review")).toBeNull();
   // One row, as an edit's: Scarlet's words for it, Before/After, Revise and Apply. No Close button: Esc closes it.
   expect(decide.querySelector(".edit-card-title")?.textContent).toBe(data.changes.find(c => c.id === "chg_ready")!.description);
-  expect(buttonIn(decide, "Close")).toBeUndefined();
+  expect(buttonIn(decide, "关闭")).toBeUndefined();
   // The suggestion's own line plays it: there is no Play link under it, and the line stays pressed while it shows.
   expect([buttonIn(turnFor("chg_ready"), "Play"), suggestion("chg_ready").getAttribute("aria-pressed")]).toEqual([undefined, "true"]);
-  expect(beforeIcon(decide)).toEqual(["", "Before", "false", "Play Before (\\)"]);
+  expect(beforeIcon(decide)).toEqual(["", "剪辑前", "false", "播放剪辑前 (\\)"]);
   expect(decide.querySelectorAll(".edit-card-side button")).toHaveLength(1);
   await click(compareButton(decide));
-  expect(compareButton(container.querySelector('[aria-label="Suggestion"]')!)?.getAttribute("aria-pressed")).toBe("true");
-  await click(buttonIn(container.querySelector('[aria-label="Suggestion"]')!, "Apply")!);
+  expect(compareButton(container.querySelector('[aria-label="剪辑建议"]')!)?.getAttribute("aria-pressed")).toBe("true");
+  await click(buttonIn(container.querySelector('[aria-label="剪辑建议"]')!, "应用")!);
   expect(approve).toHaveBeenCalledWith("chg_ready", undefined, undefined);
 });
 
@@ -2457,7 +2457,7 @@ it("carries a playing suggestion over a switch of sides, and stays paused once t
     await heard();
     return { file: video.getAttribute("src")?.split("?")[0]?.split("/").slice(-3).join("/"), playing: !isPaused(video) };
   };
-  const decide = () => container.querySelector('[aria-label="Suggestion"]')!;
+  const decide = () => container.querySelector('[aria-label="剪辑建议"]')!;
   await show();
   // Its line plays it.
   await click(suggestion("chg_ready"));
@@ -2524,11 +2524,11 @@ it("marks every place a suggestion changes: its band on the one the player is on
   expect(seek).toHaveBeenCalledWith(12, false);
   // Before plays the working cut from a second ahead of that place.
   seek.mockClear();
-  await click(compareButton(container.querySelector('[aria-label="Suggestion"]')!));
+  await click(compareButton(container.querySelector('[aria-label="剪辑建议"]')!));
   expect(seek).toHaveBeenCalledWith(11, true);
   // Revise is about the place on screen.
-  await click(buttonIn(container.querySelector('[aria-label="Suggestion"]')!, "Revise")!);
-  expect(useUiStore.getState().agentContext).toMatchObject({ changeId: "chg_ready", time: 12, end: 13, label: "Suggestion" });
+  await click(buttonIn(container.querySelector('[aria-label="剪辑建议"]')!, "修改")!);
+  expect(useUiStore.getState().agentContext).toMatchObject({ changeId: "chg_ready", time: 12, end: 13, label: "剪辑建议" });
   // Opened again, the suggestion starts on its first place.
   await press("Escape");
   await click(suggestion("chg_ready"));
@@ -2607,7 +2607,7 @@ const reviewCalls = async () => {
 };
 /** A call's row in the pass's list, by Scarlet's note on it. */
 const passRow = (note: string) => passRows().find(r => r.querySelector(".simple-pass-label")?.textContent?.includes(note))!;
-const call = () => container.querySelector<HTMLElement>('[aria-label="Call"]')!;
+const call = () => container.querySelector<HTMLElement>('[aria-label="剪点"]')!;
 
 it("keeps a call the editor sent back with them once its revision leaves the footage in, until they approve it", async () => {
   const save = flagged();
@@ -2618,14 +2618,14 @@ it("keeps a call the editor sent back with them once its revision leaves the foo
   await show();
   await act(async () => {});
   // The revised call still needs the editor, as the one Scarlet never revised does.
-  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("2 need you");
+  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("2 项待审阅");
   await click(passCard().querySelector(".simple-pass-need")!);
   expect(call().querySelector(".edit-card-title")?.textContent).toBe("Left the breath in, as asked.");
   // Approve takes the revision, which keeps the footage.
   await press("a");
   expect(save).toHaveBeenLastCalledWith("chg_ready", expect.objectContaining({ choices: [{ index: 1, choice: "keep" }] }));
-  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 needs you");
-  expect(passRows()[0]?.querySelector(".simple-pass-value")?.textContent).toBe("Approved");
+  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 项待审阅");
+  expect(passRows()[0]?.querySelector(".simple-pass-value")?.textContent).toBe("已批准");
   expect(approve).not.toHaveBeenCalled();
 });
 
@@ -2637,16 +2637,16 @@ it("sums a dialogue pass up on one card, and makes its calls in the card on the 
   await act(async () => {});
   // While the calls wait they are the block, listed without a click: no sentence yet, nothing to open, and no strip
   // under the player. "2 need you" is the heading's.
-  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("2 need you");
+  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("2 项待审阅");
   expect(passCard().querySelector(".simple-made")).toBeNull();
   expect(seeAll(passCard())).toBeNull();
   // The third cut is Scarlet's own pick. It goes in with the last call, and no line under the pass counts it.
   expect(passCard().textContent).not.toMatch(/more cuts? appl|Apply adds|proposed/);
-  expect(container.querySelector('[aria-label="Suggestion"]')).toBeNull();
+  expect(container.querySelector('[aria-label="剪辑建议"]')).toBeNull();
   expect(container.querySelector(".simple-on-video")).toBeNull();
   // The short list is a call's number, amber while it waits, and Scarlet's note: no time, mark, version or amount.
   expect([passCard().querySelector(".simple-pass-list")!.className, passCard().querySelector(".simple-pass-list")!.getAttribute("aria-label")])
-    .toEqual(["simple-pass-list is-short", "Calls that need you"]);
+    .toEqual(["simple-pass-list is-short", "待确认的剪点"]);
   expect(passRows().map(r => [r.querySelector(".edit-badge")?.textContent, r.querySelector(".edit-badge")?.classList.contains("is-check"), r.querySelector(".simple-pass-label")?.textContent]))
     .toEqual([["1", true, "Breath before the price."], ["2", true, "The corrected image-input take belongs here."]]);
   expect(passCard().querySelector(".simple-pass-list :is(.simple-pass-time, .simple-pass-tick, .simple-pass-value, small)")).toBeNull();
@@ -2656,7 +2656,7 @@ it("sums a dialogue pass up on one card, and makes its calls in the card on the 
   expect(passRows().map(r => r.getAttribute("aria-current"))).toEqual(["true", null]);
   // The call opens in the same card an applied edit uses, right on top of the timeline.
   expect(call().closest(".cut-transport > .edit-card")).toBe(call());
-  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing cut at 3:50 · 1 of 2 · After");
+  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing cut at 3:50 · 1 of 2 · 剪辑后");
   // Like an applied edit, a call is one row: its number, the same as on its line in the chat, then Scarlet's reason.
   // How many still wait is on hover. It has no picker and no script.
   expect([...call().querySelectorAll(".edit-card-bar > .edit-card-count, .edit-card-bar > .edit-card-title")].map(e => e.textContent))
@@ -2668,16 +2668,16 @@ it("sums a dialogue pass up on one card, and makes its calls in the card on the 
   // The conversation stays whole and the message box is tagged with this cut. The icon for the cut's words is
   // on the card, before the one for Before, folded: the chat is for what's said and done, not the dialogue.
   expect(turns().some(t => t.hidden)).toBe(false);
-  expect(boxTag()).toBe("Cut 1");
+  expect(boxTag()).toBe("剪点 1");
   // The tag is only the call's number, so its line says where the cut is: at 3:50.
   expect(composer.props!.aimTime).toBe(230);
   expect(container.querySelector(".simple-open")).toBeNull();
   expect(call().querySelector(".edit-card-side > :first-child")).toBe(transcriptLink());
-  expect([...transcriptName(), transcriptLink().getAttribute("aria-expanded")]).toEqual(["", "Show transcript", "Show transcript", "false"]);
+  expect([...transcriptName(), transcriptLink().getAttribute("aria-expanded")]).toEqual(["", "显示转写稿", "显示转写稿", "false"]);
   expect(openHead()!.querySelector(".edit-passage")).toBeNull();
   // Opened, the mark where the cut would join says how long it runs, in amber: it hasn't come out yet. The icon folds it away again.
   await click(transcriptLink());
-  expect([...transcriptName(), transcriptLink().getAttribute("aria-expanded")]).toEqual(["", "Hide transcript", "Hide transcript", "true"]);
+  expect([...transcriptName(), transcriptLink().getAttribute("aria-expanded")]).toEqual(["", "隐藏转写稿", "隐藏转写稿", "true"]);
   // The words open under the card's row, as the card's second row.
   expect(call().children.length).toBe(2);
   expect(call().querySelector(":scope > .thread-passage.is-call .edit-passage-cut")?.textContent).toBe("3.0 s");
@@ -2686,12 +2686,12 @@ it("sums a dialogue pass up on one card, and makes its calls in the card on the 
   // A cut has no Before/After switch: one icon plays it with the cut footage, and names itself and its key on hover.
   expect(call().querySelector(".compare-switch")).toBeNull();
   expect(call().querySelector(".edit-card-side > :last-child")).toBe(call().querySelector(".edit-card-before"));
-  expect(beforeIcon(call())).toEqual(["", "Before", "false", "Play Before (\\)"]);
+  expect(beforeIcon(call())).toEqual(["", "剪辑前", "false", "播放剪辑前 (\\)"]);
   expect(call().querySelector(".edit-card-before")?.getAttribute("aria-keyshortcuts")).toBe("\\");
   expect(call().querySelector(".simple-key")).toBeNull();
   expect(call().querySelector(".review-close")).toBeNull();
   expect([...call().querySelectorAll(".review-actions button")].map(b => [b.textContent, b.getAttribute("aria-keyshortcuts"), b.getAttribute("title")]))
-    .toEqual([["Revise", "R", "Revise (R)"], ["Approve", "A", "Approve (A)"], ["", "S", "Skip (S)"]]);
+    .toEqual([["修改", "R", "修改 (R)"], ["批准", "A", "批准（A）"], ["", "S", "跳过（S）"]]);
   // Skip is a small × after Approve, named on hover.
   expect(call().querySelector(".review-actions > .edit-card-skip:last-child svg")).not.toBeNull();
   expect(passRows()[0]!.getAttribute("aria-current")).toBe("true");
@@ -2699,32 +2699,32 @@ it("sums a dialogue pass up on one card, and makes its calls in the card on the 
   // A approves it and plays the next call. The call is saved on the proposal right away; nothing applies yet.
   await press("a");
   expect(save).toHaveBeenLastCalledWith("chg_ready", expect.objectContaining({ choices: [{ index: 1, choice: "cut" }], applyWhenDone: false }));
-  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing cut at 9:58 · 2 of 2 · After");
+  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing cut at 9:58 · 2 of 2 · 剪辑后");
   // The next call is the only one still waiting, and the box is tagged with it. Its transcript opens folded again.
-  expect(call().querySelector(".edit-card-count")?.textContent).toBe("Cut 2");
-  expect(boxTag()).toBe("Cut 2");
+  expect(call().querySelector(".edit-card-count")?.textContent).toBe("剪点 2");
+  expect(boxTag()).toBe("剪点 2");
   expect(transcriptLink().getAttribute("aria-expanded")).toBe("false");
   // The count goes down. The decided call keeps its place while the list is open, ticked, with how it was decided.
-  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 needs you");
+  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 项待审阅");
   expect(passRows().map(r => [r.querySelector(".edit-badge")?.textContent, r.querySelector(".edit-badge")?.classList.contains("is-check"), r.querySelector(".simple-pass-value")?.textContent]))
-    .toEqual([["1", false, "Approved"], ["2", true, undefined]]);
+    .toEqual([["1", false, "已批准"], ["2", true, undefined]]);
   expect(approve).not.toHaveBeenCalled();
   // "1 needs you" leaves the call that's open where it is. A decided call's row opens it again.
   await click(passCard().querySelector(".simple-pass-need")!);
   expect(passRows().map(r => r.getAttribute("aria-current"))).toEqual([null, "true"]);
   await click(passRows()[0]!);
-  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing cut at 3:50 · 1 of 2 · After");
-  expect(buttonIn(call(), "Approve")?.getAttribute("aria-pressed")).toBe("true");
+  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing cut at 3:50 · 1 of 2 · 剪辑后");
+  expect(buttonIn(call(), "批准")?.getAttribute("aria-pressed")).toBe("true");
   await press("ArrowDown");
   await press("\\");
   expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing cut at 9:58 · 2 of 2 · Before");
 
   // The last call applies the pass: Scarlet's pick for the cut it was sure of, and the footage this one skips.
-  await click(call().querySelector('[aria-label="Skip"]')!);
+  await click(call().querySelector('[aria-label="跳过"]')!);
   await act(async () => {});
   expect(save).toHaveBeenLastCalledWith("chg_ready", expect.objectContaining({ choices: [{ index: 1, choice: "cut" }, { index: 2, choice: "keep" }] }));
   expect(approve).toHaveBeenCalledWith("chg_ready", undefined, [2]);
-  expect(container.querySelector('[aria-label="Call"]')).toBeNull();
+  expect(container.querySelector('[aria-label="剪点"]')).toBeNull();
 });
 
 it("says nothing under a pass's stages while it works and asks about no cut, and applies it once it is done", async () => {
@@ -2739,7 +2739,7 @@ it("says nothing under a pass's stages while it works and asks about no cut, and
     cuts: STAGED.map((r, at) => ({ at, removed: { start: r.start, end: r.end }, beforeClip: 0 })) } });
   await show();
   await act(async () => {});
-  expect(container.querySelector('[aria-label="Dialogue pass"]')).toBeNull();
+  expect(container.querySelector('[aria-label="口播粗剪"]')).toBeNull();
   // Its first part stages three cuts. Scarlet hasn't checked them, so none is a call yet. Nothing needs the editor, so
   // the block is the pass's stages: no count of the staged cuts under them, and nothing to apply or schedule.
   await act(async () => {
@@ -2760,7 +2760,7 @@ it("says nothing under a pass's stages while it works and asks about no cut, and
   await event(d => ({ ...d, project: { ...d.project, editingPaused: false } }));
   expect(approve).toHaveBeenCalledWith("chg_ready", undefined, []);
   expect(approve).toHaveBeenCalledTimes(1);
-  expect(buttonIn(passCard(), "Apply")).toBeFalsy();
+  expect(buttonIn(passCard(), "应用")).toBeFalsy();
 });
 
 it("hands the editor the cuts a finished pass never checked, as calls, instead of Apply", async () => {
@@ -2775,8 +2775,8 @@ it("hands the editor the cuts a finished pass never checked, as calls, instead o
   await show();
   await act(async () => {});
   // Those two are the editor's calls, listed as a stopped pass's would be: nothing applies them unseen.
-  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("2 need you");
-  expect(buttonIn(passCard(), "Apply")).toBeUndefined();
+  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("2 项待审阅");
+  expect(buttonIn(passCard(), "应用")).toBeUndefined();
   expect(passRows().map(r => r.querySelector(".simple-pass-label")?.textContent)).toEqual(["Breath before the price.", "Repeated aside."]);
   await reviewCalls();
   expect(call().querySelector(".edit-card-title")?.textContent).toBe("Not checked yet. Breath before the price.");
@@ -2817,7 +2817,7 @@ it("numbers an applied pass's cuts on the timeline while it has the timeline, as
   await act(async () => { row.dispatchEvent(new PointerEvent("pointerout", { bubbles: true })); });
   expect(marks()[0]!.classList.contains("is-hot")).toBe(false);
   // With the list still open, an edit of another request opens in the card, and closing it brings the pass's cuts back.
-  await click(buttonIn(turnFor("chg_title"), "See edit")!);
+  await click(buttonIn(turnFor("chg_title"), "查看剪辑")!);
   await act(async () => {});
   expect(openTitle()).toBe("title card");
   expect(editPanel()).not.toBeNull();
@@ -2844,14 +2844,14 @@ it("switches an applied pass between For you and See all, with its cuts numbered
   const marks = () => [...container.querySelectorAll<HTMLElement>(".simple-timeline-mark")];
   expect(pass.querySelector(".simple-made")?.textContent).toBe("Made 3 edits: music bed, captions, wrap.");
   expect(pass.querySelector(".simple-made-line button")).toBeNull();
-  expect(reviewModes(pass)).toEqual([["For you", "true"], ["See all", "false"]]);
+  expect(reviewModes(pass)).toEqual([["待审阅", "true"], ["查看全部", "false"]]);
   expect([pass.querySelector(".simple-review-tabs + .simple-pass-list"), list()?.getAttribute("aria-label"), list()?.querySelectorAll("li").length])
-    .toEqual([list(), "Edits that need you", 1]);
+    .toEqual([list(), "待确认的剪辑", 1]);
   const need = () => pass.querySelector<HTMLElement>(".simple-pass-need")!;
-  expect(need().getAttribute("title")).toBe("1 needs you");
+  expect(need().getAttribute("title")).toBe("1 项待审阅");
   await click(need());
   await act(async () => {});
-  expect([list()?.getAttribute("aria-label"), list()?.className, list()?.querySelectorAll("li").length]).toEqual(["Edits that need you", "simple-pass-list", 1]);
+  expect([list()?.getAttribute("aria-label"), list()?.className, list()?.querySelectorAll("li").length]).toEqual(["待确认的剪辑", "simple-pass-list", 1]);
   // The row that needs the editor has its time in amber, and no dot before its words.
   expect([list()?.querySelector(".simple-pass-label")?.textContent, list()?.querySelector(".simple-pass-time")?.className, list()?.querySelector("button")?.getAttribute("aria-current")]).toEqual(["wrap", "simple-pass-time is-need", "true"]);
   expect(editPanel()).not.toBeNull();
@@ -2859,34 +2859,34 @@ it("switches an applied pass between For you and See all, with its cuts numbered
   expect([list()?.querySelectorAll("li").length, !!editPanel()]).toEqual([1, true]);
   // Both controls stay above the rows. Pressing the selected See all keeps the full list open.
   await click(seeAll(pass)!);
-  expect(reviewModes(pass)).toEqual([["For you", "false"], ["See all", "true"]]);
+  expect(reviewModes(pass)).toEqual([["待审阅", "false"], ["查看全部", "true"]]);
   expect(list()?.querySelectorAll("li").length).toBe(3);
   await click(seeAll(pass)!);
   expect(list()?.querySelectorAll("li").length).toBe(3);
   await click(need());
-  expect(reviewModes(pass)).toEqual([["For you", "true"], ["See all", "false"]]);
+  expect(reviewModes(pass)).toEqual([["待审阅", "true"], ["查看全部", "false"]]);
   expect(list()?.querySelectorAll("li").length).toBe(1);
   // Kept, nothing waits on the editor, so that list goes. The link lists every edit, and the timeline numbers them.
   await press("k");
   await act(async () => {});
   expect(editPanel()).toBeNull();
-  expect([reviewModes(pass), list()]).toEqual([[["See all", "false"]], null]);
+  expect([reviewModes(pass), list()]).toEqual([[["查看全部", "false"]], null]);
   await click(seeAll(pass)!);
   await act(async () => {});
-  expect(list()?.getAttribute("aria-label")).toBe("Every edit");
+  expect(list()?.getAttribute("aria-label")).toBe("全部剪辑");
   expect(list()?.querySelectorAll("li")).toHaveLength(3);
   expect(marks().map(m => m.textContent)).toEqual(["1", "2", "3"]);
   // The row under the pointer lights its dot.
   await act(async () => { list()!.querySelector("button")!.dispatchEvent(new PointerEvent("pointerover", { bubbles: true })); });
   expect(marks()[0]!.classList.contains("is-hot")).toBe(true);
   // See all, lit while its list is open, closes the list when pressed again, and the dots go with it.
-  expect(reviewModes(pass)).toEqual([["See all", "true"]]);
+  expect(reviewModes(pass)).toEqual([["查看全部", "true"]]);
   await click(seeAll(pass)!);
   expect(list()).toBeNull();
   expect(marks()).toEqual([]);
 });
 
-/** The request's one edit is the flagged one, so the link that opens every edit would list what "1 needs you" does. */
+/** The request's one edit is the flagged one, so the link that opens every edit would list what "1 项待审阅" does. */
 const onlyFlagged = (reason?: string) => {
   appliedEdits().mockImplementation(async (_project, threadId) => ({ version: data.project.head!,
     edits: threadId !== threadWith("chg_approved_2").id ? [] : [
@@ -2914,21 +2914,21 @@ it("leaves out the link that opens every edit while each of them needs the edito
   const need = () => turn.querySelector<HTMLElement>(".simple-pass-need");
   const rows = () => [...turn.querySelectorAll<HTMLButtonElement>(".simple-edits .simple-edit")];
   // For you opens the only result. Both modes would show the same edit.
-  expect([need()?.getAttribute("title"), rows().length, seeAll(turn)]).toEqual(["1 needs you", 1, null]);
-  expect(reviewModes(turn)).toEqual([["For you", "true"]]);
+  expect([need()?.getAttribute("title"), rows().length, seeAll(turn)]).toEqual(["1 项待审阅", 1, null]);
+  expect(reviewModes(turn)).toEqual([["待审阅", "true"]]);
   await click(need()!);
   await act(async () => {});
   expect([rows().length, !!editPanel(), seeAll(turn)]).toEqual([1, true, null]);
   // Kept, nothing needs the editor, and the link is how the edit is reached again.
   await press("k");
   await act(async () => {});
-  const see = buttonIn(turn, "See edit")!;
+  const see = buttonIn(turn, "查看剪辑")!;
   expect([need(), rows().length, see.hasAttribute("aria-expanded")]).toEqual([null, 0, false]);
   await click(see);
   expect(editPanel()?.querySelector(".edit-card-title")?.textContent).toBe(SUMMARY);
-  expect([rows()[0]?.getAttribute("aria-current"), buttonIn(turn, "Close edit")?.getAttribute("aria-current")]).toEqual(["true", "true"]);
-  await click(buttonIn(turn, "Close edit")!);
-  expect([editPanel(), rows().length, !!buttonIn(turn, "See edit")]).toEqual([null, 0, true]);
+  expect([rows()[0]?.getAttribute("aria-current"), buttonIn(turn, "关闭剪辑")?.getAttribute("aria-current")]).toEqual(["true", "true"]);
+  await click(buttonIn(turn, "关闭剪辑")!);
+  expect([editPanel(), rows().length, !!buttonIn(turn, "查看剪辑")]).toEqual([null, 0, true]);
 });
 
 it("opens the list of what needs the editor, not every edit, for an edit opened while each of them needs the editor", async () => {
@@ -2948,7 +2948,7 @@ it("opens the list of what needs the editor, not every edit, for an edit opened 
   await act(async () => {});
   expect(editPanel()).not.toBeNull();
   expect([turn.querySelector(".simple-edits")?.getAttribute("aria-label"), turn.querySelector(".simple-pass-need")?.getAttribute("title"), seeAll(turn)])
-    .toEqual(["Edits that need you", "1 needs you", null]);
+    .toEqual(["待确认的剪辑", "1 项待审阅", null]);
 });
 
 it("leaves out a pass's link too while each of its edits needs the editor", async () => {
@@ -2959,34 +2959,34 @@ it("leaves out a pass's link too while each of its edits needs the editor", asyn
   await showFolded();
   await act(async () => {});
   const pass = turnFor("chg_approved_2").querySelector<HTMLElement>(".simple-pass")!;
-  expect([pass.querySelector(".simple-pass-need")?.getAttribute("title"), seeAll(pass)]).toEqual(["1 needs you", null]);
+  expect([pass.querySelector(".simple-pass-need")?.getAttribute("title"), seeAll(pass)]).toEqual(["1 项待审阅", null]);
   await click(pass.querySelector(".simple-pass-need")!);
   await act(async () => {});
   expect([pass.querySelector(".simple-pass-list")?.querySelectorAll("li").length, seeAll(pass)]).toEqual([1, null]);
   await press("k");
   await act(async () => {});
   expect([pass.querySelector(".simple-pass-need"), pass.querySelector(".simple-pass-list")]).toEqual([null, null]);
-  await click(buttonIn(pass, "See edit")!);
+  await click(buttonIn(pass, "查看剪辑")!);
   expect(editPanel()?.querySelector(".edit-card-title")?.textContent).toBe(SUMMARY);
   expect(pass.querySelector('.simple-pass-list [aria-current="true"] .simple-pass-words')?.textContent).toBe("wrap");
-  expect(buttonIn(pass, "Close edit")?.getAttribute("aria-current")).toBe("true");
+  expect(buttonIn(pass, "关闭剪辑")?.getAttribute("aria-current")).toBe("true");
   await press("Escape");
-  expect([editPanel(), pass.querySelector(".simple-pass-list"), !!buttonIn(pass, "See edit")]).toEqual([null, null, true]);
+  expect([editPanel(), pass.querySelector(".simple-pass-list"), !!buttonIn(pass, "查看剪辑")]).toEqual([null, null, true]);
 });
 
 it("closes the selected edit in one click when only that edit remains in an expanded list", async () => {
   const { lists, earlier } = laterRequest("chg_later", false);
   await showFolded();
   const turn = turnFor("chg_approved_2");
-  await click(buttonIn(turn, "See all")!);
+  await click(buttonIn(turn, "查看全部")!);
   await click(editRows("chg_approved_2")[1]!);
   expect(openTitle()).toBe("captions");
   await pauses();
   lists[earlier] = (lists[earlier] as object[]).slice(1, 2);
   await headMoves("ver_only_captions");
   expect(openTitle()).toBe("captions");
-  await click(buttonIn(turn, "Close edit")!);
-  expect([editPanel(), turn.querySelector(".simple-edits"), !!buttonIn(turn, "See edit")]).toEqual([null, null, true]);
+  await click(buttonIn(turn, "关闭剪辑")!);
+  expect([editPanel(), turn.querySelector(".simple-edits"), !!buttonIn(turn, "查看剪辑")]).toEqual([null, null, true]);
 });
 
 /** An applied pass that is not the latest request, with or without a cut that asks for a look, beside a later request with one flagged edit. */
@@ -3130,31 +3130,31 @@ it("holds back the cuts a running pass hasn't checked, and applies the calls it 
   useProjectStore.setState({ current: data });
   await show();
   await act(async () => {});
-  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 needs you");
+  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 项待审阅");
   await reviewCalls();
-  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing cut at 3:50 · 1 of 1 · After");
+  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing cut at 3:50 · 1 of 1 · 剪辑后");
   expect(call().querySelector(".edit-card-title")?.textContent).toBe("Breath before the price.");
   // Scarlet is still checking, so the last call schedules the pass to apply the moment it finishes.
   await press("a");
   expect(save).toHaveBeenLastCalledWith("chg_ready", expect.objectContaining({
     choices: [{ index: 0, choice: "cut" }, { index: 1, choice: "cut" }], applyWhenDone: true }));
-  expect(container.querySelector('[aria-label="Call"]')).toBeNull();
+  expect(container.querySelector('[aria-label="剪点"]')).toBeNull();
   // It says so, with no guess at how long that will be: the chat carries no time. It is a status, not a button: there
   // is nothing to press and no way to hold the pass back.
-  expect(passCard().querySelector(".simple-pass-ok")?.textContent).toBe("Goes in when Scarlet finishes");
+  expect(passCard().querySelector(".simple-pass-ok")?.textContent).toBe("Scarlet 完成后自动应用");
   expect(passCard().querySelector(".simple-pass-line")?.querySelectorAll("button").length).toBe(0);
   // Going back to change that call keeps the schedule: the pass still goes in when Scarlet finishes, with the new call.
   await click(passRows().find(r => r.textContent?.includes("Breath before the price."))!);
   await press("s");
   expect(save).toHaveBeenLastCalledWith("chg_ready", expect.objectContaining({
     choices: [{ index: 0, choice: "cut" }, { index: 1, choice: "keep" }], applyWhenDone: true }));
-  expect(passCard().textContent).toContain("Goes in when Scarlet finishes");
+  expect(passCard().textContent).toContain("Scarlet 完成后自动应用");
   // Scarlet then asks about another cut. The engine takes the schedule back, and the line follows it: the pass waits
   // for the editor again instead of going on saying it applies by itself.
   await event(d => ({ ...d, changes: d.changes.map(c => c.id === "chg_ready" ? { ...c, applyWhenDone: undefined, cutAssessments: [...c.cutAssessments!,
     { index: 2, start: 598, end: 602.5, verdict: "ask" as const, reason: "The corrected image-input take belongs here." }] } : c) }));
-  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 needs you");
-  expect(passCard().textContent).not.toContain("Goes in when Scarlet finishes");
+  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 项待审阅");
+  expect(passCard().textContent).not.toContain("Scarlet 完成后自动应用");
 });
 
 it("doesn't send a pass's old schedule along with a call once its run has stopped", async () => {
@@ -3185,21 +3185,21 @@ it("keeps a call whose save is still on its way when an earlier save fails, and 
   await show();
   await act(async () => {});
   const need = () => passCard().querySelector(".simple-pass-need")?.getAttribute("title");
-  expect(need()).toBe("3 need you");
+  expect(need()).toBe("3 项待审阅");
   await reviewCalls();
   await press("a");
   await press("a");
   expect(saves).toHaveLength(2);
-  expect(need()).toBe("1 needs you");
+  expect(need()).toBe("1 项待审阅");
   // The first save fails after the second went out. The second carries both calls and may still land: they stay made.
   await act(async () => saves[0]!.fail("The engine is busy."));
-  expect(need()).toBe("1 needs you");
+  expect(need()).toBe("1 项待审阅");
   // The failure is said on the pass's line and on the open call's card.
   expect(passCard().querySelector(".simple-error")?.textContent).toBe("The engine is busy.");
   expect(call().querySelector('[role="alert"]')?.textContent).toBe("The engine is busy.");
   // A save that fails with none sent since gives its calls back to the editor: nothing was saved.
   await act(async () => saves[1]!.fail("Still busy."));
-  expect(need()).toBe("3 need you");
+  expect(need()).toBe("3 项待审阅");
   expect(passCard().querySelector(".simple-error")?.textContent).toBe("Still busy.");
   // Made again, the first save fails once more, and this time the second lands with both calls. Nothing was lost,
   // so the line that said a save failed goes.
@@ -3209,7 +3209,7 @@ it("keeps a call whose save is still on its way when an earlier save fails, and 
   await act(async () => saves[2]!.fail("Busy again."));
   expect(passCard().querySelector(".simple-error")?.textContent).toBe("Busy again.");
   await act(async () => saves[3]!.land());
-  expect(need()).toBe("1 needs you");
+  expect(need()).toBe("1 项待审阅");
   expect(passCard().querySelector(".simple-error")).toBeNull();
   expect(call().querySelector('[role="alert"]')).toBeNull();
 });
@@ -3231,7 +3231,7 @@ it("says nothing when an earlier save fails after a later one carrying its calls
   // The second save lands with both calls, then the first one fails: both calls were saved.
   await act(async () => saves[1]!.land());
   await act(async () => saves[0]!.fail("The engine is busy."));
-  expect(need()).toBe("1 needs you");
+  expect(need()).toBe("1 项待审阅");
   expect(passCard().querySelector(".simple-error")).toBeNull();
   expect(call().querySelector('[role="alert"]')).toBeNull();
 });
@@ -3354,7 +3354,7 @@ it("appends published calls while holding back provisional notes and keeps the o
     cutAssessments: [{ ...second!, askOrder: 2 }, { ...carried!, askOrder: 1 }] });
   expect(passRows()[0]).toBe(first);
   expect(call()).toBe(card);
-  expect(call().querySelector(".edit-card-count")?.textContent).toBe("Cut 1");
+  expect(call().querySelector(".edit-card-count")?.textContent).toBe("剪点 1");
   await press("s");
   expect(save).toHaveBeenLastCalledWith("chg_ready_part2", expect.objectContaining({ choices: [{ index: 1, choice: "keep" }] }));
   expect(call().querySelector(".edit-card-title")?.textContent).toBe(middle!.reason);
@@ -3363,7 +3363,7 @@ it("appends published calls while holding back provisional notes and keeps the o
     cutAssessments: c.cutAssessments!.map(a => a.index === 1 ? { ...a, verdict: "keep" } : a) } : c) }));
   expect(passRows()[0]).toBe(first);
   expect(passRows().map(r => r.textContent)).toEqual([`1${late!.reason}Skipped`, `2${middle!.reason}`]);
-  expect(call().querySelector(".edit-card-count")?.textContent).toBe("Cut 2");
+  expect(call().querySelector(".edit-card-count")?.textContent).toBe("剪点 2");
 });
 
 it("keeps a newly published call when an earlier decision's HTTP response arrives after the project event", async () => {
@@ -3388,7 +3388,7 @@ it("keeps a newly published call when an earlier decision's HTTP response arrive
   await act(async () => respond());
   expect(passRows()[2]).toBe(third);
   expect(call()).toBe(card);
-  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("2 need you");
+  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("2 项待审阅");
   expect(passRows()[0]?.textContent).toBe(`1${asks[0]!.reason}Skipped`);
 });
 
@@ -3401,10 +3401,10 @@ it.each(["done", "failed", "cancelled"] as const)("hands provisional and uncheck
   expect(passRows().map(r => r.textContent)).toEqual([`1${late!.reason}`]);
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === "task_done" ? { ...t, state } : t) }));
   expect(passRows().map(r => r.textContent)).toEqual([`1${late!.reason}`, `2${early!.reason}`, `3${STAGED[1]!.reason}`]);
-  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("3 need you");
+  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("3 项待审阅");
   await click(passRows()[1]!);
   expect(call().querySelector(".edit-card-title")?.textContent).toBe(`Not checked yet. ${early!.reason}`);
-  expect(buttonIn(passCard(), "Apply")).toBeUndefined();
+  expect(buttonIn(passCard(), "应用")).toBeUndefined();
 });
 
 it.each(["saved", "another call", "unchecked part", "failed"] as const)("uses the last call's save before applying a pass (%s)", async outcome => {
@@ -3423,7 +3423,7 @@ it.each(["saved", "another call", "unchecked part", "failed"] as const)("uses th
   if (outcome === "failed") {
     await act(async () => fail(new Error("Couldn’t save this call.")));
     expect(approve).not.toHaveBeenCalled();
-    expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 needs you");
+    expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 项待审阅");
     expect(passCard().querySelector('[role="alert"]')?.textContent).toBe("Couldn’t save this call.");
     return;
   }
@@ -3436,7 +3436,7 @@ it.each(["saved", "another call", "unchecked part", "failed"] as const)("uses th
     expect(approve).not.toHaveBeenCalled();
     if (outcome === "unchecked part")
       await event(d => ({ ...d, changes: d.changes.map(c => c.id === "chg_ready_part2" ? { ...c, cutAssessments: askAll(STAGED) } : c) }));
-    expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 needs you");
+    expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 项待审阅");
     await reviewCalls();
     expect(call().querySelector(".edit-card-title")?.textContent).toBe(STAGED[1]!.reason);
   } else {
@@ -3477,14 +3477,14 @@ it("keeps saying a call's save failed while that call is undecided, though a lat
   await press("a");
   expect(save.mock.lastCall![1].choices).toEqual([{ index: 1, choice: "cut" }]);
   expect(alert()).toBe("Couldn’t save this call.");
-  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("2 need you");
+  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("2 项待审阅");
   expect(approve).not.toHaveBeenCalled();
   // Made again and saved, the line goes.
   await click(passRow(STAGED[0]!.reason));
   await press("s");
   expect(save.mock.lastCall![1].choices).toEqual(expect.arrayContaining([{ index: 0, choice: "keep" }, { index: 1, choice: "cut" }]));
   expect(alert()).toBeUndefined();
-  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 needs you");
+  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 项待审阅");
 });
 
 it("keeps the call on screen on its cut when the pass saves its next part", async () => {
@@ -3493,7 +3493,7 @@ it("keeps the call on screen on its cut when the pass saves its next part", asyn
   await show();
   await act(async () => {});
   await openCall("Repeated aside.");
-  expect(onVideo()).toBe("Showing cut at 0:11 · 3 of 3 · After");
+  expect(onVideo()).toBe("Showing cut at 0:11 · 3 of 3 · 剪辑后");
   expect(listen).toHaveBeenLastCalledWith({ start: 9, end: 15, skips: [{ start: 11, end: 12, removed: true }] }, expect.any(Number));
   const listens = listen.mock.calls.length;
   // The editor opens the call's transcript in the chat to read the passage.
@@ -3506,9 +3506,9 @@ it("keeps the call on screen on its cut when the pass saves its next part", asyn
   hold("chg_ready_part2");
   await nextPart({ cutReasons: [STAGED[0]!, STAGED[1]!, { start: 8.5, end: 9.5, reason: "A second try at the line." }, STAGED[2]!] });
   expect(call().querySelector(".edit-card-title")?.textContent).toBe("Repeated aside.");
-  expect(onVideo()).toBe("Showing cut at 0:11 · 4 of 4 · After");
+  expect(onVideo()).toBe("Showing cut at 0:11 · 4 of 4 · 剪辑后");
   await release();
-  expect(onVideo()).toBe("Showing cut at 0:11 · 4 of 4 · After");
+  expect(onVideo()).toBe("Showing cut at 0:11 · 4 of 4 · 剪辑后");
   expect(listen).toHaveBeenCalledTimes(listens);
   // It is the same card throughout, and its transcript is still open on the passage.
   expect(call()).toBe(card);
@@ -3521,7 +3521,7 @@ it("keeps the call on screen on its cut when the pass saves its next part", asyn
   await press("s");
   expect(save).toHaveBeenLastCalledWith("chg_ready_part2", expect.objectContaining({ choices: [{ index: 3, choice: "keep" }] }));
   // The next call opens folded again.
-  expect(onVideo()).toBe("Showing cut at 0:02 · 1 of 4 · After");
+  expect(onVideo()).toBe("Showing cut at 0:02 · 1 of 4 · 剪辑后");
   expect(script().getAttribute("aria-expanded")).toBe("false");
   expect(openHead()!.querySelector(".edit-passage")).toBeNull();
 });
@@ -3533,10 +3533,10 @@ it("makes a call while the new proposal's cut list is still on its way", async (
   await openCall("Repeated aside.");
   hold("chg_ready_part2");
   await nextPart({ cutReasons: [STAGED[0]!, STAGED[1]!, { start: 8.5, end: 9.5, reason: "A second try at the line." }, STAGED[2]!] });
-  expect([passCard().querySelector(".simple-pass-need")?.getAttribute("title"), passRows().length]).toEqual(["4 need you", 4]);
+  expect([passCard().querySelector(".simple-pass-need")?.getAttribute("title"), passRows().length]).toEqual(["4 项待审阅", 4]);
   await press("s");
   expect(save).toHaveBeenLastCalledWith("chg_ready_part2", expect.objectContaining({ choices: [{ index: 3, choice: "keep" }] }));
-  expect(onVideo()).toBe("Showing cut at 0:02 · 1 of 4 · After");
+  expect(onVideo()).toBe("Showing cut at 0:02 · 1 of 4 · 剪辑后");
 });
 
 it("counts a pass's cuts as its review will while the cut list is still on its way", async () => {
@@ -3545,9 +3545,9 @@ it("counts a pass's cuts as its review will while the cut list is still on its w
   await show();
   await act(async () => {});
   // Three staged cuts, two of which touch: two cuts, before the list says so and after.
-  expect([passCard().querySelector(".simple-pass-need")?.getAttribute("title"), passRows().length]).toEqual(["2 need you", 2]);
+  expect([passCard().querySelector(".simple-pass-need")?.getAttribute("title"), passRows().length]).toEqual(["2 项待审阅", 2]);
   await release();
-  expect([passCard().querySelector(".simple-pass-need")?.getAttribute("title"), passRows().length]).toEqual(["2 need you", 2]);
+  expect([passCard().querySelector(".simple-pass-need")?.getAttribute("title"), passRows().length]).toEqual(["2 项待审阅", 2]);
 });
 
 it("holds After until the pass's cut list is in or has failed, and plays Before meanwhile", async () => {
@@ -3598,7 +3598,7 @@ it("keeps the other calls' dots on the timeline while a call is open, so one pre
   strip.getBoundingClientRect = () => ({ left: 0, width: 1000 }) as DOMRect;
   await act(async () => { strip.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, isPrimary: true, button: 0, pointerId: 1, clientX: parseFloat(dots()[2]!.style.left) * 10 })); });
   await act(async () => {});
-  expect(onVideo()).toBe("Showing cut at 0:11 · 3 of 3 · After");
+  expect(onVideo()).toBe("Showing cut at 0:11 · 3 of 3 · 剪辑后");
   expect(dots().find(d => d.classList.contains("is-on"))?.textContent).toBe("3");
   // Zoomed out to the whole video (0), the other calls are there to see and to press without closing this one.
   await press("0");
@@ -3646,7 +3646,7 @@ it("shows the cuts already in the video around an open call as grey gaps, After 
   await openCall("Breath before the price.");
   await act(async () => {});
   expect(gaps().map(gap => [gap.textContent, gap.classList.contains("is-skipped")])).toEqual([["Cut at 0:07", true]]);
-  expect(onVideo()).toBe("Showing cut at 0:06 · 2 of 3 · After");
+  expect(onVideo()).toBe("Showing cut at 0:06 · 2 of 3 · 剪辑后");
   expect([...container.querySelectorAll(".simple-timeline-mark.is-numbered")].map(d => d.textContent)).toEqual(["1", "2", "3"]);
   // After plays as the video runs now: over the call's footage, then over the cut's.
   expect(rounded(listen.mock.lastCall![0].skips)).toEqual([[6, 7], [7.04, 8.04]]);
@@ -3657,14 +3657,14 @@ it("shows the cuts already in the video around an open call as grey gaps, After 
   expect(visit.from).toBeCloseTo(7.04, 6);
   expect([visit.through, visit.skips]).toEqual([true, []]);
   expect(usePlayerStore.getState().scrubGesture).toBeUndefined();
-  expect(beforeIcon(call())).toEqual(["", "Before", "true", "Back to After (\\)"]);
+  expect(beforeIcon(call())).toEqual(["", "剪辑前", "true", "返回剪辑后 (\\)"]);
   expect(call().querySelector(".edit-card-before.is-flash")).not.toBeNull();
   expect([...call().querySelector(".edit-card-switched")!.children].map(part => part.textContent)).toEqual(["Before", "The cut at 0:07 took this part out."]);
   expect(onVideo()).toBe("Showing what the cut at 0:07 took out · Before");
   // It plays now, so it's only outlined. The call's card is otherwise as it was.
   expect(gaps()[0]!.classList.contains("is-skipped")).toBe(false);
-  expect(call().querySelector(".edit-card-count")?.textContent).toBe("Cut 2");
-  expect(buttonIn(call(), "Approve")).toBeTruthy();
+  expect(call().querySelector(".edit-card-count")?.textContent).toBe("剪点 2");
+  expect(buttonIn(call(), "批准")).toBeTruthy();
 
   // The lit icon goes back to After, which picks up where that footage ends.
   await click(call().querySelector(".edit-card-before")!);
@@ -3702,20 +3702,20 @@ it("plays a call's cut footage from a click inside its passage on the timeline",
   await openCall("Breath before the price.");
   const band = () => container.querySelector<HTMLElement>(".simple-timeline-band")!;
   // After steps over the cut, so its passage takes a click.
-  expect(beforeIcon(call())).toEqual(["", "Before", "false", "Play Before (\\)"]);
+  expect(beforeIcon(call())).toEqual(["", "剪辑前", "false", "播放剪辑前 (\\)"]);
   expect(band().classList.contains("is-live")).toBe(true);
   // Without layout the click lands on the passage's first frame. Before plays from there, and its icon lights with a flash.
   await act(async () => { band().dispatchEvent(new PointerEvent("pointerdown", { pointerId: 1, isPrimary: true, button: 0, bubbles: true })); });
   expect(listen).toHaveBeenLastCalledWith({ start: 4, end: 9, skips: [], from: 6, through: true }, expect.any(Number));
   expect(usePlayerStore.getState().scrubGesture).toBeUndefined();
-  expect(beforeIcon(call())).toEqual(["", "Before", "true", "Back to After (\\)"]);
+  expect(beforeIcon(call())).toEqual(["", "剪辑前", "true", "返回剪辑后 (\\)"]);
   expect(call().querySelector(".edit-card-before.is-flash")).not.toBeNull();
   // On Before the passage plays, and scrubs as any footage.
   expect(band().classList.contains("is-live")).toBe(false);
   // The icon goes back to how the video would run, from the top of the listen.
   await click(call().querySelector(".edit-card-before")!);
   expect(listen).toHaveBeenLastCalledWith({ start: 4, end: 10, skips: [{ start: 6, end: 7, removed: true }] }, expect.any(Number));
-  expect(beforeIcon(call())).toEqual(["", "Before", "false", "Play Before (\\)"]);
+  expect(beforeIcon(call())).toEqual(["", "剪辑前", "false", "播放剪辑前 (\\)"]);
   expect(call().querySelector(".edit-card-before.is-flash")).toBeNull();
   // Lit again by a click in the passage, then its row in the chat pressed again: the card stays, and the cut plays from
   // the top as the video runs, unlit.
@@ -3723,7 +3723,7 @@ it("plays a call's cut footage from a click inside its passage on the timeline",
   expect(beforeIcon(call())?.[2]).toBe("true");
   const listens = listen.mock.calls.length;
   await click(passRows().find(r => r.textContent?.includes("Breath before the price."))!);
-  expect(beforeIcon(call())).toEqual(["", "Before", "false", "Play Before (\\)"]);
+  expect(beforeIcon(call())).toEqual(["", "剪辑前", "false", "播放剪辑前 (\\)"]);
   expect(listen.mock.calls.length).toBe(listens + 1);
   expect(listen).toHaveBeenLastCalledWith({ start: 4, end: 10, skips: [{ start: 6, end: 7, removed: true }] }, expect.any(Number));
 });
@@ -3745,7 +3745,7 @@ it("plays just the selected call when another is within earshot and keeps playin
   hold("chg_ready_part2");
   await nextPart({ cutReasons: [...cuts, { start: 14, end: 15, reason: "A cough." }] });
   await release();
-  expect(onVideo()).toBe("Showing cut at 0:06 · 2 of 5 · After");
+  expect(onVideo()).toBe("Showing cut at 0:06 · 2 of 5 · 剪辑后");
   expect(listen).toHaveBeenCalledTimes(1);
   expect(ended).not.toHaveBeenCalled();
 });
@@ -3756,15 +3756,15 @@ it("numbers a call as the pass's cut list does when staged cuts touch", async ()
   await show();
   await act(async () => {});
   await openCall("Repeated aside.");
-  expect(onVideo()).toBe("Showing cut at 0:11 · 3 of 3 · After");
+  expect(onVideo()).toBe("Showing cut at 0:11 · 3 of 3 · 剪辑后");
   hold("chg_ready_part2");
   await nextPart({ cutReasons: [...PAIR, STAGED[1]!, { start: 8.5, end: 9.5, reason: "A second try at the line." }, STAGED[2]!] });
   // The card is still on the aside, the fourth cut of four, before the new cut list arrives and after.
   expect(call().querySelector(".edit-card-title")?.textContent).toBe("Repeated aside.");
-  expect(onVideo()).toBe("Showing cut at 0:11 · 4 of 4 · After");
+  expect(onVideo()).toBe("Showing cut at 0:11 · 4 of 4 · 剪辑后");
   await release();
   expect(call().querySelector(".edit-card-title")?.textContent).toBe("Repeated aside.");
-  expect(onVideo()).toBe("Showing cut at 0:11 · 4 of 4 · After");
+  expect(onVideo()).toBe("Showing cut at 0:11 · 4 of 4 · 剪辑后");
   // Approve approves that cut and no other.
   await press("a");
   expect(save).toHaveBeenLastCalledWith("chg_ready_part2", expect.objectContaining({ choices: [{ index: 3, choice: "cut" }] }));
@@ -3776,7 +3776,7 @@ it("keeps staged cuts a frame apart as two cuts while the cut list is on its way
   hold("chg_ready");
   await show();
   await act(async () => {});
-  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("4 need you");
+  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("4 项待审阅");
 });
 
 it("plays a call straight through while the pass saves its next parts, and takes them up once the video stops", async () => {
@@ -3787,7 +3787,7 @@ it("plays a call straight through while the pass saves its next parts, and takes
   await act(async () => {});
   await openCall("Repeated aside.");
   expect(usePlayerStore.getState().playing).toBe(true);
-  expect(onVideo()).toBe("Showing cut at 0:11 · 3 of 3 · After");
+  expect(onVideo()).toBe("Showing cut at 0:11 · 3 of 3 · 剪辑后");
   const listens = listen.mock.calls.length;
   const head = useShownCutStore.getState().head;
   const video = container.querySelector("video");
@@ -3797,7 +3797,7 @@ it("plays a call straight through while the pass saves its next parts, and takes
     { ...STAGED[2]!, start: 9.5, end: 10.5 }] }, [{ start: 4, end: 5.5, reason: "Dead air." }], { whilePlaying: true });
   await act(async () => {});
   expect(useShownCutStore.getState().head).toBe(head);
-  expect(onVideo()).toBe("Showing cut at 0:11 · 3 of 3 · After");
+  expect(onVideo()).toBe("Showing cut at 0:11 · 3 of 3 · 剪辑后");
   expect(call().querySelector(".edit-card-title")?.textContent).toBe("Repeated aside.");
   expect(listen).toHaveBeenCalledTimes(listens);
   expect(container.querySelector("video")).toBe(video);
@@ -3809,7 +3809,7 @@ it("plays a call straight through while the pass saves its next parts, and takes
   await pauses();
   await act(async () => {});
   expect(useShownCutStore.getState().head).toBe("ver_part2");
-  expect(onVideo()).toBe("Showing cut at 0:09 · 4 of 4 · After");
+  expect(onVideo()).toBe("Showing cut at 0:09 · 4 of 4 · 剪辑后");
   expect(call().querySelector(".edit-card-title")?.textContent).toBe("Repeated aside.");
   expect(listen.mock.calls.slice(listens).every(call => call[2] === true)).toBe(true);
 });
@@ -3830,7 +3830,7 @@ it("follows the call's cut, and a revision aimed at it, when the next part's con
   await nextPart({ cutReasons: [STAGED[0]!, { ...STAGED[1]!, start: 4.5, end: 5.5 }, { ...STAGED[2]!, start: 9.5, end: 10.5 }] },
     [{ start: 4, end: 5.5, reason: "Dead air." }, { start: 13, end: 14, reason: "A cough." }]);
   expect(call().querySelector(".edit-card-title")?.textContent).toBe("Repeated aside.");
-  expect(onVideo()).toBe("Showing cut at 0:09 · 3 of 3 · After");
+  expect(onVideo()).toBe("Showing cut at 0:09 · 3 of 3 · 剪辑后");
   // The listen waits for the new cut list and then starts once, on the cut where it is now.
   expect(listen).toHaveBeenCalledTimes(listens);
   await release();
@@ -3931,15 +3931,15 @@ it("prepares waiting calls before the first click and skips a call the editor al
   const warmed = prepare.mock.calls.filter(([, version]) => version === data.timeline!.version).map(([, , positions]) => positions[0]);
   expect(warmed.sort((a, b) => a! - b!)).toEqual([0, 9]);
   await reviewCalls();
-  expect(call().querySelector(".edit-card-count")?.textContent).toBe("Cut 1");
+  expect(call().querySelector(".edit-card-count")?.textContent).toBe("剪点 1");
   const listens = listen.mock.calls.length;
   await act(async () => usePlayerStore.setState({ playing: true, playbackReady: true }));
   // Cut 2 has a decision. While Cut 1 plays, prepare the uncut lead-in to Cut 3, which starts at eleven seconds.
   await vi.waitFor(() => expect(prepare).toHaveBeenCalledWith(PRJ, data.timeline!.version, expect.arrayContaining([9]), expect.any(AbortSignal)));
   expect(listen).toHaveBeenCalledTimes(listens);
-  expect(call().querySelector(".edit-card-count")?.textContent).toBe("Cut 1");
+  expect(call().querySelector(".edit-card-count")?.textContent).toBe("剪点 1");
   await press("s");
-  expect(call().querySelector(".edit-card-count")?.textContent).toBe("Cut 3");
+  expect(call().querySelector(".edit-card-count")?.textContent).toBe("剪点 3");
 });
 
 it("warms the call ↑ goes back to, also one the editor already decided", async () => {
@@ -3952,7 +3952,7 @@ it("warms the call ↑ goes back to, also one the editor already decided", async
   const warmed = () => prepare.mock.calls.some(([, version, times]) => version === data.timeline!.version && times[0] === 4);
   expect(warmed()).toBe(false);
   await press("ArrowUp");
-  expect(call().querySelector(".edit-card-count")?.textContent).toBe("Cut 3");
+  expect(call().querySelector(".edit-card-count")?.textContent).toBe("剪点 3");
   // Once Cut 3 plays, the one before it is prepared.
   await act(async () => usePlayerStore.setState({ playing: true, playbackReady: true }));
   await vi.waitFor(() => expect(warmed()).toBe(true));
@@ -3982,8 +3982,8 @@ it("marks, shades and plays a waiting call where its footage sits once the worki
   await openCall("Repeated aside.");
   expect(draft.mock.calls.length).toBe(warmRequestCount);
   readFiles.mockResolvedValue({ renders: [] });
-  expect(call().querySelector(".edit-card-count")?.textContent).toBe("Cut 3");
-  expect(onVideo()).toBe("Showing cut at 0:10 · 3 of 3 · After");
+  expect(call().querySelector(".edit-card-count")?.textContent).toBe("剪点 3");
+  expect(onVideo()).toBe("Showing cut at 0:10 · 3 of 3 · 剪辑后");
   expect(listen).toHaveBeenLastCalledWith({ start: 8, end: 14, skips: [{ start: 10, end: 11, removed: true }] }, expect.any(Number));
   expect(api.cutReviewDraft).toHaveBeenCalledWith("chg_ready", [0, 1], "ver_moved", expect.any(AbortSignal));
   expect(player.mediaTime(10.5)).toBe(10);
@@ -4062,7 +4062,7 @@ it("keeps an open call's listen on its footage when the working cut moves under 
   // The head moves first. Until the new working cut arrives the call is where it was.
   await event(d => ({ ...d, project: { ...d.project, head: "ver_moved" } }));
   expect(listen).toHaveBeenCalledTimes(listens);
-  expect(onVideo()).toBe("Showing cut at 0:11 · 3 of 3 · After");
+  expect(onVideo()).toBe("Showing cut at 0:11 · 3 of 3 · 剪辑后");
   // Then the working cut, a second shorter ahead of the call. The listen is taken up where the cut is now, not started
   // again, and the playhead goes with the footage it was on.
   await event(d => ({ ...d, timeline: { ...applyOps(d.timeline!, [{ op: "rippleDelete" as const, start: 0.2, end: 1.2 }]), version: "ver_moved" } }));
@@ -4070,7 +4070,7 @@ it("keeps an open call's listen on its footage when the working cut moves under 
   expect(listen).toHaveBeenCalledTimes(listens + 1);
   expect(listen).toHaveBeenLastCalledWith({ start: 8, end: 14, skips: [{ start: 10, end: 11, removed: true }] }, expect.any(Number), true);
   expect(usePlayerStore.getState().time).toBe(9.5);
-  expect(onVideo()).toBe("Showing cut at 0:10 · 3 of 3 · After");
+  expect(onVideo()).toBe("Showing cut at 0:10 · 3 of 3 · 剪辑后");
   // The line over the box follows the cut as well, though the box was aimed before it moved.
   expect(container.querySelector(".simple-target")?.textContent).toContain("Revising the cut at 0:10");
 });
@@ -4084,7 +4084,7 @@ it("leaves the playhead where the editor scrubbed it, away from an open call's l
   await act(async () => usePlayerStore.getState().setTime(3));
   await workingCutMoves(0.2, 1.2);
   await act(async () => {});
-  expect(onVideo()).toBe("Showing cut at 0:10 · 3 of 3 · After");
+  expect(onVideo()).toBe("Showing cut at 0:10 · 3 of 3 · 剪辑后");
   expect(usePlayerStore.getState().time).toBe(3);
 });
 
@@ -4101,13 +4101,13 @@ it("leaves a waiting call unmarked and unplayed once footage inside it is gone f
   const listens = listen.mock.calls.length;
   await openCall("Breath before the price.");
   // Its card is up. Nothing is shaded or played in its place, and nothing on the video says it is.
-  expect(call().querySelector(".edit-card-count")?.textContent).toBe("Cut 2");
+  expect(call().querySelector(".edit-card-count")?.textContent).toBe("剪点 2");
   expect(container.querySelector(".simple-timeline-band")).toBeNull();
   expect(onVideo()).toBeUndefined();
   // There is nothing to play it on, so its icon is off and \ does nothing.
   expect(call().querySelector<HTMLButtonElement>(".edit-card-before")!.disabled).toBe(true);
   await press("\\");
-  expect(beforeIcon(call())).toEqual(["", "Before", "false", "Play Before (\\)"]);
+  expect(beforeIcon(call())).toEqual(["", "剪辑前", "false", "播放剪辑前 (\\)"]);
   expect(listen).toHaveBeenCalledTimes(listens);
   // Its words are read on the pass's own version, which still has its footage.
   expect(await callWords()).toEqual(footage(stagedOn, STAGED[1]!));
@@ -4194,7 +4194,7 @@ it("places no call by the pass's own clock while the pass's version can't be loa
   const listens = listen.mock.calls.length;
   await openCall("Repeated aside.");
   // The card is up, with nothing shaded or played. Opening it asked for the pass's version again, once.
-  expect(call().querySelector(".edit-card-count")?.textContent).toBe("Cut 3");
+  expect(call().querySelector(".edit-card-count")?.textContent).toBe("剪点 3");
   expect(container.querySelector(".simple-timeline-band")).toBeNull();
   expect(listen).toHaveBeenCalledTimes(listens);
   expect(version).toHaveBeenCalledTimes(2);
@@ -4258,9 +4258,9 @@ it("offers Retry transcript on a call's words when the pass's version can't be l
   await click(call().querySelector(".edit-card-words")!);
   const passage = () => call().querySelector<HTMLElement>(":scope > .thread-passage.is-call")!;
   // There is nothing to read the words on. The passage says so with the control a cut's words have, and why on hover.
-  expect([passage().querySelector(".edit-passage-wait"), buttonIn(passage(), "Retry transcript")?.title]).toEqual([null, "The engine is restarting."]);
+  expect([passage().querySelector(".edit-passage-wait"), buttonIn(passage(), "重试加载转写稿")?.title]).toEqual([null, "The engine is restarting."]);
   // Asking again brings the version in: the words are read, and the call is marked where its footage sits.
-  await click(buttonIn(passage(), "Retry transcript")!);
+  await click(buttonIn(passage(), "重试加载转写稿")!);
   for (let i = 0; i < 4; i++) await act(async () => {});
   expect(version).toHaveBeenCalledTimes(3);
   expect([passage().querySelector('[title="The engine is restarting."]'), !!passage().querySelector('[aria-label="Words this cut removes"]')]).toEqual([null, true]);
@@ -4279,7 +4279,7 @@ it("closes a call when the next part decides its range again", async () => {
   expect(call()).toBeNull();
   expect(onVideo()).toBeUndefined();
   expect(container.querySelector(".simple-timeline-band")).toBeNull();
-  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("3 need you");
+  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("3 项待审阅");
 });
 
 it("closes a call when its pass is applied", async () => {
@@ -4313,11 +4313,11 @@ it("closes a call rather than moving it onto another request's pass", async () =
   await show();
   await act(async () => {});
   // Each request marks its own pass's call. The one about the earlier pass leaves the pass on screen alone.
-  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("2 need you");
+  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("2 项待审阅");
   await event(d => ({ ...d, tasks: d.tasks.filter(t => t.id !== "task_queued_revision") }));
-  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("3 need you");
+  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("3 项待审阅");
   await openCall("Repeated aside.");
-  expect(onVideo()).toBe("Showing cut at 0:11 · 3 of 3 · After");
+  expect(onVideo()).toBe("Showing cut at 0:11 · 3 of 3 · 剪辑后");
   // The pass on screen is applied, and the earlier one is the pass that waits now. The card doesn't move onto its cut.
   await act(async () => {
     data = { ...data, changes: data.changes.map(c => c.id === "chg_ready" ? { ...c, state: "approved" as const, appliedVersion: c.toVersion } : c),
@@ -4328,7 +4328,7 @@ it("closes a call rather than moving it onto another request's pass", async () =
   // The earlier pass's one call was sent back by its own request, and by no other.
   expect(turnFor("chg_other_pass").querySelector(".simple-review-tab-count")).toBeNull();
   await event(d => ({ ...d, tasks: d.tasks.filter(t => t.id !== "task_other_revision") }));
-  expect(turnFor("chg_other_pass").querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 needs you");
+  expect(turnFor("chg_other_pass").querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 项待审阅");
   expect(call()).toBeNull();
   expect(onVideo()).toBeUndefined();
 });
@@ -4343,7 +4343,7 @@ it("marks the right call Revising… when its revision named an earlier part who
   await nextPart({ cutReasons: [...PAIR, STAGED[1]!, STAGED[2]!, { start: 14, end: 15, reason: "A cough." }] });
   await act(async () => {});
   await click(passCard().querySelector(".simple-pass-need")!);
-  expect(passRows().find(r => r.textContent?.includes("Repeated aside."))!.querySelector(".simple-pass-value")?.textContent).toBe("Revising…");
+  expect(passRows().find(r => r.textContent?.includes("Repeated aside."))!.querySelector(".simple-pass-value")?.textContent).toBe("正在修改…");
   expect(passRows().find(r => r.textContent?.includes("Breath before the price."))!.querySelector(".simple-pass-value")).toBeNull();
 });
 
@@ -4371,7 +4371,7 @@ it("leaves a revision aimed at an applied pass's cut where it is when the reques
     useProjectStore.setState({ current: data });
   });
   await act(async () => {});
-  expect(turnFor("chg_second_pass").querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 needs you");
+  expect(turnFor("chg_second_pass").querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 项待审阅");
   expect(target()).toContain("Revising the cut at 0:11");
   expect(useUiStore.getState().agentContext).toMatchObject({ changeId: "chg_ready", cutIndex: 2, time: 11, end: 12 });
 });
@@ -4383,7 +4383,7 @@ it("follows the call's cut when the next part applies a cut that ends exactly wh
   await openCall("Repeated aside.");
   await nextPart({ cutReasons: [STAGED[0]!, STAGED[1]!, { ...STAGED[2]!, start: 10, end: 11 }] }, [{ start: 10, end: 11, reason: "Dead air." }]);
   await act(async () => {});
-  expect(onVideo()).toBe("Showing cut at 0:10 · 3 of 3 · After");
+  expect(onVideo()).toBe("Showing cut at 0:10 · 3 of 3 · 剪辑后");
   await press("a");
   expect(save).toHaveBeenLastCalledWith("chg_ready_part2", expect.objectContaining({ choices: [{ index: 2, choice: "cut" }] }));
 });
@@ -4484,7 +4484,7 @@ it("lists the queue in the order it will run while one call is revised, and says
   await event(d => ({ ...d, changes: d.changes.map(c => c.id === "chg_ready" ? { ...c, state: "ready" as const } : c),
     tasks: d.tasks.map(t => t.id === "task_revise" ? { ...t, state: "done" as const, finishedAt: at(3000) } : t.id === "task_note" ? { ...t, state: "running" as const, startedAt: at(3000) } : t) }));
   const line = () => [tray().querySelector(".queue-row")?.textContent, tray().getAttribute("title")];
-  const held = ["Waits for your callsAdd a lower third with my name.", "Starts once you’ve made your calls on the dialogue pass"];
+  const held = ["Waits for your callsAdd a lower third with my name.", "确认口播粗剪建议后开始"];
   expect(line()).toEqual(held);
   // The note saves its cut, so the pass comes back under the note's own run. It waits on the editor as it did before:
   // the line doesn't turn to Next for as long as the note still runs (2026-11-09).
@@ -4499,7 +4499,7 @@ it("doesn't say a queued request waits for the calls once they're all made and S
   idle();
   const at = (ms: number) => new Date(Date.now() + ms).toISOString();
   // Every call is made. Applying found the first cut's footage changed, so Scarlet rechecks it, and the pass goes in
-  // after (2026-11-14: the tray said "Waits for your calls" with nothing left to call).
+  // after (2026-11-14: the tray said "等待你确认剪点" with nothing left to call).
   const recheck = callRequest("task_recheck", 0, { kind: "revise" as const, state: "running" as const, createdAt: at(0), startedAt: at(0),
     createdBy: { type: "scarlet" as const, name: "Scarlet" }, cutConflict: { version: "v_head", approved: true as const } });
   const base = data.tasks.find(t => t.id === "task_done")!;
@@ -4511,8 +4511,8 @@ it("doesn't say a queued request waits for the calls once they're all made and S
   await show();
   await act(async () => {});
   const tray = container.querySelector<HTMLElement>('[aria-label="Queued requests"]')!;
-  expect(tray.textContent).not.toContain("Waits for your calls");
-  expect(tray.getAttribute("title")).toBe("Starts when Scarlet finishes what it’s on");
+  expect(tray.textContent).not.toContain("等待你确认剪点");
+  expect(tray.getAttribute("title")).toBe("Scarlet 完成当前任务后开始");
   // Nothing of the editor's holds it, so it has no mark to start it before the calls.
   expect(tray.querySelector('[aria-label="Start now, before your calls"], [title="Start now, before your calls"]')).toBeNull();
 });
@@ -4569,10 +4569,10 @@ it("shows a pass's calls, and the suggestion its run left after them, while they
   // and the queued request says what it waits for.
   const unit = () => container.querySelector<HTMLElement>(".simple-pin .unit")!;
   const passCard = () => unit().querySelector<HTMLElement>(".simple-pass")!;
-  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("3 need you");
+  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("3 项待审阅");
   expect(container.querySelectorAll('.simple-timeline-mark[data-state="check"]').length).toBe(3);
   const tray = container.querySelector<HTMLElement>('[aria-label="Queued requests"]')!;
-  expect(tray.getAttribute("title")).toBe("Starts once you’ve made your calls on the dialogue pass");
+  expect(tray.getAttribute("title")).toBe("确认口播粗剪建议后开始");
   // The tray's line says so where Next would be: the request doesn't start until the calls are made.
   expect(tray.querySelector(".queue-head")?.textContent).toBe("Waits for your calls/frame-screen2 queued");
   expect(tray.querySelector(".queue-next")?.classList.contains("is-waiting")).toBe(true);
@@ -4588,11 +4588,11 @@ it("shows a pass's calls, and the suggestion its run left after them, while they
   // The suggestion is in the chat with its way to play it, and playing it leaves the calls where they were.
   expect(unit().querySelector(".req-said")?.textContent).toContain("Show the host camera full-frame for the intro.");
   await click(unit().querySelector(".simple-suggest")!);
-  expect(container.querySelector('.edit-card[aria-label="Suggestion"]')).not.toBeNull();
-  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("3 need you");
+  expect(container.querySelector('.edit-card[aria-label="剪辑建议"]')).not.toBeNull();
+  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("3 项待审阅");
   await press("Escape");
-  expect(container.querySelector('[aria-label="Suggestion"]')).toBeNull();
-  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("3 need you");
+  expect(container.querySelector('[aria-label="剪辑建议"]')).toBeNull();
+  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("3 项待审阅");
 });
 
 it("scrolls a pinned pass's calls below its heading and above the message box", async () => {
@@ -4602,7 +4602,7 @@ it("scrolls a pinned pass's calls below its heading and above the message box", 
     await act(async () => {});
     const pin = container.querySelector<HTMLElement>(".simple-pin")!;
     const list = pin.querySelector<HTMLElement>(".simple-pass-list")!;
-    expect([list.getAttribute("aria-label"), list.children.length]).toEqual(["Calls that need you", 3]);
+    expect([list.getAttribute("aria-label"), list.children.length]).toEqual(["待确认的剪点", 3]);
     expect(styled(pin, "display", "flex-direction")).toEqual(["flex", "column"]);
     expect(styled(list, "max-height", "overflow-y")).toEqual(["none", "auto"]);
   });
@@ -4618,15 +4618,15 @@ it("leaves a waiting pass its calls and its place above the message box while a 
   const need = () => unit()?.querySelector(".simple-pass-need")?.getAttribute("title");
   const callRows = () => [...unit()!.querySelectorAll<HTMLButtonElement>(".simple-pass-list > li > button")];
   const play = async () => { await click(unit()!.querySelector(".simple-suggest")!); await act(async () => {}); };
-  const strip = () => container.querySelector<HTMLElement>('[aria-label="Suggestion"]');
+  const strip = () => container.querySelector<HTMLElement>('[aria-label="剪辑建议"]');
   const callDots = () => container.querySelectorAll('.simple-timeline-mark[data-state="check"]').length;
-  expect([need(), callDots()]).toEqual(["3 need you", 3]);
+  expect([need(), callDots()]).toEqual(["3 项待审阅", 3]);
 
   // The suggestion plays in the card on top of the timeline. The pass is where it was: above the message box, saying
   // "3 need you", with its three calls listed. Its suggestion's line is lit.
   await play();
   expect(strip()?.querySelector(".edit-card-title")?.textContent).toBe("Show the host camera full-frame for the intro.");
-  expect(need()).toBe("3 need you");
+  expect(need()).toBe("3 项待审阅");
   expect(callRows().map(r => [r.querySelector(".edit-badge")?.textContent, r.querySelector(".simple-pass-label")?.textContent]))
     .toEqual([["1", "A clean retake."], ["2", "Breath before the price."], ["3", "Repeated aside."]]);
   expect(unit()!.querySelector(".simple-suggest")?.getAttribute("aria-pressed")).toBe("true");
@@ -4646,12 +4646,12 @@ it("leaves a waiting pass its calls and its place above the message box while a 
   // Esc closes the suggestion, and the calls' dots are back on the timeline.
   await play();
   await press("Escape");
-  expect([strip(), need(), callDots()]).toEqual([null, "3 need you", 3]);
+  expect([strip(), need(), callDots()]).toEqual([null, "3 项待审阅", 3]);
   // Apply (A) on its card applies the suggestion and never the pass, whose calls still wait.
   await play();
   await press("a");
   expect(approve.mock.calls).toEqual([["chg_reframe", undefined, undefined]]);
-  expect([strip(), need()]).toEqual([null, "3 need you"]);
+  expect([strip(), need()]).toEqual([null, "3 项待审阅"]);
 });
 
 it("plays another request's suggestion over a waiting pass: Revise is the suggestion's, and “N need you” goes back to the calls", async () => {
@@ -4670,15 +4670,15 @@ it("plays another request's suggestion over a waiting pass: Revise is the sugges
   await show();
   await act(async () => {});
   const need = () => container.querySelector<HTMLElement>(".simple-pin .unit .simple-pass-need");
-  const strip = () => container.querySelector<HTMLElement>('[aria-label="Suggestion"]');
+  const strip = () => container.querySelector<HTMLElement>('[aria-label="剪辑建议"]');
   expect(threadWith("chg_third").id).not.toBe(threadWith("chg_ready").id);
   await click(suggestion("chg_third"));
   await act(async () => {});
   // The suggestion plays, and the pass still holds the place above the message box with its count.
-  expect([strip()?.querySelector(".edit-card-title")?.textContent, need()?.getAttribute("title")]).toEqual(["A lower third with your name over the intro.", "3 need you"]);
+  expect([strip()?.querySelector(".edit-card-title")?.textContent, need()?.getAttribute("title")]).toEqual(["A lower third with your name over the intro.", "3 项待审阅"]);
   // Revise (R) is about what is in the player: the message box turns to the suggestion, in the request that left it.
   await press("r");
-  expect(useUiStore.getState().agentContext).toMatchObject({ changeId: "chg_third", label: "Suggestion" });
+  expect(useUiStore.getState().agentContext).toMatchObject({ changeId: "chg_third", label: "剪辑建议" });
   expect(useUiStore.getState().draftOwner).toBe(JSON.stringify([PRJ, threadWith("chg_third").id]));
   // "3 need you" reaches the first call, as it does with nothing playing: the suggestion closes and the call's card opens.
   await click(need()!);
@@ -4696,7 +4696,7 @@ it("keeps a second call Revising… when the first revised cut comes back, and d
   await event(d => ({ ...d, changes: d.changes.map(c => c.id === "chg_ready" ? { ...c, state: "revising" as const } : c) }));
   // They send the aside back too. That request waits in the queue and names the pass it saw.
   await event(d => ({ ...d, tasks: [...d.tasks, callRequest("task_queued_revision", 2, { kind: "edit" as const, instruction: "Keep the aside." })] }));
-  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 needs you");
+  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 项待审阅");
   // The first cut comes back revised, as a new proposal. The pass it replaces stays "revising" and is never marked replaced.
   const old = data.changes.find(c => c.id === "chg_ready")!;
   const revised = { ...old, id: "chg_revised", state: "ready" as const, taskId: "task_revise", toVersion: "ver_revised", createdAt: new Date().toISOString(),
@@ -4708,10 +4708,10 @@ it("keeps a second call Revising… when the first revised cut comes back, and d
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === "task_revise" ? { ...t, state: "done" as const, finishedAt: new Date().toISOString() } : t) }));
   await act(async () => {});
   // The aside still waits on Scarlet: no amber dot, and it can't be opened.
-  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("2 need you");
+  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("2 项待审阅");
   await click(passCard().querySelector(".simple-pass-need")!);
   const aside = passRows().find(r => r.textContent?.includes("Repeated aside."))!;
-  expect(aside.querySelector(".simple-pass-value")?.textContent).toBe("Revising…");
+  expect(aside.querySelector(".simple-pass-value")?.textContent).toBe("正在修改…");
   expect(aside.querySelector(".simple-pass-time.is-need")).toBeNull();
   expect(aside.disabled).toBe(true);
   // The editor makes the two calls that are theirs. The pass still waits for the aside's revision before it applies.
@@ -4740,15 +4740,15 @@ it("shows Scarlet on two calls at once: each row has its own actions, alongside 
   expect(document.querySelector(".queue-row")).toBeNull();
   // Pause sits with Stop at the right of each request Scarlet has. Nothing sits over the message box.
   expect(container.querySelector(".queue-tray")).toBeNull();
-  expect([...container.querySelectorAll(".subunit .unit-pause-edit")].map(b => b.getAttribute("aria-label"))).toEqual(["Pause editing", "Pause editing"]);
+  expect([...container.querySelectorAll(".subunit .unit-pause-edit")].map(b => b.getAttribute("aria-label"))).toEqual(["暂停剪辑", "暂停剪辑"]);
   // The pass's heading says how many Scarlet is on, beside what still needs the editor.
   const word = block().querySelector(".unit-msg .unit-word")!;
   expect(word.textContent).toBe("Working on 2 at once");
   expect(word.getAttribute("title")).toBe("Scarlet is working on 2 cuts or edits at the same time.");
-  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 needs you");
+  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 项待审阅");
   // Each call has its own menu under its row.
   const working = [...passCard().querySelectorAll(".simple-pass-value.working-text")];
-  expect(working.map(el => el.textContent)).toEqual(["Revising…", "Revising…"]);
+  expect(working.map(el => el.textContent)).toEqual(["正在修改…", "正在修改…"]);
   const under = [...passCard().querySelectorAll<HTMLElement>(".subunit")];
   expect(under.map(el => el.dataset.run)).toEqual(["task_revise", "task_aside"]);
   expect(under.map(el => el.querySelector(".unit-stop-edit")?.getAttribute("aria-haspopup"))).toEqual([null, null]);
@@ -4770,7 +4770,7 @@ it("keeps a call Revising… when it comes back revised while a second note on i
   await event(d => ({ ...d, tasks: [...d.tasks, callRequest("task_revise", 0, { kind: "revise" as const, state: "running" as const, startedAt: new Date().toISOString() })] }));
   await event(d => ({ ...d, changes: d.changes.map(c => c.id === "chg_ready" ? { ...c, state: "revising" as const } : c) }));
   await event(d => ({ ...d, tasks: [...d.tasks, callRequest("task_second_note", 0, { kind: "edit" as const, instruction: "And keep the breath." })] }));
-  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("2 need you");
+  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("2 项待审阅");
   // The cut comes back revised, somewhere else. The second note is about it still.
   const old = data.changes.find(c => c.id === "chg_ready")!;
   const revised = { ...old, id: "chg_revised", state: "ready" as const, taskId: "task_revise", toVersion: "ver_revised", createdAt: new Date().toISOString(),
@@ -4778,10 +4778,10 @@ it("keeps a call Revising… when it comes back revised while a second note on i
     cutAssessments: old.cutAssessments!.map(a => a.index === 0 ? { index: 0, start: 1.5, end: 3, verdict: "ask" as const, reason: "Starts in the pause." } : a) };
   await event(d => ({ ...d, changes: [...d.changes, revised], tasks: d.tasks.map(t => t.id === "task_revise" ? { ...t, state: "done" as const, finishedAt: new Date().toISOString(), changeIds: [revised.id] } : t) }));
   await act(async () => {});
-  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("2 need you");
+  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("2 项待审阅");
   await click(passCard().querySelector(".simple-pass-need")!);
   const row = passRows().find(r => r.textContent?.includes("Starts in the pause."))!;
-  expect(row.querySelector(".simple-pass-value")?.textContent).toBe("Revising…");
+  expect(row.querySelector(".simple-pass-value")?.textContent).toBe("正在修改…");
   expect(row.disabled).toBe(true);
   // The two calls that are the editor's don't apply the pass over it.
   await click(passRows().find(r => !r.disabled)!);
@@ -4832,10 +4832,10 @@ it("keeps a call Revising… when a request that waited its turn revised it and 
   await runPasses("task_note1", "task_note2");
   await act(async () => {});
   // The second note is about that cut still: it waits on Scarlet, and the pass doesn't apply over it.
-  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("2 need you");
+  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("2 项待审阅");
   await click(passCard().querySelector(".simple-pass-need")!);
   const row = passRows().find(r => r.textContent?.includes("Starts in the pause."))!;
-  expect(row.querySelector(".simple-pass-value")?.textContent).toBe("Revising…");
+  expect(row.querySelector(".simple-pass-value")?.textContent).toBe("正在修改…");
   expect(row.disabled).toBe(true);
   await click(passRows().find(r => !r.disabled)!);
   await press("a");
@@ -4861,7 +4861,7 @@ it("keeps the right call Revising… when a part gave it a new number before a w
   await click(passCard().querySelector(".simple-pass-need")!);
   const aside = passRows().find(r => r.textContent?.includes("The aside, from the breath."))!;
   const other = passRows().find(r => r.textContent?.includes("A second try at the line."))!;
-  expect([aside.querySelector(".simple-pass-value")?.textContent, aside.disabled]).toEqual(["Revising…", true]);
+  expect([aside.querySelector(".simple-pass-value")?.textContent, aside.disabled]).toEqual(["正在修改…", true]);
   expect([other.querySelector(".simple-pass-value")?.textContent ?? null, other.disabled]).toEqual([null, false]);
 });
 
@@ -4881,7 +4881,7 @@ it("keeps a request about a cut on the cut that takes in most of its footage whe
   await passEnds("chg_ready_part2", cuts, "task_note1");
   await click(passCard().querySelector(".simple-pass-need")!);
   const marked = (reason: string) => { const row = passRows().find(r => r.textContent?.includes(reason))!; return [row.querySelector(".simple-pass-value")?.textContent ?? null, row.disabled]; };
-  expect(marked("Only the aside itself.")).toEqual(["Revising…", true]);
+  expect(marked("Only the aside itself.")).toEqual(["正在修改…", true]);
   expect(marked("The breath.")).toEqual([null, false]);
   expect(marked("The click after it.")).toEqual([null, false]);
   // The calls that are the editor's don't apply the pass over the note.
@@ -4906,7 +4906,7 @@ it("finds the footage a waiting request named where it sits after a part applied
   await passEnds("chg_ready_part2", cuts, "task_note1");
   await click(passCard().querySelector(".simple-pass-need")!);
   const marked = (reason: string) => { const row = passRows().find(r => r.textContent?.includes(reason))!; return [row.querySelector(".simple-pass-value")?.textContent ?? null, row.disabled]; };
-  expect(marked("Only the breath itself.")).toEqual(["Revising…", true]);
+  expect(marked("Only the breath itself.")).toEqual(["正在修改…", true]);
   expect(marked("A line that came in late.")).toEqual([null, false]);
 });
 
@@ -4920,7 +4920,7 @@ it("marks no call for a request about footage the pass no longer stages, though 
   await nextPart({ cutReasons: cuts });
   await act(async () => {});
   await passEnds("chg_ready_part2", cuts, "task_note1");
-  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("3 need you");
+  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("3 项待审阅");
   await click(passCard().querySelector(".simple-pass-need")!);
   expect(passRows().map(r => [r.querySelector(".simple-pass-value")?.textContent ?? null, r.disabled])).toEqual([[null, false], [null, false], [null, false]]);
 });
@@ -4976,13 +4976,13 @@ it("keeps a call Revising… when its revision named an earlier part and a later
   useProjectStore.setState({ current: data });
   await show();
   await act(async () => {});
-  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("2 need you");
+  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("2 项待审阅");
   await nextPart({ cutReasons: [STAGED[0]!, { ...STAGED[1]!, start: 4.5, end: 5.5 }, { ...STAGED[2]!, start: 9.5, end: 10.5 }] }, [{ start: 4, end: 5.5, reason: "Dead air." }]);
   await act(async () => {});
-  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("2 need you");
+  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("2 项待审阅");
   await click(passCard().querySelector(".simple-pass-need")!);
   const row = passRows().find(r => r.textContent?.includes("Repeated aside."))!;
-  expect(row.querySelector(".simple-pass-value")?.textContent).toBe("Revising…");
+  expect(row.querySelector(".simple-pass-value")?.textContent).toBe("正在修改…");
   expect(row.querySelector(".simple-pass-time.is-need")).toBeNull();
 });
 
@@ -5015,7 +5015,7 @@ it("keeps the call on screen on its cut when the pass saves its next part after 
   await show();
   await act(async () => {});
   await openCall("Repeated aside.");
-  expect(onVideo()).toBe("Showing cut at 0:11 · 3 of 3 · After");
+  expect(onVideo()).toBe("Showing cut at 0:11 · 3 of 3 · 剪辑后");
   const card = call();
   await crossfadesBetweenParts();
   await partAfterCrossfades();
@@ -5023,7 +5023,7 @@ it("keeps the call on screen on its cut when the pass saves its next part after 
   // The card stays open on the same cut, now the fourth, and Skip still means it.
   expect(call()).toBe(card);
   expect(call().querySelector(".edit-card-title")?.textContent).toBe("Repeated aside.");
-  expect(onVideo()).toBe("Showing cut at 0:11 · 4 of 4 · After");
+  expect(onVideo()).toBe("Showing cut at 0:11 · 4 of 4 · 剪辑后");
   await press("s");
   expect(save).toHaveBeenLastCalledWith("chg_ready_part2", expect.objectContaining({ fromVersion: "ver_fades", choices: [{ index: 3, choice: "keep" }] }));
 });
@@ -5041,16 +5041,16 @@ it("keeps a call Revising… and its number when its revision named the part bef
   await act(async () => {});
   const tag = () => [...container.querySelectorAll<HTMLElement>(".queue-row, .queue-head")].find(r => r.textContent?.includes("Keep the aside."))
     ?.querySelector(".queue-target")?.textContent;
-  expect(tag()).toBe("Cut 3");
+  expect(tag()).toBe("剪点 3");
   await crossfadesBetweenParts();
   await partAfterCrossfades();
   await act(async () => {});
   // The aside is the fourth call now. It still waits on Scarlet, not the editor, and can't be opened from the list.
-  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("3 need you");
-  expect(tag()).toBe("Cut 4");
+  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("3 项待审阅");
+  expect(tag()).toBe("剪点 4");
   await click(passCard().querySelector(".simple-pass-need")!);
   const row = passRows().find(r => r.textContent?.includes("Repeated aside."))!;
-  expect([row.querySelector(".simple-pass-value")?.textContent, row.disabled]).toEqual(["Revising…", true]);
+  expect([row.querySelector(".simple-pass-value")?.textContent, row.disabled]).toEqual(["正在修改…", true]);
 });
 
 it("marks a call Revising… in the need-you list once its revision is queued behind the running pass", async () => {
@@ -5067,19 +5067,19 @@ it("marks a call Revising… in the need-you list once its revision is queued be
   useProjectStore.setState({ current: data });
   await show();
   await act(async () => {});
-  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("2 need you");
+  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("2 项待审阅");
   // The editor revises the call at 3:50 while the pass still runs, so the request waits in the queue.
   const base = data.tasks.find(t => t.id === "task_done")!;
   data = { ...data, tasks: [...data.tasks, { ...base, id: "task_queued_revision", kind: "edit" as const, state: "queued" as const,
     startedAt: undefined, finishedAt: undefined, summary: null, changeIds: [], instruction: "Keep the breath.", createdAt: new Date().toISOString(),
     context: { threadId, changeId: "chg_ready", cutIndex: 1, time: 230, end: 233, message: "Keep the breath." } }] };
   await act(async () => { useProjectStore.setState({ current: data }); });
-  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 needs you");
+  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 项待审阅");
   // It stays in the "need you" list, marked Revising…, beside the call that still waits.
   await click(passCard().querySelector(".simple-pass-need")!);
   expect(passRows().map(r => r.querySelector(".simple-pass-label")?.textContent).sort()).toEqual(["Breath before the price.", "Repeated aside."].sort());
   const row = passRows().find(r => r.textContent?.includes("Breath before the price."))!;
-  expect(row.querySelector(".simple-pass-value")?.textContent).toBe("Revising…");
+  expect(row.querySelector(".simple-pass-value")?.textContent).toBe("正在修改…");
   // Its number is no longer amber: it waits on Scarlet now. The call that still waits keeps its amber number.
   expect(passRows().map(r => r.querySelector(".edit-badge")?.classList.contains("is-check"))).toEqual(passRows().map(r => r !== row));
   expect(row.disabled).toBe(true);
@@ -5299,8 +5299,8 @@ it("hands an interrupted pass's unchecked cuts to the editor, and takes them bac
   await show();
   await act(async () => {});
   // The calls it had before the quit are still the editor's, and nothing offers to apply the unchecked cuts.
-  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("2 need you");
-  expect(buttonIn(passCard(), "Apply")).toBeFalsy();
+  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("2 项待审阅");
+  expect(buttonIn(passCard(), "应用")).toBeFalsy();
   // The pass carries on under a new run. A revision sent before the quit named an earlier part of the pass.
   const base = data.tasks.find(t => t.id === "task_done")!;
   const queued = { ...base, state: "queued" as const, interrupted: undefined, error: undefined, startedAt: undefined, finishedAt: undefined, summary: null, changeIds: [] };
@@ -5313,7 +5313,7 @@ it("hands an interrupted pass's unchecked cuts to the editor, and takes them bac
   // sent back is with Scarlet too: nothing waits on the editor.
   expect(passCard().querySelector(".simple-review-tab-count")).toBeNull();
   const row = passRows().find(r => r.textContent?.includes("Breath before the price."))!;
-  expect(row.querySelector(".simple-pass-value")?.textContent).toBe("Revising…");
+  expect(row.querySelector(".simple-pass-value")?.textContent).toBe("正在修改…");
   expect(passRows().some(r => r.textContent?.includes("Repeated aside."))).toBe(false);
 });
 
@@ -5331,7 +5331,7 @@ it("keeps a pass's other calls open while Scarlet revises one of them, and waits
   await show();
   await act(async () => {});
   // The cut under revision leaves the calls. The other one stays open.
-  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 needs you");
+  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 项待审阅");
   // The revision sits directly under the call it revises, named by that call's number among the pass's calls, with
   // the editor's words and Scarlet at work on it. It is no block of its own in the conversation.
   const under = passRows()[0]!.closest("li")!.querySelector<HTMLElement>(".subunit")!;
@@ -5340,17 +5340,17 @@ it("keeps a pass's other calls open while Scarlet revises one of them, and waits
   expect(under.querySelector('[aria-label="Scarlet’s work"]')).not.toBeNull();
   expect(units().map(u => u.dataset.run)).not.toContain("task_revise");
   // Its row's word moves while Scarlet is on it.
-  expect([passRows()[0]!.querySelector(".simple-pass-value")?.textContent, passRows()[0]!.querySelector(".simple-pass-value")?.classList.contains("working-text")]).toEqual(["Revising…", true]);
+  expect([passRows()[0]!.querySelector(".simple-pass-value")?.textContent, passRows()[0]!.querySelector(".simple-pass-value")?.classList.contains("working-text")]).toEqual(["正在修改…", true]);
   expect(passCard().querySelector(".simple-pass-quiet")).toBeNull();
   await reviewCalls();
   // It is numbered among all the pass's calls, the one with Scarlet included, as its row in the list is.
-  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing cut at 9:58 · 2 of 2 · After");
+  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing cut at 9:58 · 2 of 2 · 剪辑后");
   await press("a");
   expect(save).toHaveBeenLastCalledWith("chg_ready", expect.objectContaining({ choices: [{ index: 2, choice: "cut" }] }));
   // That was the last open call, but the revised cut comes back as a new one, so nothing applies yet.
   expect(approve).not.toHaveBeenCalled();
   expect(passCard().querySelector(".simple-review-tab-count")).toBeNull();
-  expect(buttonIn(passCard(), "Apply")).toBeUndefined();
+  expect(buttonIn(passCard(), "应用")).toBeUndefined();
 });
 
 it("marks a revised call v2 in the list and in its card, with the earlier version on hover", async () => {
@@ -5415,7 +5415,7 @@ it("says what the requests about a cut took on the hover of the word its row end
   // Decided, the word changes and says the same.
   await click(passRows()[1]!);
   await press("a");
-  expect([word().textContent, word().getAttribute("title")]).toEqual(["Approved", "42s · 1.1M tokens"]);
+  expect([word().textContent, word().getAttribute("title")]).toEqual(["已批准", "42s · 1.1M tokens"]);
   await act(async () => useUiStore.getState().setShowRunTokens(shown));
 });
 
@@ -5460,7 +5460,7 @@ it("waits for a staged revision to finish while the editor decides the other cal
   await event(d => ({ ...d, changes: d.changes.map(c => c.id === "chg_ready" ? { ...c, state: "revising" as const } : c) }));
   await revisedCut("task_revise", "chg_ready", 0, { start: 1.5, end: 3 }, "Starts in the pause.");
   await act(async () => {});
-  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("2 need you");
+  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("2 项待审阅");
   await click(passCard().querySelector(".simple-pass-need")!);
   await press("a");
   await press("a");
@@ -5468,7 +5468,7 @@ it("waits for a staged revision to finish while the editor decides the other cal
     choices: [1, 2].map(index => ({ index, choice: "cut" })) }));
   expect(approve).not.toHaveBeenCalled();
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === "task_revise" ? { ...t, state: "done" as const } : t) }));
-  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 needs you");
+  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 项待审阅");
   await reviewCalls();
   expect(call().querySelector(".edit-card-title")?.textContent).toBe("Starts in the pause.");
   await press("a");
@@ -5493,7 +5493,7 @@ it("draws a pass's rows and any other request's rows as one row, and a revised e
     await act(async () => {});
     await click(passToggle());
     await act(async () => {});
-    await click(buttonIn(turnFor("chg_later"), "See edit")!);
+    await click(buttonIn(turnFor("chg_later"), "查看剪辑")!);
     const pass = turnFor("chg_approved_2").querySelector<HTMLElement>(".simple-pass-list")!, edits = turnFor("chg_later").querySelector<HTMLElement>(".simple-edits")!;
     // Both are lists, a row to an item.
     expect([pass.tagName, edits.tagName]).toEqual(["OL", "OL"]);
@@ -5561,7 +5561,7 @@ it("lists a pass's edits that overlap as one moment, with its own edits under it
   await click(more());
   await click(momentRows()[2]!);
   await act(async () => {});
-  expect([editPanel()?.querySelector(".edit-card-length")?.textContent, momentRows()[2]!.getAttribute("aria-current")]).toEqual(["Zoom", "true"]);
+  expect([editPanel()?.querySelector(".edit-card-length")?.textContent, momentRows()[2]!.getAttribute("aria-current")]).toEqual(["缩放", "true"]);
   expect((useUiStore.getState().agentContext as AgentContext).momentEdits).toBeUndefined();
   await press("k");
   await act(async () => {});
@@ -5642,8 +5642,8 @@ it("says on a pass's row when its cut is being revised, kept or not, and that it
   // did, as a row in any other request's list does, until the editor keeps it (2026-11-10: the pass's rows said neither).
   // Each keeps the figure at its end, and the word follows it, as in that list.
   const stands = (label: string) => [...row(label).children].slice(-2).map(el => [el.className, el.textContent]);
-  expect(stands("captions")).toEqual([["simple-pass-value", "Audio"], ["simple-pass-check is-kept working-text", "Revising…"]]);
-  expect(stands("wrap")).toEqual([["simple-pass-value", "Audio"], ["simple-pass-check", "Revised"]]);
+  expect(stands("captions")).toEqual([["simple-pass-value", "Audio"], ["simple-pass-check is-kept working-text", "正在修改…"]]);
+  expect(stands("wrap")).toEqual([["simple-pass-value", "Audio"], ["simple-pass-check", "已修改"]]);
   expect(row("wrap").querySelector(".simple-pass-label small")?.textContent).toBe("v2");
   expect(row("music bed").querySelector(".simple-pass-check")).toBeNull();
 });
@@ -5727,7 +5727,7 @@ it("runs one request at a time: what Scarlet is on stays pinned above the messag
   expect(turns().some(t => t.textContent?.includes("Zoom into the browser window"))).toBe(false);
   const tray = container.querySelector<HTMLElement>('[aria-label="Queued requests"]')!;
   expect(tray.querySelector(".queue-head")?.textContent).toBe("NextZoom into the browser window during the demo.2 queued");
-  expect(tray.getAttribute("title")).toBe("Starts when Scarlet finishes what it’s on");
+  expect(tray.getAttribute("title")).toBe("Scarlet 完成当前任务后开始");
   // It opens into every queued request, each with a way to take it out of the queue.
   await click(tray.querySelector(".queue-head")!);
   expect([...tray.querySelectorAll(".queue-row")].map(r => r.textContent)).toEqual(["NextZoom into the browser window during the demo.", "Add a lower third with my name."]);
@@ -5738,7 +5738,7 @@ it("runs one request at a time: what Scarlet is on stays pinned above the messag
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === "task_title" ? { ...t, state: "cancelled" as const, hostId: null, finishedAt: new Date().toISOString() } : t) }));
   expect(container.querySelector('[aria-label="Queued requests"] .queue-row')?.textContent).toBe("NextZoom into the browser window during the demo.");
   expect(container.querySelector(".simple-thread")?.textContent).not.toContain("Add a lower third with my name.");
-  expect([...container.querySelectorAll(".simple-thread button")].some(b => b.textContent === "Resume")).toBe(false);
+  expect([...container.querySelectorAll(".simple-thread button")].some(b => b.textContent === "恢复")).toBe(false);
   // A request stopped after Scarlet began it is another matter: it stays, with its Resume.
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === "task_pass" ? { ...t, state: "cancelled" as const, finishedAt: new Date().toISOString() } : t) }));
   expect(turns().some(t => t.textContent?.includes("/dialogue-pass") && t.textContent.includes("Stopped"))).toBe(true);
@@ -5775,15 +5775,15 @@ it("steps through a pass's calls with ↑ and ↓, and Esc closes the call", asy
   await act(async () => {});
   // ↓ starts on the first call, and steps on from there. ↑ steps back.
   await press("ArrowDown");
-  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing cut at 3:50 · 1 of 2 · After");
+  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing cut at 3:50 · 1 of 2 · 剪辑后");
   await press("ArrowDown");
-  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing cut at 9:58 · 2 of 2 · After");
+  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing cut at 9:58 · 2 of 2 · 剪辑后");
   await press("ArrowUp");
-  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing cut at 3:50 · 1 of 2 · After");
+  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing cut at 3:50 · 1 of 2 · 剪辑后");
   await press("Escape");
-  expect(container.querySelector('[aria-label="Call"]')).toBeNull();
+  expect(container.querySelector('[aria-label="剪点"]')).toBeNull();
   expect(container.querySelector(".simple-on-video")).toBeNull();
-  expect(container.querySelector('[aria-label="Suggestion"]')).toBeNull();
+  expect(container.querySelector('[aria-label="剪辑建议"]')).toBeNull();
 });
 
 it("starts ↓ on the first call still waiting when nothing is open, and ↑ on the last, as need you does", async () => {
@@ -5794,21 +5794,21 @@ it("starts ↓ on the first call still waiting when nothing is open, and ↑ on 
   // The first call is approved, which opens the second. Esc closes it.
   await press("ArrowDown");
   await press("a");
-  expect(onVideo()).toBe("Showing cut at 9:58 · 2 of 2 · After");
+  expect(onVideo()).toBe("Showing cut at 9:58 · 2 of 2 · 剪辑后");
   await press("Escape");
-  expect(container.querySelector('[aria-label="Call"]')).toBeNull();
+  expect(container.querySelector('[aria-label="剪点"]')).toBeNull();
   // ↓ goes to the call that still waits, not back to the one already decided.
   await press("ArrowDown");
-  expect(onVideo()).toBe("Showing cut at 9:58 · 2 of 2 · After");
-  expect(call().querySelector(".edit-card-count")?.textContent).toBe("Cut 2");
+  expect(onVideo()).toBe("Showing cut at 9:58 · 2 of 2 · 剪辑后");
+  expect(call().querySelector(".edit-card-count")?.textContent).toBe("剪点 2");
   // From a call, the arrows still reach the one beside it, decided or not.
   await press("ArrowUp");
-  expect(onVideo()).toBe("Showing cut at 3:50 · 1 of 2 · After");
-  expect(buttonIn(call(), "Approve")?.getAttribute("aria-pressed")).toBe("true");
+  expect(onVideo()).toBe("Showing cut at 3:50 · 1 of 2 · 剪辑后");
+  expect(buttonIn(call(), "批准")?.getAttribute("aria-pressed")).toBe("true");
   // ↑ from nothing starts on the last call still waiting.
   await press("Escape");
   await press("ArrowUp");
-  expect(onVideo()).toBe("Showing cut at 9:58 · 2 of 2 · After");
+  expect(onVideo()).toBe("Showing cut at 9:58 · 2 of 2 · 剪辑后");
 });
 
 it("starts ↓ on the first call when every call is made and the pass hasn't applied yet", async () => {
@@ -5820,10 +5820,10 @@ it("starts ↓ on the first call when every call is made and the pass hasn't app
   await show();
   await act(async () => {});
   await press("ArrowDown");
-  expect(onVideo()).toBe("Showing cut at 3:50 · 1 of 2 · After");
+  expect(onVideo()).toBe("Showing cut at 3:50 · 1 of 2 · 剪辑后");
   await press("Escape");
   await press("ArrowUp");
-  expect(onVideo()).toBe("Showing cut at 9:58 · 2 of 2 · After");
+  expect(onVideo()).toBe("Showing cut at 9:58 · 2 of 2 · 剪辑后");
 });
 
 it("labels a length in seconds under a minute, as minutes and seconds above and with its hours from an hour, carrying a rounded 60", () => {
@@ -5900,11 +5900,11 @@ it("plays changed footage while the editor answers the question about that cut",
   useProjectStore.setState({ current: data });
   const listen = vi.spyOn(player, "audition");
   await show();
-  await click(buttonIn(container, "Answer")!);
-  expect(call().textContent).toContain("Needs your answer");
+  await click(buttonIn(container, "回答")!);
+  expect(call().textContent).toContain("等待你的回答");
   expect(onVideo()).toBe("Current passage at 0:08");
   expect(listen).toHaveBeenLastCalledWith({ start: 6, end: 12, skips: [] }, expect.any(Number));
-  expect(boxTag()).toBe("Answer");
+  expect(boxTag()).toBe("回答");
   expect(useUiStore.getState().agentContext).toBeNull();
   await click(transcriptLink());
   const words = call().querySelector('[aria-label="Words in the current passage"]')!;
@@ -5913,18 +5913,18 @@ it("plays changed footage while the editor answers the question about that cut",
   // A later trim moves the passage during the question. Answer on the open card plays the new location.
   const shifted = { ...applyOps(measured, [{ op: "rippleDelete", start: 2, end: 3 }]), version: "newer" };
   await event(d => ({ ...d, project: { ...d.project, head: shifted.version }, timeline: shifted }));
-  await click(call().querySelector('button[aria-label="Answer"]')!);
+  await click(call().querySelector('button[aria-label="回答"]')!);
   expect(listen).toHaveBeenLastCalledWith({ start: 5, end: 11, skips: [] }, expect.any(Number));
   expect(onVideo()).toBe("Current passage at 0:07");
-  expect(boxTag()).toBe("Answer");
+  expect(boxTag()).toBe("回答");
   // When Scarlet has no unique passage, the same card can still take the editor's answer without seeking.
   listen.mockClear();
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === question.id ? { ...t, cutConflict: { version: shifted.version } } : t) }));
-  await click(call().querySelector('button[aria-label="Answer"]')!);
+  await click(call().querySelector('button[aria-label="回答"]')!);
   expect(listen).not.toHaveBeenCalled();
   expect(onVideo()).toBeFalsy();
   expect(container.querySelector(".simple-timeline-band")).toBeNull();
-  expect(boxTag()).toBe("Answer");
+  expect(boxTag()).toBe("回答");
 });
 
 it("uses the reviewed footage and preview for a call revised on a newer timeline", async () => {
@@ -5942,7 +5942,7 @@ it("uses the reviewed footage and preview for a call revised on a newer timeline
   await reviewCalls();
   await click(passRow(STAGED[0]!.reason));
   expect(load.mock.calls.filter(([project, version]) => project === PRJ && version === preview.version)).toHaveLength(1);
-  expect(onVideo()).toBe("Showing cut at 0:08 · 1 of 3 · After");
+  expect(onVideo()).toBe("Showing cut at 0:08 · 1 of 3 · 剪辑后");
   expect(listen).toHaveBeenLastCalledWith({ start: 6, end: 13, skips: [{ ...range, removed: true }] }, expect.any(Number));
   expect(useUiStore.getState().agentContext).toMatchObject({ cutIndex: 0, version: before.version, time: 8, end: 10 });
   await click(call().querySelector(".edit-card-before")!);
@@ -5977,12 +5977,12 @@ it.each([false, true])("answers the carried cut after another part moved and ren
     tasks: d.tasks.map(t => t.id === request.id ? { ...t, state: "waiting_for_user" as const, question: "Keep the pickup?",
       cutConflict: { version: d.project.head!, range: { start: 8, end: 10 }, ...(savedIndex && { changeId: currentPass, index: 2 }) } }
       : t.id === "task_done" ? { ...t, state: "done" as const } : t) }));
-  await click(buttonIn(container, "Answer")!);
-  expect(call().querySelector(".edit-card-count")?.textContent).toBe("Cut 3");
+  await click(buttonIn(container, "回答")!);
+  expect(call().querySelector(".edit-card-count")?.textContent).toBe("剪点 3");
   expect(call().textContent).toContain(STAGED[1]!.reason);
   expect(onVideo()).toBe("Current passage at 0:08");
-  expect(boxTag()).toBe("Answer");
-  await click(call().querySelector('button[aria-label="Answer"]')!);
+  expect(boxTag()).toBe("回答");
+  await click(call().querySelector('button[aria-label="回答"]')!);
   expect(listen).toHaveBeenLastCalledWith({ start: 6, end: 12, skips: [] }, expect.any(Number));
   expect(useUiStore.getState().agentContext).toBeNull();
 });
@@ -5999,12 +5999,12 @@ it("revises just the applied edit that's showing, even with a pass waiting, and 
   const beforeTimeline = vi.spyOn(api, "timeline").mockResolvedValue({ timeline: { ...data.timeline!, version: "v_before" } } as never);
   const audition = vi.spyOn(player, "audition");
   await show();
-  await click(buttonIn(turnFor("chg_approved_2"), "See edit")!);
+  await click(buttonIn(turnFor("chg_approved_2"), "查看剪辑")!);
   await act(async () => {});
   // The edit on screen hides the pass that's waiting. Its chat row says how much came out, and so does the timeline.
-  expect(container.querySelector('[aria-label="Suggestion"]')).toBeNull();
+  expect(container.querySelector('[aria-label="剪辑建议"]')).toBeNull();
   const bar = editPanel()!;
-  expect(buttonIn(bar, "Apply")).toBeUndefined();
+  expect(buttonIn(bar, "应用")).toBeUndefined();
   expect(turnFor("chg_approved_2").querySelector(".simple-edit.is-on .simple-edit-value")?.textContent).toBe("−2.4 s");
   expect(container.textContent).toContain("Removed · 2.4 s");
   // It quotes what the cut took out, struck through, and plays on the version before it: the timeline shades what came out
@@ -6013,23 +6013,23 @@ it("revises just the applied edit that's showing, even with a pass waiting, and 
   expect(container.querySelector(".simple-timeline-band")?.textContent).toBe("Removed · 2.4 s");
   // The timeline is on the version before the cut, where the waiting pass's times don't hold: its calls draw no dot here.
   expect(container.querySelector(".simple-timeline-mark")).toBeNull();
-  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing “Keep the image test” · After");
+  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing “Keep the image test” · 剪辑后");
   // A cut has no Before/After switch. One icon plays it with the cut footage: unlit while it plays as the video runs.
   expect(bar.querySelector(".compare-switch")).toBeNull();
-  expect(beforeIcon(bar)).toEqual(["", "Before", "false", "Play Before (\\)"]);
+  expect(beforeIcon(bar)).toEqual(["", "剪辑前", "false", "播放剪辑前 (\\)"]);
   // Hovering it names its key. Nothing is drawn between the card and the band.
   expect(bar.querySelector(".edit-card-before")?.getAttribute("aria-keyshortcuts")).toBe("\\");
   // The card is one row. The cut's words are folded behind a small icon.
   expect(bar.querySelector(".edit-card-script, .review-step, .edit-passage")).toBeNull();
   const script = transcriptLink();
-  expect([...transcriptName(), script.getAttribute("aria-expanded")]).toEqual(["", "Show transcript", "Show transcript", "false"]);
+  expect([...transcriptName(), script.getAttribute("aria-expanded")]).toEqual(["", "显示转写稿", "显示转写稿", "false"]);
   expect(openHead()!.querySelector(".edit-passage")).toBeNull();
   // Opened, the mark where the cut joins says how much came out, in red: it is applied. The icon folds it away again.
   await click(script);
-  expect([...transcriptName(), transcriptLink().getAttribute("aria-expanded")]).toEqual(["", "Hide transcript", "Hide transcript", "true"]);
+  expect([...transcriptName(), transcriptLink().getAttribute("aria-expanded")]).toEqual(["", "隐藏转写稿", "隐藏转写稿", "true"]);
   expect(openHead()!.querySelector(".thread-passage:not(.is-call) .edit-passage-cut")?.textContent).toBe("2.4 s");
   // The words around it are still on their way, and the passage says so.
-  expect(openHead()!.querySelector(".edit-passage-wait")?.textContent).toBe("Loading the words…");
+  expect(openHead()!.querySelector(".edit-passage-wait")?.textContent).toBe("正在加载台词…");
   await click(transcriptLink());
   expect(openHead()!.querySelector(".edit-passage")).toBeNull();
   expect(container.querySelector(".simple-timeline-bracket")).toBeNull();
@@ -6041,7 +6041,7 @@ it("revises just the applied edit that's showing, even with a pass waiting, and 
   await act(async () => { band().dispatchEvent(new PointerEvent("pointerdown", { pointerId: 1, isPrimary: true, button: 0, bubbles: true })); });
   expect(audition).toHaveBeenLastCalledWith({ start: 8, end: 14.4, skips: [], from: 10, through: true }, expect.any(Number));
   expect(usePlayerStore.getState().scrubGesture).toBeUndefined();
-  expect(beforeIcon(bar)).toEqual(["", "Before", "true", "Back to After (\\)"]);
+  expect(beforeIcon(bar)).toEqual(["", "剪辑前", "true", "返回剪辑后 (\\)"]);
   expect(bar.querySelector(".edit-card-before.is-flash")).not.toBeNull();
   // It is this cut's own footage, so nothing above the card's row says whose it is.
   expect(container.querySelector(".edit-card-switched")).toBeNull();
@@ -6049,36 +6049,36 @@ it("revises just the applied edit that's showing, even with a pass waiting, and 
   expect(band().classList.contains("is-live")).toBe(false);
   // \\ goes back, and plays the join from the top.
   await press("\\");
-  expect(beforeIcon(bar)).toEqual(["", "Before", "false", "Play Before (\\)"]);
+  expect(beforeIcon(bar)).toEqual(["", "剪辑前", "false", "播放剪辑前 (\\)"]);
   expect(bar.querySelector(".edit-card-before.is-flash")).toBeNull();
   expect(audition).toHaveBeenLastCalledWith({ start: 8, end: 15.4, skips: [{ start: 10, end: 12.4, removed: true }] }, expect.any(Number));
   // \\ switches to Before, which plays straight through the cut.
   await press("\\");
-  expect(beforeIcon(bar)).toEqual(["", "Before", "true", "Back to After (\\)"]);
+  expect(beforeIcon(bar)).toEqual(["", "剪辑前", "true", "返回剪辑后 (\\)"]);
   expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing “Keep the image test” · Before");
   expect(audition).toHaveBeenLastCalledWith({ start: 8, end: 14.4, skips: [] }, expect.any(Number));
 
-  await click(buttonIn(bar, "Revise")!);
+  await click(buttonIn(bar, "修改")!);
   expect(container.querySelector(".simple-target")?.textContent).toContain("Revising “Keep the image test” at 0:10");
   expect(useUiStore.getState().agentContext).toMatchObject({ changeId: "chg_approved_2" });
 
   // The pass that's waiting is still counted on its card in the chat.
   await press("Escape");
   expect(editPanel()).toBeNull();
-  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("2 need you");
+  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("2 项待审阅");
 });
 
 it("lists each edit a version made in History, which only shows versions and changes nothing", async () => {
   await act(async () => root.render(<MemoryRouter><ChangelogPage /></MemoryRouter>));
   await act(async () => {});
   await click([...container.querySelectorAll(".version-row")].find(r => r.textContent?.includes("Tighten the wrap"))!);
-  const edits = container.querySelector('[aria-label="Edits in this version"]')!;
+  const edits = container.querySelector('[aria-label="此版本的剪辑"]')!;
   expect(edits.querySelector(".version-edits-head")?.textContent).toBe("3 edits");
   expect([...edits.querySelectorAll(".version-edit-label")].map(l => l.firstChild?.textContent).sort()).toEqual(["captions", "music bed", "wrap"]);
   // An open version lists what it did. It has no player, and the only buttons are the two tabs and the version rows.
   expect(container.querySelector("video, .clip-monitor, .edit-card-before, select, input, [role='combobox']")).toBeNull();
   const buttons = [...container.querySelectorAll("button")];
-  expect(buttons.filter(b => !b.classList.contains("version-row")).map(b => b.textContent)).toEqual(["Edit versions", "Full history"]);
+  expect(buttons.filter(b => !b.classList.contains("version-row")).map(b => b.textContent)).toEqual(["剪辑版本", "完整历史"]);
 });
 
 const menuItems = () => [...container.querySelectorAll('[role="menuitem"]')].map(i => i.textContent?.trim());
@@ -6113,14 +6113,14 @@ it("drags the divider to resize the chat against the player, and remembers the w
   } finally { localStorage.removeItem("scarlet.simpleChatWidth"); }
 });
 
-const openMenu = () => click(container.querySelector('[aria-label="More"]')!);
-const moreButton = () => container.querySelector<HTMLElement>('[aria-label="More"]')!;
+const openMenu = () => click(container.querySelector('[aria-label="更多"]')!);
+const moreButton = () => container.querySelector<HTMLElement>('[aria-label="更多"]')!;
 /** A row of the menu by its name, whatever status or mark follows the name. */
 const menuRow = (name: string) => [...container.querySelectorAll<HTMLElement>('[role="menuitem"]')].find(i => i.textContent?.trim().startsWith(name))!;
 /** The line under the Media button's word while videos cache, and how much of it is filled, out of 100, or 0 while unmeasured. */
 const cachingLine = () => mediaButton().querySelector<HTMLElement>(".progress-line");
 const lineDrawn = (line = cachingLine()) => Math.round(parseFloat(line?.querySelector<HTMLElement>("span")?.style.width || "0"));
-const exportButton = () => buttonIn(container.querySelector(".simple-tools")!, "Export")!;
+const exportButton = () => buttonIn(container.querySelector(".simple-tools")!, "导出")!;
 /** The header's Media button, whatever mark follows its name. */
 const mediaButton = () => container.querySelector<HTMLElement>(".simple-tools .simple-media")!;
 /** What hovering the menu's button says. */
@@ -6129,20 +6129,20 @@ const moreTitle = () => moreButton().querySelector<HTMLElement>(".simple-more")!
 it("opens Media, Export and History from the header and keeps project tools in the menu", async () => {
   await show();
   const back = container.querySelector<HTMLAnchorElement>('a[href="/"]');
-  expect(back?.getAttribute("aria-label")).toBe("All projects");
+  expect(back?.getAttribute("aria-label")).toBe("全部项目");
   const tools = container.querySelector(".simple-tools")!;
-  expect([...tools.querySelectorAll(":scope > button, :scope > .media-hover > button")].map(b => b.textContent?.trim())).toEqual(["Media", "自动粗剪", "Export", "History"]);
-  for (const [name, field] of [["Media", "#media-file-types"], ["Export", "#export-range"]] as const) {
+  expect([...tools.querySelectorAll(":scope > button, :scope > .media-hover > button")].map(b => b.textContent?.trim())).toEqual(["媒体", "自动粗剪", "导出", "历史记录"]);
+  for (const [name, field] of [["媒体", "#media-file-types"], ["导出", "#export-range"]] as const) {
     await click(buttonIn(tools, name)!);
     await act(async () => { await vi.dynamicImportSettled(); });
     const dialog = container.querySelector("dialog[open]")!;
     expect(dialog.querySelector(field)).not.toBeNull();
-    await click(dialog.querySelector('button[aria-label="Close"]')!);
+    await click(dialog.querySelector('button[aria-label="关闭"]')!);
   }
   expect(moreButton().querySelector(".needs-you")).toBeNull();
   expect(moreButton().getAttribute("aria-description")).toBeNull();
   await openMenu();
-  expect(menuItems().filter(name => !name?.startsWith("Model") && name !== "Set up a model")).toEqual(["Learnings", "手动剪辑", "Transcript", "Export", "Make shorts", "Project settings", "App settings"]);
+  expect(menuItems().filter(name => !name?.startsWith("模型") && name !== "设置模型")).toEqual(["学习规则", "手动剪辑", "转写稿", "导出", "制作短视频", "项目设置", "应用设置"]);
   expect(container.querySelector('[role="menu"] .menu-dot')).toBeNull();
   await click(menuItem("手动剪辑"));
   const timeline = container.querySelector('[aria-label="手动剪辑"]')!;
@@ -6150,11 +6150,11 @@ it("opens Media, Export and History from the header and keeps project tools in t
   await click(buttonIn(timeline, "关闭")!);
   expect(container.querySelector('[aria-label="手动剪辑"]')).toBeNull();
   await openMenu();
-  await click(menuItem("Project settings"));
+  await click(menuItem("项目设置"));
   expect(useUiStore.getState().projectSettingsOpen).toBe(true);
   useUiStore.getState().setProjectSettingsOpen(false);
-  await click(buttonIn(tools, "History")!);
-  expect(document.querySelector("dialog[open]")?.textContent).toContain("History");
+  await click(buttonIn(tools, "历史记录")!);
+  expect(document.querySelector("dialog[open]")?.textContent).toContain("历史记录");
 });
 
 it("keeps the first-video V1 entry enabled in a fresh manual timeline", async () => {
@@ -6177,7 +6177,7 @@ it("keeps the first-video V1 entry enabled in a fresh manual timeline", async ()
 const openTranscript = async () => {
   vi.spyOn(api, "transcript").mockImplementation(async mediaId => buildDb().transcripts[mediaId]!);
   await openMenu();
-  await click(menuItem("Transcript"));
+  await click(menuItem("转写稿"));
   await act(async () => { await vi.dynamicImportSettled(); });
   await vi.waitFor(() => expect(container.querySelector(".simple-transcript [data-w]")).not.toBeNull());
 };
@@ -6190,12 +6190,12 @@ it("heads the Transcript as the chat is headed, with its name and a ×, and give
   expect(rail.previousElementSibling?.classList.contains("simple-stage")).toBe(true);
   expect(container.querySelector(".simple-rail .simple-transcript, .simple-thread .simple-transcript")).toBeNull();
   const head = rail.querySelector<HTMLElement>(".simple-header")!;
-  expect([...head.children].map(c => c.textContent || c.getAttribute("aria-label"))).toEqual(["Transcript", "Close transcript"]);
+  expect([...head.children].map(c => c.textContent || c.getAttribute("aria-label"))).toEqual(["转写稿", "关闭转写稿"]);
   // No toolbar, figures, key box or notes: the words, and a dim line naming each turn's time.
   const pane = rail.querySelector<HTMLElement>(".simple-transcript")!;
   expect(pane.querySelector(".reading-toolbar, .reading-window, .reading-keys, [aria-label='Keyboard shortcuts'], .border-warn")).toBeNull();
   expect(pane.querySelector(".reading-turn-head")?.textContent).toBe("0:00");
-  await click(head.querySelector('[aria-label="Close transcript"]')!);
+  await click(head.querySelector('[aria-label="关闭转写稿"]')!);
   expect(container.querySelector(".simple-transcript-rail, .simple-transcript")).toBeNull();
 });
 
@@ -6245,9 +6245,9 @@ it("keeps the chat in view beside the Transcript, and closes the Transcript on E
   expect(chat().hidden).toBe(false);
   expect(pin().hidden).toBe(false);
   expect(pin().querySelector(".unit-msg")?.textContent).toContain("Make the logo smaller.");
-  expect(pin().querySelector('[aria-label^="Stop this edit"]')).not.toBeNull();
+  expect(pin().querySelector('[aria-label^="停止此剪辑"]')).not.toBeNull();
   expect(pin().querySelector(".req-say")?.textContent).toBe("Smaller by how much?Answer");
-  expect(boxTag()).toBe("Answer");
+  expect(boxTag()).toBe("回答");
   // A message that was sent leaves it open: the chat, where it went, is already in view.
   await act(async () => composer.props!.onSent!());
   expect(transcript()).not.toBeNull();
@@ -6274,8 +6274,8 @@ it("caches the edit without a ring on the picture or a word on the Media button,
   expect(cachingLine()).toBeNull();
   expect(mediaButton().getAttribute("aria-description")).toBeNull();
   await openMenu();
-  expect(menuItems()).not.toContain("Media");
-  expect(menuItems()).not.toContain("Pause");
+  expect(menuItems()).not.toContain("媒体");
+  expect(menuItems()).not.toContain("暂停");
 });
 
 it("marks the Media button, not the menu, when a file couldn't be read or a transcription stopped, and not otherwise", async () => {
@@ -6287,8 +6287,8 @@ it("marks the Media button, not the menu, when a file couldn't be read or a tran
   data = { ...data, media: data.media.map(m => m.id === broken!.id ? { ...m, status: "failed" as const, error: "moov atom not found" } : m) };
   await act(async () => useProjectStore.setState({ current: data }));
   expect(moreButton().querySelector(".needs-you")).toBeNull();
-  expect(mediaButton().querySelector(".menu-dot")?.getAttribute("aria-label")).toBe(`Couldn’t read ${broken!.name}`);
-  expect(mediaButton().getAttribute("aria-description")).toContain(`Couldn’t read ${broken!.name}`);
+  expect(mediaButton().querySelector(".menu-dot")?.getAttribute("aria-label")).toBe(`无法读取 ${broken!.name}`);
+  expect(mediaButton().getAttribute("aria-description")).toContain(`无法读取 ${broken!.name}`);
   await openMenu();
   expect(container.querySelector('[role="menu"] .menu-dot')).toBeNull();
   // So is a recording whose transcription stopped before it had a transcript.
@@ -6296,7 +6296,7 @@ it("marks the Media button, not the menu, when a file couldn't be read or a tran
     error: "Transcription was interrupted.", instruction: `Transcribe ${silent!.name}`, context: { mediaId: silent!.id }, changeIds: [], createdAt: new Date().toISOString() };
   data = { ...data, media: data.media.map(m => m.id === silent!.id ? { ...m, transcriptId: undefined } : m), tasks: [...data.tasks, stopped] };
   await act(async () => useProjectStore.setState({ current: data }));
-  expect(mediaButton().querySelector(".menu-dot")?.getAttribute("aria-label")).toBe("2 files need attention");
+  expect(mediaButton().querySelector(".menu-dot")?.getAttribute("aria-label")).toBe("2 个文件需要处理");
 });
 
 it("marks the Media button when a file failed to import, until Media's list of imports lets it go", async () => {
@@ -6304,14 +6304,14 @@ it("marks the Media button when a file failed to import, until Media's list of i
   await show();
   await act(async () => { await enqueueImports(PRJ, ["/Users/me/Movies/drone.mov"]); });
   expect(moreButton().querySelector(".needs-you")).toBeNull();
-  expect(mediaButton().querySelector(".menu-dot")?.getAttribute("aria-label")).toBe("Some files need attention");
-  expect(mediaButton().getAttribute("aria-description")).toBe("Some files need attention");
+  expect(mediaButton().querySelector(".menu-dot")?.getAttribute("aria-label")).toBe("部分文件需要处理");
+  expect(mediaButton().getAttribute("aria-description")).toBe("部分文件需要处理");
   // Media lists the file with why it failed. Dismissed there, nothing is marked.
   await click(mediaButton());
   await act(async () => { await vi.dynamicImportSettled(); });
-  await vi.waitFor(() => expect(document.querySelector('dialog[open] [aria-label="Dismiss"]')).not.toBeNull());
+  await vi.waitFor(() => expect(document.querySelector('dialog[open] [aria-label="关闭提示"]')).not.toBeNull());
   expect(document.querySelector("dialog[open]")?.textContent).toContain("Scarlet couldn’t read this file.");
-  await click(document.querySelector('dialog[open] [aria-label="Dismiss"]')!);
+  await click(document.querySelector('dialog[open] [aria-label="关闭提示"]')!);
   expect(mediaButton().querySelector(".menu-dot")).toBeNull();
   expect(container.querySelector(".simple-banner")).toBeNull();
 });
@@ -6324,12 +6324,12 @@ it("opens the model selector beside the menu, level with its row, and keeps the 
     useHostsStore.setState({ hosts: buildDb().hosts, status: "ready" });
     await show();
     await openMenu();
-    const row = menuRow("Model");
+    const row = menuRow("模型");
     expect(row.querySelector(".menu-value")?.textContent).toBe("Opus 5.5");
     // The menu hangs from ⋯ at the chat's right edge. The selector is 352px wide and 250px tall.
     vi.spyOn(container.querySelector('[role="menu"]')!, "getBoundingClientRect").mockReturnValue(new DOMRect(130, 50, 240, 312));
     vi.spyOn(row, "getBoundingClientRect").mockReturnValue(new DOMRect(134, 246, 232, 32));
-    const selectorSize = (size: number) => function (this: HTMLElement) { return this.getAttribute("aria-label") === "Model selector" ? size : 0; };
+    const selectorSize = (size: number) => function (this: HTMLElement) { return this.getAttribute("aria-label") === "模型选择器" ? size : 0; };
     vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockImplementation(selectorSize(352));
     vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockImplementation(selectorSize(250));
     const key = (name: string) => act(async () => { document.activeElement!.dispatchEvent(new KeyboardEvent("keydown", { key: name, bubbles: true, cancelable: true })); });
@@ -6337,14 +6337,14 @@ it("opens the model selector beside the menu, level with its row, and keeps the 
     // With the selector closed, the arrows step through the menu's rows.
     row.focus();
     await key("ArrowDown");
-    expect(document.activeElement?.textContent).toBe("Project settings");
+    expect(document.activeElement?.textContent).toBe("项目设置");
     await click(row);
-    const selector = container.querySelector<HTMLElement>('[role="dialog"][aria-label="Model selector"]')!;
+    const selector = container.querySelector<HTMLElement>('[role="dialog"][aria-label="模型选择器"]')!;
     // It opens clear of the menu's right edge and level with the Model row, so Project settings and App settings under
     // that row stay in view.
     expect([selector.style.left, selector.style.top]).toEqual(["376px", "246px"]);
     // ↓ from the search goes into the models and stays there: the menu's own rows aren't stepped through behind it.
-    expect(focused()).toBe("Search models");
+    expect(focused()).toBe("搜索模型");
     await key("ArrowDown");
     expect(focused()).toBe("Claude Code · Opus 5.5");
     await key("ArrowDown");
@@ -6366,12 +6366,12 @@ it("opens the model selector under its row when the window has no room beside th
     useHostsStore.setState({ hosts: buildDb().hosts, status: "ready" });
     await show();
     await openMenu();
-    const row = menuRow("Model");
+    const row = menuRow("模型");
     vi.spyOn(container.querySelector('[role="menu"]')!, "getBoundingClientRect").mockReturnValue(new DOMRect(130, 50, 240, 312));
     vi.spyOn(row, "getBoundingClientRect").mockReturnValue(new DOMRect(134, 246, 232, 32));
-    vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockImplementation(function (this: HTMLElement) { return this.getAttribute("aria-label") === "Model selector" ? 352 : 0; });
+    vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockImplementation(function (this: HTMLElement) { return this.getAttribute("aria-label") === "模型选择器" ? 352 : 0; });
     await click(row);
-    const selector = container.querySelector<HTMLElement>('[role="dialog"][aria-label="Model selector"]')!;
+    const selector = container.querySelector<HTMLElement>('[role="dialog"][aria-label="模型选择器"]')!;
     expect([selector.style.left, selector.style.top]).toEqual(["14px", "284px"]);
   } finally {
     await act(async () => { useHostsStore.setState(hosts, true); });
@@ -6385,21 +6385,21 @@ it("keeps the menu's Model row while no model is ready, and marks it only once w
     useHostsStore.setState({ hosts: [], status: "loading" });
     await show();
     await openMenu();
-    expect(menuRow("Model").textContent).toBe("ModelConnecting…");
+    expect(menuRow("模型").textContent).toBe("模型正在连接…");
     expect(container.querySelector('[role="menu"] .menu-dot')).toBeNull();
     expect(moreButton().querySelector(".needs-you")).toBeNull();
     // A host that was signed in is offline: no request can run until the editor looks into it.
     await act(async () => useHostsStore.setState({ hosts: buildDb().hosts.map(h => ({ ...h, online: false })), status: "ready" }));
-    expect(menuRow("Model").textContent).toBe("ModelOffline");
-    expect([...container.querySelectorAll('[role="menu"] .menu-dot')]).toEqual([menuRow("Model").querySelector(".menu-dot")]);
+    expect(menuRow("模型").textContent).toBe("模型离线");
+    expect([...container.querySelectorAll('[role="menu"] .menu-dot')]).toEqual([menuRow("模型").querySelector(".menu-dot")]);
     expect(moreButton().querySelector(".needs-you")).not.toBeNull();
-    expect(moreButton().getAttribute("aria-description")).toBe("No model is ready");
+    expect(moreButton().getAttribute("aria-description")).toBe("暂无可用模型");
     // The row opens the sign-in, which says what is wrong with the host.
-    await click(menuRow("Model"));
+    await click(menuRow("模型"));
     expect(useUiStore.getState().agentSetupOpen).toBe(true);
     // Back online, the row names the model in use and the mark goes.
     await act(async () => useHostsStore.setState({ hosts: buildDb().hosts }));
-    expect(menuRow("Model").querySelector(".menu-value")?.textContent).toBe("Opus 5.5");
+    expect(menuRow("模型").querySelector(".menu-value")?.textContent).toBe("Opus 5.5");
     expect(container.querySelector('[role="menu"] .menu-dot')).toBeNull();
     expect(moreButton().querySelector(".needs-you")).toBeNull();
   } finally {
@@ -6420,13 +6420,13 @@ it("shows cache progress on the Media button and offers Pause from More", async 
   // word filled as far as the cache has got, named on hover. The menu's button shows nothing.
   expect(moreButton().querySelector(".needs-you")).toBeNull();
   expect(moreButton().querySelector(".progress-line")).toBeNull();
-  expect(moreTitle()).toBe("More");
+  expect(moreTitle()).toBe("更多");
   expect(lineDrawn()).toBe(30);
   expect(cachingLine()!.classList.contains("is-unknown")).toBe(false);
-  expect(mediaButton().getAttribute("aria-description")).toBe("Caching 30%");
-  expect(mediaButton().textContent).toBe("Media");
+  expect(mediaButton().getAttribute("aria-description")).toBe("正在缓存 30%");
+  expect(mediaButton().textContent).toBe("媒体");
   await openMenu();
-  await click(menuItem("Pause"));
+  await click(menuItem("暂停"));
   expect(updateProject).toHaveBeenCalledWith({ mediaPaused: true }, PRJ);
   expect(container.querySelector('[role="menu"]')).toBeNull();
 });
@@ -6441,7 +6441,7 @@ it("says in an empty chat that editing can start while the video caches, and sto
   await show();
   await act(async () => {});
   const said = () => container.querySelector(".simple-chat .simple-empty")?.textContent;
-  expect(said()).toBe("You can start editing while the video caches.");
+  expect(said()).toBe("视频缓存期间可以开始剪辑。");
   // Once every video is cached there is nothing to wait for, so nothing is said.
   caches.mockResolvedValue({ caches: data.media.filter(m => m.kind === "video").map(m => ({ mediaId: m.id, state: "ready" as const })) });
   await act(async () => useProjectStore.setState(s => ({ current: { ...s.current!, sourcePreviewRevisions: { [first!.id]: 1 } } })));
@@ -6464,24 +6464,24 @@ it("draws a line under the Media button's word only while videos cache, and neve
   await act(async () => {});
   // Every video cached: the button is as it always is.
   expect(cachingLine()).toBeNull();
-  expect(moreTitle()).toBe("More");
-  expect(mediaButton().getAttribute("aria-description")).not.toMatch(/^Caching/);
+  expect(moreTitle()).toBe("更多");
+  expect(mediaButton().getAttribute("aria-description")).not.toMatch(/^正在缓存/);
   // A cache starts and the engine has no figure yet: a short stretch of the line, which slides.
   await cachesBecome({ state: "caching" });
   expect(cachingLine()!.classList.contains("is-unknown")).toBe(true);
   expect(lineDrawn()).toBe(0);
-  expect(mediaButton().getAttribute("aria-description")).toBe("Caching");
+  expect(mediaButton().getAttribute("aria-description")).toBe("正在缓存");
   expect(moreButton().querySelector(".progress-line")).toBeNull();
   await cachesBecome({ state: "caching", progress: 0.71 });
   expect(cachingLine()!.classList.contains("is-unknown")).toBe(false);
   expect(lineDrawn()).toBe(71);
-  expect(mediaButton().getAttribute("aria-description")).toBe("Caching 71%");
+  expect(mediaButton().getAttribute("aria-description")).toBe("正在缓存 71%");
   // A file that needs the editor marks the Media button, which says it first, and not the menu.
   const broken = rest[0] ?? first!;
   await cachesBecome({ state: "caching", progress: 0.71 }, { media: data.media.map(m => m.id === broken.id ? { ...m, status: "failed" as const, error: "moov atom not found" } : m) });
   expect(moreButton().querySelector(".needs-you")).toBeNull();
   expect(cachingLine()).not.toBeNull();
-  expect(mediaButton().getAttribute("aria-description")).toBe(`Couldn’t read ${broken.name}. Caching 71%`);
+  expect(mediaButton().getAttribute("aria-description")).toBe(`无法读取 ${broken.name}。正在缓存 71%`);
   await cachesBecome({ state: "caching", progress: 0.71 }, { media: data.media.map(m => m.id === broken.id ? { ...m, status: "ready" as const, error: undefined } : m) });
   // Paused, nothing is caching: the ring is gone, and nothing under the header says so. The menu's Resume row does.
   await cachesBecome({ state: "uncached", queued: true }, { project: { ...data.project, mediaPaused: true } });
@@ -6492,7 +6492,7 @@ it("draws a line under the Media button's word only while videos cache, and neve
   expect(lineDrawn()).toBe(90);
   await cachesBecome({ state: "ready" });
   expect(cachingLine()).toBeNull();
-  expect(moreTitle()).toBe("More");
+  expect(moreTitle()).toBe("更多");
 });
 
 it("offers Resume from the Media hover card and More while media processing is paused", async () => {
@@ -6507,10 +6507,10 @@ it("offers Resume from the Media hover card and More while media processing is p
   expect(container.querySelector(".simple-banner")).toBeNull();
   expect(container.querySelector(".simple-thread")!.textContent).not.toMatch(/paused|Resume/i);
   expect(moreButton().querySelector(".needs-you")).toBeNull();
-  expect(mediaButton().getAttribute("aria-description")).toBe("Media processing is paused");
-  expect(buttonIn(container.querySelector(".media-hover-card")!, "Resume")).toBeTruthy();
+  expect(mediaButton().getAttribute("aria-description")).toBe("媒体处理已暂停");
+  expect(buttonIn(container.querySelector(".media-hover-card")!, "恢复")).toBeTruthy();
   await openMenu();
-  await click(menuItem("Resume"));
+  await click(menuItem("恢复"));
   expect(updateProject).toHaveBeenCalledExactlyOnceWith({ mediaPaused: false }, PRJ);
 });
 
@@ -6521,47 +6521,47 @@ it("says how an export is going on the menu's Export row, and marks the menu for
   const exports = (job: ReturnType<typeof useExports.getState>["jobs"][string]) => act(async () => useExports.setState({ jobs: { [PRJ]: job } }));
   await show();
   await openMenu();
-  const row = () => menuRow("Export");
+  const row = () => menuRow("导出");
   const says = () => [row().querySelector(".menu-value")?.textContent, row().querySelector(".menu-dot")?.getAttribute("aria-label")];
-  expect(row().textContent).toBe("Export");
+  expect(row().textContent).toBe("导出");
   // A percent while its count moves, and the word alone while it waits to start or finishes: no figure that sits still.
   await exports(running);
-  expect(says()).toEqual(["Exporting 42%", undefined]);
+  expect(says()).toEqual(["正在导出 42%", undefined]);
   await exports({ ...running, waiting: true, progress: 0 });
-  expect(says()).toEqual(["Exporting", undefined]);
+  expect(says()).toEqual(["正在导出", undefined]);
   await exports({ ...running, progress: 0.97 });
-  expect(says()).toEqual(["Exporting", undefined]);
+  expect(says()).toEqual(["正在导出", undefined]);
   await exports({ ...running, phase: "saving", progress: 1 });
-  expect(says()).toEqual(["Exporting", undefined]);
+  expect(says()).toEqual(["正在导出", undefined]);
   // An export under way needs nothing from the editor, so the menu isn't marked.
   expect(moreButton().querySelector(".needs-you")).toBeNull();
   await click(row());
   const saving = container.querySelector("dialog[open]")!;
-  expect(saving.textContent).toContain("Saving file…");
-  expect(buttonIn(saving, "Cancel export")).toBeUndefined();
-  await click(buttonIn(saving, "Continue editing")!);
+  expect(saving.textContent).toContain("保存文件…");
+  expect(buttonIn(saving, "取消导出")).toBeUndefined();
+  await click(buttonIn(saving, "继续编辑")!);
   expect(container.querySelector("dialog[open]")).toBeNull();
   await openMenu();
   // Done: the row says so, with the file's name on hover, for as long as the video is the one that was exported.
   await exports({ phase: "done", path: "/Users/me/Movies/Interview.mp4", context });
-  expect([...says(), row().title]).toEqual(["Exported", undefined, "Interview.mp4"]);
+  expect([...says(), row().title]).toEqual(["已导出", undefined, "Interview.mp4"]);
   expect(moreButton().querySelector(".needs-you")).toBeNull();
   await exports({ phase: "done", path: "/Users/me/Movies/Interview.mp4", context: "an earlier video" });
-  expect(row().textContent).toBe("Export");
+  expect(row().textContent).toBe("导出");
   // One that stopped marks the row and the menu's button, with no count.
   await exports({ phase: "failed", error: "Disk full", file, context });
-  expect(says()).toEqual([undefined, "The export didn’t finish"]);
+  expect(says()).toEqual([undefined, "导出未完成"]);
   expect(moreButton().querySelector(".needs-you")).not.toBeNull();
-  expect(moreButton().getAttribute("aria-description")).toBe("The export didn’t finish");
+  expect(moreButton().getAttribute("aria-description")).toBe("导出未完成");
   // The row opens Export, which says why and offers Retry. With that in front of the editor the mark goes.
   await click(row());
   const sheet = document.querySelector("dialog[open]")!;
   expect(sheet.textContent).toContain("Disk full");
-  expect(buttonIn(sheet, "Retry")).toBeDefined();
+  expect(buttonIn(sheet, "重试")).toBeDefined();
   expect(moreButton().querySelector(".needs-you")).toBeNull();
   await click(buttonIn(sheet, "Cancel")!);
   await openMenu();
-  expect(row().textContent).toBe("Export");
+  expect(row().textContent).toBe("导出");
 });
 
 it("continues editing during an export and reopens the original range, quality and resolution from the header", async () => {
@@ -6577,39 +6577,39 @@ it("continues editing during an export and reopens the original range, quality a
   const sheet = () => container.querySelector<HTMLDialogElement>("dialog[open]")!;
   const field = (id: string) => sheet().querySelector<HTMLButtonElement>(id)!;
   await click(exportButton());
-  await selectOption(field("#export-range"), "Custom range");
+  await selectOption(field("#export-range"), "自定义范围");
   await click(sheet().querySelector("summary")!);
   expect(field("#export-captions")).toBeNull();
-  await selectOption(field("#export-quality"), "Compressed");
+  await selectOption(field("#export-quality"), "压缩");
   await selectOption(field("#export-resolution"), / × 480$/);
   const resolution = field("#export-resolution").textContent;
   const end = sheet().querySelector<HTMLInputElement>("#export-end")!.value;
-  await click(buttonIn(sheet(), "Export")!);
+  await click(buttonIn(sheet(), "导出")!);
   expect(request).toHaveBeenCalledWith(PRJ, expect.objectContaining({ kind: "export", quality: "preview",
     exportOptions: { height: 480 }, range: { start: 0, end: timelineDuration(data.timeline!) } }));
-  await click(buttonIn(sheet(), "Continue editing")!);
+  await click(buttonIn(sheet(), "继续编辑")!);
   expect(sheet()).toBeNull();
   expect(release).not.toHaveBeenCalled();
 
-  await click(buttonIn(container.querySelector(".simple-tools")!, "Media")!);
+  await click(buttonIn(container.querySelector(".simple-tools")!, "媒体")!);
   await act(async () => { await vi.dynamicImportSettled(); });
   expect(sheet().querySelector("#media-file-types")).not.toBeNull();
-  await click(sheet().querySelector('button[aria-label="Close"]')!);
+  await click(sheet().querySelector('button[aria-label="关闭"]')!);
   const edited = buildDb().timelines.ver_4!;
   const settings = { ...data.project.settings, width: 1080, height: 1920, fps: 24 };
   await act(async () => useProjectStore.setState({ current: { ...data, project: { ...data.project, head: edited.version, settings }, timeline: edited } }));
   await click(exportButton());
-  expect(sheet().textContent).toContain("Exporting an earlier version · 42%");
+  expect(sheet().textContent).toContain("正在导出（较早版本） · 42%");
   expect(sheet().querySelector<HTMLProgressElement>("progress")?.position).toBe(0.42);
   expect(field("#export-resolution").textContent).toBe(resolution);
   expect(sheet().querySelector("summary")!.textContent).toContain(`${data.project.settings.fps} fps`);
-  expect(field("#export-quality").textContent).toBe("Compressed");
-  expect(field("#export-range").textContent).toBe("Custom range");
+  expect(field("#export-quality").textContent).toBe("压缩");
+  expect(field("#export-range").textContent).toBe("自定义范围");
   expect(sheet().querySelector<HTMLInputElement>("#export-end")!.value).toBe(end);
   expect(sheet().querySelector('[role="alert"]')?.textContent ?? "").toBe("");
   expect(choose).toHaveBeenCalledTimes(1);
   expect(request).toHaveBeenCalledTimes(1);
-  await click(buttonIn(sheet(), "Cancel export")!);
+  await click(buttonIn(sheet(), "取消导出")!);
   expect(sheet().querySelector("progress")).toBeNull();
   expect(release).toHaveBeenCalledWith("custom-export", request.mock.calls[0]![1].owner);
   expect(exportButton().querySelector("svg")).toBeNull();
@@ -6631,16 +6631,16 @@ it("exports at Original quality as a software encode, and reopens on it", async 
   await click(sheet().querySelector("summary")!);
   // High is the default, and each level says what it trades.
   expect(field("#export-quality").textContent).toBe("High");
-  expect(sheet().textContent).toContain("Looks the same as the original, in a smaller file.");
-  await selectOption(field("#export-quality"), "Original quality");
-  expect(sheet().textContent).toContain("Matches the original footage, for re-editing or grading. About the size of the original.");
-  expect(sheet().querySelector("summary")!.textContent).toContain("Original quality");
-  await click(buttonIn(sheet(), "Export")!);
+  expect(sheet().textContent).toContain("画面接近原片，文件更小。");
+  await selectOption(field("#export-quality"), "原始质量");
+  expect(sheet().textContent).toContain("保留原片质量，适合继续编辑或调色。");
+  expect(sheet().querySelector("summary")!.textContent).toContain("原始质量");
+  await click(buttonIn(sheet(), "导出")!);
   expect(request).toHaveBeenCalledWith(PRJ, expect.objectContaining({ kind: "export", quality: "delivery",
     exportOptions: { bestQuality: true } }));
-  await click(buttonIn(sheet(), "Continue editing")!);
+  await click(buttonIn(sheet(), "继续编辑")!);
   await click(exportButton());
-  expect(field("#export-quality").textContent).toBe("Original quality");
+  expect(field("#export-quality").textContent).toBe("原始质量");
 });
 
 it("updates the Export button as the job advances without drawing the player or chat again", async () => {
@@ -6662,14 +6662,14 @@ it("updates the Export button as the job advances without drawing the player or 
   await exports(running);
   expect(ring()?.getAttribute("aria-hidden")).toBe("true");
   expect(lineDrawn(ring())).toBe(42);
-  expect(status()).toEqual(["Exporting 42%", "Exporting 42%"]);
+  expect(status()).toEqual(["正在导出 42%", "正在导出 42%"]);
   await exports({ ...running, progress: 0.5 });
   expect(lineDrawn(ring())).toBe(50);
   for (const job of [{ ...running, progress: 0 }, { ...running, progress: 0, waiting: true },
     { ...running, progress: 0.97 }, { ...running, phase: "saving" as const, progress: 1 }]) {
     await exports(job);
     expect(ring()?.classList.contains("is-unknown")).toBe(true);
-    expect(status()).toEqual(["Exporting", "Exporting"]);
+    expect(status()).toEqual(["正在导出", "正在导出"]);
   }
   await exports({ phase: "done", path: file.name, context });
   expect(ring()).toBeNull();
@@ -6704,9 +6704,9 @@ it("marks the menu while a rule waits in Learnings, and lists each with its skil
     .toEqual(["Learned for dialogue-pass: “Leave the breath before a punchline.” Review", "Learned for frame-screen: “Keep a laugh in.” Review"]);
   expect(container.querySelectorAll(".simple-learned")).toHaveLength(2);
   await openMenu();
-  expect(menuRow("Learnings").querySelector(".menu-dot")?.getAttribute("aria-label")).toBe("2 rules to review");
-  await click(menuRow("Learnings"));
-  const panel = container.querySelector<HTMLElement>('[role="dialog"][aria-label="Learnings"]')!;
+  expect(menuRow("学习规则").querySelector(".menu-dot")?.getAttribute("aria-label")).toBe("2 rules to review");
+  await click(menuRow("学习规则"));
+  const panel = container.querySelector<HTMLElement>('[role="dialog"][aria-label="学习规则"]')!;
   const rows = [...panel.querySelectorAll<HTMLElement>(".learn-item")];
   expect(rows.map(r => [r.querySelector(".learn-rule")!.textContent, r.querySelector(".learn-said")!.textContent, r.querySelector('[role="combobox"]')!.textContent]))
     .toEqual([["Leave the breath before a punchline.", "You said: “Keep the breath before the punchline.”", "dialogue-pass"],
@@ -6719,8 +6719,8 @@ it("marks the menu while a rule waits in Learnings, and lists each with its skil
   expect(rows[1]!.querySelector(".learn-replaces")).toBeNull();
   // The decision is the row's one button, after Revise in plain text; declining is the small × after it, as on a call's card.
   expect([...rows[0]!.querySelectorAll(".learn-actions button:not([role=combobox])")].map(b => [b.textContent || b.getAttribute("aria-label"), b.className]))
-    .toEqual([["Revise", "btn-quiet learn-revise"], ["Approve", "btn-primary"], ["Decline", "edit-card-icon"]]);
-  await click(buttonIn(rows[0]!, "Approve")!);
+    .toEqual([["修改", "btn-quiet learn-revise"], ["批准", "btn-primary"], ["Decline", "edit-card-icon"]]);
+  await click(buttonIn(rows[0]!, "批准")!);
   // It is saved by the model chosen now, whichever one the request ran on.
   expect(approveLearning).toHaveBeenCalledWith("lrn_a", "skl_dialogue", { agent: "claude", model: "opus" });
   await click(rows[1]!.querySelector('[aria-label="Decline"]')!);
@@ -6728,7 +6728,7 @@ it("marks the menu while a rule waits in Learnings, and lists each with its skil
   // The editor can send a rule to another skill.
   await click(rows[1]!.querySelector('[role="combobox"]')!);
   await click([...document.querySelectorAll<HTMLElement>('[role="option"]')].find(o => o.textContent === "dialogue-pass")!);
-  await click(buttonIn(rows[1]!, "Approve")!);
+  await click(buttonIn(rows[1]!, "批准")!);
   expect(approveLearning).toHaveBeenLastCalledWith("lrn_b", "skl_dialogue", { agent: "claude", model: "opus" });
   // Those passages are in the skill the rule was offered for. Sent to another, it replaces none of them.
   await click(rows[0]!.querySelector('[role="combobox"]')!);
@@ -6739,7 +6739,7 @@ it("marks the menu while a rule waits in Learnings, and lists each with its skil
   expect(rows[0]!.querySelector(".learn-replaces")).not.toBeNull();
   // Esc closes the list and leaves the rest as it was.
   await act(async () => { window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })); });
-  expect(container.querySelector('[role="dialog"][aria-label="Learnings"]')).toBeNull();
+  expect(container.querySelector('[role="dialog"][aria-label="学习规则"]')).toBeNull();
 });
 
 it("opens Learnings at a rule from Review on its line in the chat, and takes the line away once the rule is decided", async () => {
@@ -6749,13 +6749,13 @@ it("opens Learnings at a rule from Review on its line in the chat, and takes the
   await show();
   const line = () => [...container.querySelectorAll<HTMLElement>(".simple-learned")].find(l => l.textContent?.includes("laugh"));
   await click(buttonIn(line()!, "Review")!);
-  const panel = container.querySelector<HTMLElement>('[role="dialog"][aria-label="Learnings"]')!;
+  const panel = container.querySelector<HTMLElement>('[role="dialog"][aria-label="学习规则"]')!;
   // The rule it came from is the one marked in the list.
   expect([...panel.querySelectorAll(".learn-item[aria-current=true] .learn-rule")].map(r => r.textContent)).toEqual(["Keep a laugh in."]);
   await act(async () => { window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })); });
   // Opened from the menu, no rule is singled out.
   await openMenu();
-  await click(menuRow("Learnings"));
+  await click(menuRow("学习规则"));
   expect(container.querySelector(".learn-item[aria-current=true]")).toBeNull();
   await act(async () => { window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })); });
   // Approved (saving) or declined, it has left the chat.
@@ -6773,8 +6773,8 @@ it("names a rule's skill in full on hover, and moves the decisions under it toge
   await withSimpleSheet(async () => {
     await show();
     await openMenu();
-    await click(menuRow("Learnings"));
-    const actions = container.querySelector<HTMLElement>('[role="dialog"][aria-label="Learnings"] .learn-actions')!;
+    await click(menuRow("学习规则"));
+    const actions = container.querySelector<HTMLElement>('[role="dialog"][aria-label="学习规则"] .learn-actions')!;
     const picker = actions.querySelector<HTMLElement>('[role="combobox"]')!;
     // A narrow chat can clip the name. The hover title always shows it in full.
     expect([picker.textContent, picker.title]).toEqual(["dialogue-pass", "dialogue-pass"]);
@@ -6782,7 +6782,7 @@ it("names a rule's skill in full on hover, and moves the decisions under it toge
     // room left, up to its whole name, and with less than 6em of it the row wraps: the decisions go under it together, at
     // the right, rather than leave the name nothing.
     expect([...actions.children].map(part => part.className)).toEqual(["learn-to", "preference-select compact", "learn-decide"]);
-    expect([...actions.querySelector(".learn-decide")!.children].map(button => button.textContent || button.getAttribute("aria-label"))).toEqual(["Revise", "Approve", "Decline"]);
+    expect([...actions.querySelector(".learn-decide")!.children].map(button => button.textContent || button.getAttribute("aria-label"))).toEqual(["修改", "批准", "Decline"]);
     expect([...styled(actions, "flex-wrap"), ...styled(picker, "flex-grow", "flex-basis", "min-width", "max-width"), ...styled(actions.querySelector(".learn-decide")!, "margin-left")])
       .toEqual(["wrap", "1", "6em", "0", "max-content", "auto"]);
   });
@@ -6803,8 +6803,8 @@ it("lets the editor reword a rule in place: Esc puts it back, Enter keeps it, an
   useProjectStore.setState({ current: data, reviseLearning, approveLearning });
   await show();
   await openMenu();
-  await click(menuRow("Learnings"));
-  const panel = () => container.querySelector<HTMLElement>('[role="dialog"][aria-label="Learnings"]');
+  await click(menuRow("学习规则"));
+  const panel = () => container.querySelector<HTMLElement>('[role="dialog"][aria-label="学习规则"]');
   const row = () => panel()!.querySelector<HTMLElement>(".learn-item")!;
   const field = () => row().querySelector<HTMLTextAreaElement>("textarea.learn-rule-edit");
   const rule = () => row().querySelector("p.learn-rule")?.textContent;
@@ -6814,17 +6814,17 @@ it("lets the editor reword a rule in place: Esc puts it back, Enter keeps it, an
   });
 
   // Revise turns the rule into a line with the keyboard in it, and stays lit while it is.
-  await click(buttonIn(row(), "Revise")!);
-  expect([field()?.value, document.activeElement === field(), buttonIn(row(), "Revise")!.getAttribute("aria-pressed")])
+  await click(buttonIn(row(), "修改")!);
+  expect([field()?.value, document.activeElement === field(), buttonIn(row(), "修改")!.getAttribute("aria-pressed")])
     .toEqual(["Leave the breath before a punchline.", true, "true"]);
   // Esc puts it back as it was, and the list stays open.
   await write("Keep every breath.");
   await press("Escape");
-  expect([field(), rule(), panel() !== null, buttonIn(row(), "Revise")!.getAttribute("aria-pressed")]).toEqual([null, "Leave the breath before a punchline.", true, "false"]);
+  expect([field(), rule(), panel() !== null, buttonIn(row(), "修改")!.getAttribute("aria-pressed")]).toEqual([null, "Leave the breath before a punchline.", true, "false"]);
   expect(reviseLearning).not.toHaveBeenCalled();
 
   // Enter keeps the new wording, on one line however it was pasted, and it shows at once.
-  await click(buttonIn(row(), "Revise")!);
+  await click(buttonIn(row(), "修改")!);
   await write("Keep the breath\nbefore every punchline.");
   await act(async () => { field()!.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })); });
   expect([field(), rule()]).toEqual([null, "Keep the breath before every punchline."]);
@@ -6834,9 +6834,9 @@ it("lets the editor reword a rule in place: Esc puts it back, Enter keeps it, an
   expect(row().querySelector(".learn-problem")).toBeNull();
 
   // Approve pressed straight from the line keeps what was written and waits for it to be saved.
-  await click(buttonIn(row(), "Revise")!);
+  await click(buttonIn(row(), "修改")!);
   await write("Never cut the breath before a punchline.");
-  const approve = buttonIn(row(), "Approve")!;
+  const approve = buttonIn(row(), "批准")!;
   await act(async () => approve.focus());
   await click(approve);
   expect(approveLearning).not.toHaveBeenCalled();
@@ -6857,13 +6857,13 @@ it("says Saving while Scarlet works an approved rule into its skill, why one was
   // One being saved needs nothing more from the editor: only the other one counts.
   expect(moreButton().getAttribute("aria-description")).toBe("1 rule to review in Learnings");
   await openMenu();
-  await click(menuRow("Learnings"));
+  await click(menuRow("学习规则"));
   const [saving, back] = [...container.querySelectorAll<HTMLElement>(".learn-item")];
-  expect(saving!.querySelector('[role="status"]')?.textContent).toBe("Saving…");
-  expect(buttonIn(saving!, "Approve")).toBeUndefined();
+  expect(saving!.querySelector('[role="status"]')?.textContent).toBe("保存中…");
+  expect(buttonIn(saving!, "批准")).toBeUndefined();
   expect(saving!.querySelector<HTMLButtonElement>('[role="combobox"]')!.disabled).toBe(true);
   expect(back!.querySelector(".learn-problem")?.textContent).toBe("Not saved. It already says that.");
-  expect(buttonIn(back!, "Approve")).toBeDefined();
+  expect(buttonIn(back!, "批准")).toBeDefined();
   // With nothing waiting the menu is unmarked, and the list says so.
   data = { ...data, learnings: [] };
   await act(async () => useProjectStore.setState({ current: data }));
@@ -6879,8 +6879,8 @@ it("leaves a rule's skill list open, with the keyboard on its picker, when the w
   try {
     await show();
     await openMenu();
-    await click(menuRow("Learnings"));
-    const panel = () => container.querySelector<HTMLElement>('[role="dialog"][aria-label="Learnings"]');
+    await click(menuRow("学习规则"));
+    const panel = () => container.querySelector<HTMLElement>('[role="dialog"][aria-label="学习规则"]');
     // Learnings takes the keyboard as it opens, and only then.
     expect(document.activeElement).toBe(panel());
     const picker = panel()!.querySelector<HTMLButtonElement>('[role="combobox"]')!;
@@ -6906,11 +6906,11 @@ it("asks for the skills again when Learnings opens after a read of them failed, 
     .mockResolvedValue({ skills: [skillNamed("skl_dialogue", "dialogue-pass")] });
   data = { ...data, learnings: [learning("lrn_a")] };
   useProjectStore.setState({ current: data });
-  const openPanel = async () => { await openMenu(); await click(menuRow("Learnings")); };
+  const openPanel = async () => { await openMenu(); await click(menuRow("学习规则")); };
   const saveTo = () => {
     const row = container.querySelector<HTMLElement>(".learn-item")!;
     const picker = row.querySelector<HTMLButtonElement>('[role="combobox"]')!;
-    return [picker.textContent, picker.disabled, buttonIn(row, "Approve")!.disabled];
+    return [picker.textContent, picker.disabled, buttonIn(row, "批准")!.disabled];
   };
   try {
     await show();
@@ -6933,19 +6933,19 @@ it("says why a rule has no skill to be saved to while the skills can't be read, 
     .mockResolvedValue({ skills: [skillNamed("skl_dialogue", "dialogue-pass")] });
   data = { ...data, learnings: [learning("lrn_a")] };
   useProjectStore.setState({ current: data });
-  const panel = () => container.querySelector<HTMLElement>('[role="dialog"][aria-label="Learnings"]')!;
+  const panel = () => container.querySelector<HTMLElement>('[role="dialog"][aria-label="学习规则"]')!;
   const said = () => panel().querySelector('[role="alert"]')?.textContent;
   try {
     await show();
     await openMenu();
-    await click(menuRow("Learnings"));
+    await click(menuRow("学习规则"));
     // The rule's picker and Approve are off, and the list says why.
     expect(said()).toBe("Couldn’t load skills. Engine is restarting Retry");
     // Retry asks again without leaving Learnings. Once the skills are in, the rule can be saved, and the reason goes.
-    await click(buttonIn(panel(), "Retry")!);
+    await click(buttonIn(panel(), "重试")!);
     expect(read).toHaveBeenCalledTimes(2);
     const row = panel().querySelector<HTMLElement>(".learn-item")!;
-    expect([row.querySelector('[role="combobox"]')!.textContent, buttonIn(row, "Approve")!.disabled, said()])
+    expect([row.querySelector('[role="combobox"]')!.textContent, buttonIn(row, "批准")!.disabled, said()])
       .toEqual(["dialogue-pass", false, undefined]);
   } finally { await act(async () => useSkillsStore.setState(library, true)); }
 });
@@ -6994,7 +6994,7 @@ it("holds Resume in the tray when editing is paused with only requests waiting t
   expect(tray.querySelector(".queue-head")?.textContent).toBe("Editing paused · 1 queued");
   expect(container.querySelector(".unit-pause-edit")).toBeNull();
   const resume = tray.querySelector<HTMLButtonElement>(".queue-editing-action")!;
-  expect(resume.textContent).toBe("Resume");
+  expect(resume.textContent).toBe("恢复");
   await click(resume);
   expect(resumeEditing).toHaveBeenCalledExactlyOnceWith(PRJ);
 });
@@ -7024,11 +7024,11 @@ it("pauses project editing from the band beside Stop, keeps the paused request i
   // Pause, then Resume, sits beside Stop at the right of the request's band. The tray has no line of its own for it.
   const projectControl = () => unit()!.querySelector<HTMLButtonElement>(".unit-msg .unit-actions .unit-pause-edit")!;
   // Each is an icon alone. Its name shows over it at once, as the keyboard or the pointer reaches it, with no wait.
-  expect([projectControl().textContent, projectControl().getAttribute("aria-label"), projectControl().title]).toEqual(["", "Pause editing", ""]);
+  expect([projectControl().textContent, projectControl().getAttribute("aria-label"), projectControl().title]).toEqual(["", "暂停剪辑", ""]);
   expect(projectControl().getAttribute("aria-description")).toMatch(/^All editing in this project stops\./);
   expect(document.querySelector(".button-tip")).toBeNull();
   await act(async () => projectControl().focus());
-  expect(document.querySelector(".button-tip")?.textContent).toBe("Pause editing");
+  expect(document.querySelector(".button-tip")?.textContent).toBe("暂停剪辑");
   await act(async () => projectControl().blur());
   expect(document.querySelector(".button-tip")).toBeNull();
   expect(projectControl().nextElementSibling?.getAttribute("aria-label")).toMatch(/^Stop this edit/);
@@ -7042,12 +7042,12 @@ it("pauses project editing from the band beside Stop, keeps the paused request i
   expect(tray().querySelector(".queue-head")?.textContent).toBe("Editing paused · 1 queued");
   expect(tray().querySelector(".queue-paused")?.textContent).toBe("Editing paused");
   expect(tray().querySelector(".queue-editing-action")).toBeNull();
-  expect(projectControl().getAttribute("aria-label")).toBe("Resume editing");
+  expect(projectControl().getAttribute("aria-label")).toBe("恢复剪辑");
   expect(unit()?.closest(".simple-pin")).toBeNull();
-  expect(unit()?.querySelector(".unit-msg .unit-word")?.textContent).toBe("Paused");
+  expect(unit()?.querySelector(".unit-msg .unit-word")?.textContent).toBe("已暂停");
   expect(unit()?.querySelector(".req-status")).toBeNull();
   // Stop this edit ends the paused request alone.
-  await click(unit()!.querySelector<HTMLButtonElement>('.unit-actions [aria-label^="Stop this edit"]')!);
+  await click(unit()!.querySelector<HTMLButtonElement>('.unit-actions [aria-label^="停止此剪辑"]')!);
   expect(cancelTask).toHaveBeenCalledExactlyOnceWith(interrupted.id);
   // Why Resume failed is said under the request, as Stop's is, until the same press works.
   await click(projectControl());
@@ -7055,7 +7055,7 @@ it("pauses project editing from the band beside Stop, keeps the paused request i
   await click(projectControl());
   expect(resumeEditing.mock.calls).toEqual([[PRJ], [PRJ]]);
   expect(unit()!.querySelector(".unit-error")).toBeNull();
-  expect(projectControl().getAttribute("aria-label")).toBe("Pause editing");
+  expect(projectControl().getAttribute("aria-label")).toBe("暂停剪辑");
   expect(container.querySelector(`.simple-pin .unit[data-run="${running.id}"]`)).not.toBeNull();
   expect(tray().querySelector(".queue-text")?.textContent).toBe("Add a title.");
 });
@@ -7074,7 +7074,7 @@ it("keeps a question answerable while project editing is paused", async () => {
   expect([...unit.querySelectorAll(".req-say")].map(el => el.textContent)).toEqual([`${question}Answer`]);
   // Resume is on the band of the request that asks, beside Stop: the tray has nothing to say.
   expect(container.querySelector(".queue-tray")).toBeNull();
-  expect(unit.querySelector(".unit-pause-edit")?.getAttribute("aria-label")).toBe("Resume editing");
+  expect(unit.querySelector(".unit-pause-edit")?.getAttribute("aria-label")).toBe("恢复剪辑");
 });
 
 it("says what a run picked up again is doing while a request sent in its thread before that still waits", async () => {
@@ -7124,7 +7124,7 @@ it("keeps edits saved mid-run inside the run until it finishes", async () => {
   useProjectStore.setState({ current: data });
   await show();
   const unit = runOf("task_running").closest(".unit")!;
-  expect([...unit.querySelectorAll(".simple-msg.from-scarlet")].some(m => buttonIn(m, "Revise"))).toBe(false);
+  expect([...unit.querySelectorAll(".simple-msg.from-scarlet")].some(m => buttonIn(m, "修改"))).toBe(false);
 });
 
 it("plays an applied cut's After from the version the cut made, so the join sounds exactly as it does in the edit", async () => {
@@ -7143,7 +7143,7 @@ it("plays an applied cut's After from the version the cut made, so the join soun
   vi.spyOn(api, "timeline").mockImplementation(async (_, version) => ({ timeline: version === "v_before" ? before : working }));
   const audition = vi.spyOn(player, "audition");
   await show();
-  await click(buttonIn(turnFor("chg_approved_2"), "See edit")!);
+  await click(buttonIn(turnFor("chg_approved_2"), "查看剪辑")!);
   await act(async () => {});
   // The timeline stays on the version before, shading what came out, and the listen is in its clock.
   expect(container.querySelector(".simple-timeline-band")?.textContent).toBe("Removed · 2.4 s");
@@ -7187,7 +7187,7 @@ it("warms and opens the actual saved After for a named removal alongside restore
   vi.spyOn(api, "timeline").mockImplementation(async (_, version) => ({ timeline: version === before.version ? before : after }));
   await show();
   expect(api.preparePlayback).toHaveBeenCalledWith(PRJ, after.version, [10, 12, 15 - 1 / data.project.settings.fps], expect.any(AbortSignal));
-  await click(buttonIn(turnFor(id), "See edit")!);
+  await click(buttonIn(turnFor(id), "查看剪辑")!);
   expect([player.mediaTime(8), player.mediaTime(11), player.mediaTime(13)]).toEqual([10, 12, 13]);
   await press("\\");
   expect(player.mediaTime(11)).toBe(11);
@@ -7298,7 +7298,7 @@ it("starts an applied cut's After once, on the player it stays on, and plays not
   arrive.files = () => waiting.splice(0).forEach(done => done());
   vi.spyOn(api, "renders").mockImplementation(async () => { await new Promise<void>(done => waiting.push(done)); return { renders: [] }; });
   const audition = vi.spyOn(player, "audition"), passage = vi.spyOn(player, "previewRange"), play = vi.spyOn(player, "play");
-  await click(buttonIn(turnFor("chg_approved_2"), "See edit")!);
+  await click(buttonIn(turnFor("chg_approved_2"), "查看剪辑")!);
   await act(async () => {});
   // The working edit doesn't start on the passage while the cut's own version loads: that was a flash of the wrong
   // picture and a clipped sound before the listen.
@@ -7352,7 +7352,7 @@ it("greys out the pass's other cuts on After, and a click into one plays it in B
   const notice = container.querySelector(".edit-card-switched")!;
   expect([...notice.children].map(part => part.textContent)).toEqual(["Before", "The cut at 0:06 took this part out."]);
   expect(notice.querySelector("button, kbd")).toBeNull();
-  expect(beforeIcon(editPanel()!)).toEqual(["", "Before", "true", "Back to After (\\)"]);
+  expect(beforeIcon(editPanel()!)).toEqual(["", "剪辑前", "true", "返回剪辑后 (\\)"]);
   expect(container.querySelector(".edit-card-before.is-flash[aria-pressed='true']")).not.toBeNull();
   expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing what the cut at 0:06 took out · Before");
   // On Before the footage plays, so it's only outlined.
@@ -7430,15 +7430,15 @@ it("waits for the latest version with captions when opening an older cut, and re
     fullRenderKeys: { context: fullRenderContext(data.project), preview: cache.key, delivery: "delivery" },
   }));
   await show();
-  await click(buttonIn(turnFor("chg_approved_2"), "See edit")!);
+  await click(buttonIn(turnFor("chg_approved_2"), "查看剪辑")!);
   const monitor = container.querySelector<HTMLElement>(".watch-monitor")!;
   const alerts = () => [...monitor.querySelectorAll('[role="alert"]')].filter(el => !el.closest('[aria-hidden="true"]')).map(el => el.textContent);
-  expect(alerts()).toContain("Couldn’t load the version for After.");
+  expect(alerts()).toContain("无法加载剪辑后的版本。");
   expect(audition).not.toHaveBeenCalled();
   expect(monitor.querySelector('video[src*="without-later-captions"]')).toBeNull();
   failing = false;
-  await click(buttonIn(monitor, "Retry")!);
-  expect(alerts()).not.toContain("Couldn’t load the version for After.");
+  await click(buttonIn(monitor, "重试")!);
+  expect(alerts()).not.toContain("无法加载剪辑后的版本。");
   expect(player.element()?.getAttribute("src")).toBe(api.renderFileUrl(cache.id));
   expect(player.mediaTime(13)).toBeCloseTo(10.6, 6);
 
@@ -7522,7 +7522,7 @@ it("gives the timeline to a request that arrived under a pass's open list once t
   await click(passForYou());
   await press("Escape");
   await act(async () => {});
-  expect(turnFor("chg_later").querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 needs you");
+  expect(turnFor("chg_later").querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 项待审阅");
   expect(numbered()).toEqual([["3", "check"], ["1", "check"]]);
   expect([...container.querySelectorAll<HTMLElement>(".simple-timeline-mark.is-numbered")].at(-1)?.style.left).toBe("81.25%");
 });
@@ -7594,7 +7594,7 @@ it("fixes the request Scarlet is on above the message box, moves it into the con
   expect(unit("task_pass")!.querySelector(".req-now .working-text")).not.toBeNull();
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === "task_pass" ? { ...t, expectedSeconds: 600 } : t) }));
   expect(unit("task_pass")!.querySelector('[role="timer"], [role=progressbar], .req-bar')).toBeNull();
-  expect(unit("task_pass")!.querySelector('[aria-label^="Stop this edit"]')).not.toBeNull();
+  expect(unit("task_pass")!.querySelector('[aria-label^="停止此剪辑"]')).not.toBeNull();
   // Once Scarlet finishes, the request joins the conversation and the next one takes the fixed spot, at work.
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === "task_pass" ? { ...t, state: "done" as const, finishedAt: new Date().toISOString() }
     : t.id === "task_zoom" ? { ...t, state: "running" as const, startedAt: new Date().toISOString() } : t) }));
@@ -7602,9 +7602,9 @@ it("fixes the request Scarlet is on above the message box, moves it into the con
   expect(unit("task_zoom")!.closest(".simple-pin")).not.toBeNull();
   expect(unit("task_zoom")!.querySelector(".unit-msg p")?.textContent).toBe("Zoom into the browser window.");
   expect(unit("task_zoom")!.querySelector('.req-now [role="status"]')).not.toBeNull();
-  expect(unit("task_zoom")!.querySelector('[aria-label^="Stop this edit"]')).not.toBeNull();
+  expect(unit("task_zoom")!.querySelector('[aria-label^="停止此剪辑"]')).not.toBeNull();
   expect(container.querySelector(".queue-row")).toBeNull();
-  expect(unit("task_zoom")!.querySelector(".unit-pause-edit")?.getAttribute("aria-label")).toBe("Pause editing");
+  expect(unit("task_zoom")!.querySelector(".unit-pause-edit")?.getAttribute("aria-label")).toBe("暂停剪辑");
   // A request asked meanwhile leaves the box as it was, starting a new edit.
   const asked = { ...data.tasks.find(t => t.id === "task_zoom")!, id: "task_asked", instruction: "Add captions.", state: "queued" as const,
     context: { message: "Add captions." }, createdAt: new Date(Date.now() + 2000).toISOString(), startedAt: undefined };
@@ -7632,32 +7632,32 @@ it("opens a call that's with Scarlet: its card says so, and its revision is at w
   await show();
   await act(async () => {});
   // The pass counts only what still waits on the editor. Its list keeps the cut being revised, marked Revising….
-  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 needs you");
+  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 项待审阅");
   await click(passCard().querySelector(".simple-pass-need")!);
   expect(passRows().map(r => [r.querySelector(".edit-badge")?.textContent, r.querySelector(".edit-badge")?.classList.contains("is-check"), r.querySelector(".simple-pass-value")?.textContent]))
-    .toEqual([["1", false, "Revising…"], ["2", true, undefined]]);
+    .toEqual([["1", false, "正在修改…"], ["2", true, undefined]]);
   // ↑ steps to it from the call beside it. The card keeps Scarlet's note and Before/After, and says Revising… where the
   // decisions were. It isn't waiting on the editor, so it has no place among the ones that are.
   // "1 needs you" opened the one call still waiting.
   expect(passRow("The corrected image-input take belongs here.").getAttribute("aria-current")).toBe("true");
   await press("ArrowUp");
-  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing cut at 3:50 · 1 of 2 · After");
+  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing cut at 3:50 · 1 of 2 · 剪辑后");
   expect(call().querySelector(".edit-card-title")?.textContent).toBe("Breath before the price.");
-  expect(call().querySelector(".edit-card-status")?.textContent).toBe("Revising…");
+  expect(call().querySelector(".edit-card-status")?.textContent).toBe("正在修改…");
   expect(call().querySelector(".review-actions")).toBeNull();
   // It keeps its number, the same as on its line in the list and on the revision at work on it.
-  expect(call().querySelector(".edit-card-count")?.textContent).toBe("Cut 1");
-  expect(beforeIcon(call())).toEqual(["", "Before", "false", "Play Before (\\)"]);
+  expect(call().querySelector(".edit-card-count")?.textContent).toBe("剪点 1");
+  expect(beforeIcon(call())).toEqual(["", "剪辑前", "false", "播放剪辑前 (\\)"]);
   // The editor's revision is at work directly under that call's row, tagged once with the cut it revises.
   const unit = container.querySelector<HTMLElement>('.subunit[data-run="task_revise"]')!;
   expect(unit.closest("li")).toBe(passRow("Breath before the price.").closest("li"));
-  expect([...unit.querySelectorAll(".simple-revising")].map(t => t.textContent)).toEqual(["Cut 1"]);
+  expect([...unit.querySelectorAll(".simple-revising")].map(t => t.textContent)).toEqual(["剪点 1"]);
   expect(wordsOf(unit.querySelector(".subunit-msg p"))).toBe("The words don't line up.");
   expect(unit.querySelector(".req")?.getAttribute("data-state")).toBe("working");
-  expect(transcriptLink().getAttribute("aria-label")).toBe("Show transcript");
+  expect(transcriptLink().getAttribute("aria-label")).toBe("显示转写稿");
   // The message box is on that cut, so a second note goes to it.
   expect(container.querySelector(".simple-target")?.textContent).toContain("Revising the cut at 3:50");
-  expect(boxTag()).toBe("Cut 1");
+  expect(boxTag()).toBe("剪点 1");
   // A and S do nothing on it: the decision waits for the new version.
   const save = vi.mocked(api.saveCutChoices);
   save.mockClear();
@@ -7665,8 +7665,8 @@ it("opens a call that's with Scarlet: its card says so, and its revision is at w
   expect(save).not.toHaveBeenCalled();
   // The other call still has its decisions, the only one waiting.
   await press("ArrowDown");
-  expect(buttonIn(call(), "Approve")).toBeDefined();
-  expect([call().querySelector(".edit-card-count")?.textContent, call().querySelector(".edit-card-count")?.getAttribute("title")]).toEqual(["Cut 2", expect.stringMatching(/^Cut at \d+:\d\d$/)]);
+  expect(buttonIn(call(), "批准")).toBeDefined();
+  expect([call().querySelector(".edit-card-count")?.textContent, call().querySelector(".edit-card-count")?.getAttribute("title")]).toEqual(["剪点 2", expect.stringMatching(/^Cut at \d+:\d\d$/)]);
 });
 
 it("aims the message box at the cut that's open, and lets go of it when the cut closes", async () => {
@@ -7677,12 +7677,12 @@ it("aims the message box at the cut that's open, and lets go of it when the cut 
   await reviewCalls();
   expect(useUiStore.getState().agentContext).toMatchObject({ changeId: "chg_ready", cutIndex: 1 });
   // The tag is the call's number, as on its card and its line in the list.
-  expect(boxTag()).toBe("Cut 1");
+  expect(boxTag()).toBe("剪点 1");
   // Esc puts the cut away, and a message no longer goes to it.
   await press("Escape");
-  expect(container.querySelector('[aria-label="Call"]')).toBeNull();
+  expect(container.querySelector('[aria-label="剪点"]')).toBeNull();
   expect(useUiStore.getState().agentContext).toBeNull();
-  expect(boxTag()).not.toBe("Cut 1");
+  expect(boxTag()).not.toBe("剪点 1");
 });
 
 /** The line that names where the message box is aimed, for screen readers only. */
@@ -7717,7 +7717,7 @@ it("leaves a message being written aimed where it was, and offers nothing above 
   // With another edit open the message still starts a new edit, with no line over the box.
   await click(edits()[2]!);
   await act(async () => {});
-  expect(aimLine()).toBe("Starting a new edit");
+  expect(aimLine()).toBe("发起新剪辑");
   expect(container.querySelector(".simple-target button")).toBeNull();
   expect(boxNow()).toEqual(["Make the captions smaller", "whole", JSON.stringify([PRJ, null])]);
   expect(editPanel()).not.toBeNull();
@@ -7773,7 +7773,7 @@ it("keeps the box where it was while the editor speaks into it, and follows what
     finishedAt: undefined, summary: null, changeIds: [], question: "Smaller by how much?", context: { changeId: "chg_approved_2", message: "Carry on" } }] }));
   expect(threadWith("chg_approved_2").question?.id).toBe("task_asking");
   expect([boxTag(), useUiStore.getState().draftOwner]).toEqual([undefined, newEdit]);
-  expect(aimLine()).toBe("Starting a new edit");
+  expect(aimLine()).toBe("发起新剪辑");
   // Opening an edit while they speak leaves it there too, as it does a message being typed.
   await click(turnFor("chg_approved_2").querySelectorAll(".simple-edits .simple-edit")[1]!);
   await act(async () => {});
@@ -7789,7 +7789,7 @@ it("keeps the box where it was while the editor speaks into it, and follows what
   expect(editPanel()).toBeNull();
   expect(boxTag()).toBe("Edit at 0:00");
   await act(async () => useUiStore.getState().setSpeaking(false));
-  expect(boxTag()).toBe("Answer");
+  expect(boxTag()).toBe("回答");
 });
 
 it("leaves a spoken message where it was said: the tag's × and words typed and sent meanwhile wait until it is out", async () => {
@@ -7824,25 +7824,25 @@ it("takes the box off a suggestion when its card closes after Revise, as off a c
   vi.spyOn(api, "timeline").mockImplementation(async (_, version = "head") => ({ timeline: { ...data.timeline!, version } }));
   await show();
   // Scarlet's question waits, so with nothing open the box answers it.
-  expect(boxTag()).toBe("Answer");
+  expect(boxTag()).toBe("回答");
   await click(suggestion("chg_ready"));
   await act(async () => {});
   // Revise (R) aims the box at the suggestion on the card. That is what's open, so the line naming it is for screen readers.
   await press("r");
-  expect([boxTag(), useUiStore.getState().agentContext]).toMatchObject(["Whole edit", { changeId: "chg_ready", label: "Suggestion" }]);
+  expect([boxTag(), useUiStore.getState().agentContext]).toMatchObject(["Whole edit", { changeId: "chg_ready", label: "剪辑建议" }]);
   expect(aimLine()).toBe("Revising this suggestion");
   // Esc closes the card, and the empty box goes back to Scarlet's question.
   await press("Escape");
-  expect(container.querySelector('[aria-label="Suggestion"]')).toBeNull();
-  expect([boxTag(), useUiStore.getState().agentContext]).toEqual(["Answer", null]);
+  expect(container.querySelector('[aria-label="剪辑建议"]')).toBeNull();
+  expect([boxTag(), useUiStore.getState().agentContext]).toEqual(["回答", null]);
   // A message written to the suggestion stays aimed at it when the card closes.
   await click(suggestion("chg_ready"));
   await act(async () => {});
   await press("r");
   await act(async () => useUiStore.getState().setAgentDraft("Make it shorter"));
   await press("Escape");
-  expect(container.querySelector('[aria-label="Suggestion"]')).toBeNull();
-  expect([boxTag(), useUiStore.getState().agentContext]).toMatchObject(["Whole edit", { changeId: "chg_ready", label: "Suggestion" }]);
+  expect(container.querySelector('[aria-label="剪辑建议"]')).toBeNull();
+  expect([boxTag(), useUiStore.getState().agentContext]).toMatchObject(["Whole edit", { changeId: "chg_ready", label: "剪辑建议" }]);
   expect(aimLine()).toBe("Revising this suggestion");
 });
 
@@ -7914,10 +7914,10 @@ it("says Queued on the card of a cut sent back until Scarlet starts on it, and s
   await event(d => ({ ...d, changes: d.changes.map(c => c.id === "chg_ready" ? { ...c, state: "revising" as const } : c) }));
   await event(d => ({ ...d, tasks: [...d.tasks, callRequest("task_second", 2, { kind: "edit" as const, instruction: "Keep the aside.", expectedSeconds: undefined })] }));
   // Only the second cut still waits on the editor. The other two are with Scarlet.
-  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 needs you");
+  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 项待审阅");
   await click(passCard().querySelector(".simple-pass-need")!);
   expect(passRows().map(r => [r.querySelector(".simple-pass-label")?.textContent, r.querySelector(".simple-pass-value")?.textContent]))
-    .toEqual([["A clean retake.", "Revising…"], ["Breath before the price.", undefined], ["Repeated aside.", "Revising…"]]);
+    .toEqual([["A clean retake.", "正在修改…"], ["Breath before the price.", undefined], ["Repeated aside.", "正在修改…"]]);
   // Each call has its number among all three, amber only on the one that still waits.
   expect(passRows().map(r => [r.querySelector(".edit-badge")?.textContent, r.querySelector(".edit-badge")?.classList.contains("is-check")])).toEqual([["1", false], ["2", true], ["3", false]]);
   // ↓ steps from the call still waiting to the one that waits its turn. Its card says it's queued, and its number is
@@ -7925,18 +7925,18 @@ it("says Queued on the card of a cut sent back until Scarlet starts on it, and s
   // "1 needs you" opened the call still waiting.
   expect(passRow("Breath before the price.").getAttribute("aria-current")).toBe("true");
   await press("ArrowDown");
-  expect([onVideo(), call().querySelector(".edit-card-status")?.textContent]).toEqual(["Showing cut at 0:11 · 3 of 3 · After", "Queued"]);
+  expect([onVideo(), call().querySelector(".edit-card-status")?.textContent]).toEqual(["Showing cut at 0:11 · 3 of 3 · 剪辑后", "排队中"]);
   // ↑ steps back through every call, the one Scarlet is revising too.
   await press("ArrowUp");
-  expect([onVideo(), !!buttonIn(call(), "Approve")]).toEqual(["Showing cut at 0:06 · 2 of 3 · After", true]);
+  expect([onVideo(), !!buttonIn(call(), "批准")]).toEqual(["Showing cut at 0:06 · 2 of 3 · 剪辑后", true]);
   await press("ArrowUp");
-  expect([onVideo(), call().querySelector(".edit-card-status")?.textContent]).toEqual(["Showing cut at 0:02 · 1 of 3 · After", "Revising…"]);
+  expect([onVideo(), call().querySelector(".edit-card-status")?.textContent]).toEqual(["Showing cut at 0:02 · 1 of 3 · 剪辑后", "正在修改…"]);
   // Scarlet starts on the note about the aside. It wasn't sent as a revision, but its card says Scarlet is on it.
   await press("ArrowDown");
   await press("ArrowDown");
-  expect(call().querySelector(".edit-card-status")?.textContent).toBe("Queued");
+  expect(call().querySelector(".edit-card-status")?.textContent).toBe("排队中");
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === "task_second" ? { ...t, state: "running" as const, startedAt: started } : t) }));
-  expect(call().querySelector(".edit-card-status")?.textContent).toBe("Revising…");
+  expect(call().querySelector(".edit-card-status")?.textContent).toBe("正在修改…");
 });
 
 /**
@@ -7960,19 +7960,19 @@ it("opens the request's flagged edit after its last call, where need you still c
   await show();
   await act(async () => {});
   // Three calls and one flagged edit wait. "4 need you" opens the first of them, a call.
-  expect(needYou()).toBe("4 need you");
+  expect(needYou()).toBe("4 项待审阅");
   await reviewCalls();
   await press("a");
   await press("a");
-  expect([call().querySelector(".edit-card-count")?.textContent, needYou()]).toEqual(["Cut 3", "2 need you"]);
+  expect([call().querySelector(".edit-card-count")?.textContent, needYou()]).toEqual(["剪点 3", "2 项待审阅"]);
   // The last call schedules the pass, since Scarlet is still on it. The flagged edit still waits, so it opens in the
   // call's place: the card doesn't close on "1 needs you".
   await press("a");
   await act(async () => {});
   expect(save).toHaveBeenLastCalledWith("chg_ready", expect.objectContaining({ applyWhenDone: true }));
-  expect(container.querySelector('[aria-label="Call"]')).toBeNull();
+  expect(container.querySelector('[aria-label="剪点"]')).toBeNull();
   // It has the number it has among the calls, after them: the card and the box say it as its line in the chat does.
-  expect([editPanel()?.querySelector(".edit-card-title")?.textContent, cardCount(), needYou()]).toEqual([SUMMARY, "Edit 4", "1 needs you"]);
+  expect([editPanel()?.querySelector(".edit-card-title")?.textContent, cardCount(), needYou()]).toEqual([SUMMARY, "Edit 4", "1 项待审阅"]);
   expect(boxTag()).toBe("Edit 4");
   // Kept, nothing of the request waits and the card closes.
   await press("k");
@@ -7990,7 +7990,7 @@ it("says what Scarlet said as the pass finished, and what it applied so far, abo
   const note = passCard().closest(".unit")!.querySelector<HTMLElement>(".req-say")!;
   const made = passCard().querySelector<HTMLElement>(".simple-made")!;
   const list = passCard().querySelector<HTMLElement>(".simple-pass-list")!;
-  expect([note?.textContent, made?.textContent, list?.getAttribute("aria-label")]).toEqual([said, `${SUMMARY}.`, "Calls that need you"]);
+  expect([note?.textContent, made?.textContent, list?.getAttribute("aria-label")]).toEqual([said, `${SUMMARY}.`, "待确认的剪点"]);
   // Scarlet's words, then the sentence (the one edit applied so far says what it did), then the calls and the
   // flagged edit, one run of numbers.
   expect([note.compareDocumentPosition(made), made.compareDocumentPosition(list)].map(p => !!(p & Node.DOCUMENT_POSITION_FOLLOWING))).toEqual([true, true]);
@@ -8009,7 +8009,7 @@ it("opens the request's first waiting call after its last flagged edit is kept",
   // K keeps it. Three calls of the same request still wait, so the first of them opens.
   await press("k");
   expect(editPanel()).toBeNull();
-  expect([call().querySelector(".edit-card-count")?.textContent, needYou(), boxTag()]).toEqual(["Cut 1", "3 need you", "Cut 1"]);
+  expect([call().querySelector(".edit-card-count")?.textContent, needYou(), boxTag()]).toEqual(["剪点 1", "3 项待审阅", "剪点 1"]);
 });
 
 it("keeps the waiting pass's flagged edit on the timeline, numbered after its calls, with a call open and with a request behind the pass", async () => {
@@ -8032,7 +8032,7 @@ it("keeps the waiting pass's flagged edit on the timeline, numbered after its ca
   await openCall("Breath before the price.");
   await press("0");
   expect(call()).not.toBeNull();
-  expect([marks(), needYou()]).toEqual([["1", "2", "3", "4"], "4 need you"]);
+  expect([marks(), needYou()]).toEqual([["1", "2", "3", "4"], "4 项待审阅"]);
   await press("Escape");
   // A request waits behind the pass. It is the latest, so the timeline goes to it: the window asks for its edits, as
   // only the timeline does for a request that has applied none.
@@ -8062,7 +8062,7 @@ it("keeps the number a call or a flagged edit was shown under when another call 
   // It asks about the third. Until 2026-11-11 that call took 3 and the edit moved up to 4, so on a pass still at work
   // every number after a new call changed under the editor. The edit is still 3, and the new call is 4.
   await event(d => ({ ...d, changes: d.changes.map(c => c.id === "chg_ready" ? { ...c, cutAssessments: asked(3) } : c) }));
-  expect([needYou(), numbers()]).toEqual(["4 need you", [["1", "A clean retake."], ["2", "Breath before the price."], ["3", "wrap"], ["4", "Repeated aside."]]]);
+  expect([needYou(), numbers()]).toEqual(["4 项待审阅", [["1", "A clean retake."], ["2", "Breath before the price."], ["3", "wrap"], ["4", "Repeated aside."]]]);
   const marks = () => [...container.querySelectorAll<HTMLElement>(".simple-timeline-mark")].map(m => m.textContent);
   expect(marks()).toEqual(["1", "2", "4", "3"]);
   // Hovered, each says it needs the editor by its number alone, not "Cut 4 of 3".
@@ -8094,18 +8094,18 @@ it("keeps a revised call's number on its card and on the note about it that wait
   await event(d => ({ ...d, tasks: [...d.tasks, callRequest("task_note1", 0, { kind: "edit" as const, state: "running" as const, startedAt: now }), callRequest("task_note2", 0, laterNote)] }));
   const tag = () => [...container.querySelectorAll<HTMLElement>(".queue-row, .queue-head")].find(r => r.textContent?.includes("Start it later."))
     ?.querySelector(".queue-target")?.textContent;
-  expect(tag()).toBe("Cut 3");
+  expect(tag()).toBe("剪点 3");
   // The first moves the cut. The engine keeps the call's place among the calls, and the tag stays.
   await revisedCut("task_note1", "chg_ready", 0, { start: 1.5, end: 3 }, "Starts in the pause.");
   await event(d => ({ ...d, changes: d.changes.map(c => c.id !== "chg_revised" ? c
     : { ...c, cutAssessments: c.cutAssessments!.map(a => a.index === 0 ? { ...a, revised: true, askOrder: 3 } : a) }),
     tasks: d.tasks.map(t => t.id === "task_note1" ? { ...t, state: "done" as const, finishedAt: new Date().toISOString() } : t) }));
   await act(async () => {});
-  expect(tag()).toBe("Cut 3");
+  expect(tag()).toBe("剪点 3");
   // The editor takes the second note out of the queue, and opens the revised call: its card says Cut 3 too.
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === "task_note2" ? { ...t, state: "cancelled" as const } : t) }));
   await click(passRow("Starts in the pause."));
-  expect(call().querySelector(".edit-card-count")?.textContent).toBe("Cut 3");
+  expect(call().querySelector(".edit-card-count")?.textContent).toBe("剪点 3");
 });
 
 it("leaves the flagged edit open and playing when the last call applies the pass under it", async () => {
@@ -8146,8 +8146,8 @@ it("keeps the flagged edits listed in the chat once the last call applies the pa
   // The pass goes in and its calls' list goes with it. The edit that still waits stays listed, and is the one open.
   await event(d => ({ ...d, changes: d.changes.map(c => c.id === "chg_ready" ? { ...c, state: "approved" as const, appliedVersion: c.toVersion } : c) }));
   await act(async () => {});
-  expect(needYou()).toBe("1 needs you");
-  const waiting = [...passCard().querySelectorAll<HTMLButtonElement>('[aria-label="Edits that need you"] > li > button')];
+  expect(needYou()).toBe("1 项待审阅");
+  const waiting = [...passCard().querySelectorAll<HTMLButtonElement>('[aria-label="待确认的剪辑"] > li > button')];
   expect(waiting.map(r => [r.textContent?.includes("wrap"), r.getAttribute("aria-current")])).toEqual([[true, "true"]]);
   expect(editPanel()?.querySelector(".edit-card-title")?.textContent).toBe(SUMMARY);
 });
@@ -8166,7 +8166,7 @@ it("keeps a previously unnumbered call in place when the engine publishes an ear
   expect(passRows().map(r => r.textContent)).toEqual([`1${later!.reason}`, `2${early!.reason}`]);
   expect(passRows()[0]).toBe(first);
   expect(call()).toBe(card);
-  expect(card.querySelector(".edit-card-count")?.textContent).toBe("Cut 1");
+  expect(card.querySelector(".edit-card-count")?.textContent).toBe("剪点 1");
 });
 
 it("numbers each call in the order it reached the editor, so an ask earlier in the video doesn't renumber the calls before it", async () => {
@@ -8187,14 +8187,14 @@ it("numbers each call in the order it reached the editor, so an ask earlier in t
   await event(d => ({ ...d, tasks: [...d.tasks, callRequest("task_about", 2, { kind: "edit" as const, expectedSeconds: undefined })] }));
   const tag = () => [...container.querySelectorAll<HTMLElement>(".queue-row, .queue-head")].find(r => r.textContent?.includes("Start it later."))
     ?.querySelector(".queue-target")?.textContent;
-  expect(tag()).toBe("Cut 1");
+  expect(tag()).toBe("剪点 1");
   // Scarlet then asks about the cut at 0:02, earlier in the video. It is the third call, and the others keep theirs.
   await event(d => ({ ...d, changes: d.changes.map(c => c.id === "chg_ready" ? { ...c, cutAssessments: asked({ 2: 1, 1: 2, 0: 3 }) } : c) }));
   await act(async () => {});
   expect(badges()).toEqual([["1", STAGED[2]!.reason], ["2", STAGED[1]!.reason], ["3", STAGED[0]!.reason]]);
-  expect(tag()).toBe("Cut 1");
+  expect(tag()).toBe("剪点 1");
   await click(passRow(STAGED[1]!.reason));
-  expect(call().querySelector(".edit-card-count")?.textContent).toBe("Cut 2");
+  expect(call().querySelector(".edit-card-count")?.textContent).toBe("剪点 2");
 });
 
 it("numbers the cuts a pass never checked after its asks, in timeline order, once it hands them over", async () => {
@@ -8208,7 +8208,7 @@ it("numbers the cuts a pass never checked after its asks, in timeline order, onc
   expect(passRows().map(r => [r.querySelector(".edit-badge")?.textContent, r.querySelector(".simple-pass-label")?.textContent]))
     .toEqual([["1", STAGED[1]!.reason], ["2", STAGED[2]!.reason], ["3", STAGED[0]!.reason]]);
   await click(passRow(STAGED[0]!.reason));
-  expect([call().querySelector(".edit-card-count")?.textContent, call().querySelector(".edit-card-title")?.textContent?.startsWith("Not checked yet.")]).toEqual(["Cut 3", true]);
+  expect([call().querySelector(".edit-card-count")?.textContent, call().querySelector(".edit-card-title")?.textContent?.startsWith("尚未检查。")]).toEqual(["剪点 3", true]);
 });
 
 it("heads each request with the editor's words alone, and tags a request about one call with its cut", async () => {
@@ -8220,7 +8220,7 @@ it("heads each request with the editor's words alone, and tags a request about o
   // or tag before them. "Edit N" is only ever an edit Scarlet made.
   const before = names();
   expect(before.length).toBeGreaterThan(1);
-  expect(units().map(u => [u.querySelector(".unit-msg .simple-revising"), u.querySelector(".unit-msg")!.textContent!.startsWith("You")])).toEqual(before.map(() => [null, true]));
+  expect(units().map(u => [u.querySelector(".unit-msg .simple-revising"), u.querySelector(".unit-msg")!.textContent!.startsWith("你")])).toEqual(before.map(() => [null, true]));
   // Each call still waiting has an amber dot on the timeline with its number, the one it has in the pass's list.
   const dots = () => [...container.querySelectorAll<HTMLElement>(".simple-timeline-mark.is-numbered")].map(d => [d.querySelector(".simple-timeline-number")?.textContent, d.dataset.state]);
   expect(dots()).toEqual([["1", "check"], ["2", "check"], ["3", "check"]]);
@@ -8294,7 +8294,7 @@ it("keeps a request about one cut in the conversation while it's stopped early, 
   const about = () => container.querySelector<HTMLElement>('.subunit[data-run="task_about"]');
   expect([tagIn(about()), about()?.querySelector(".subunit-msg > .unit-state")?.textContent]).toEqual(["Cut 1", "Stopped"]);
   expect(about()?.querySelector(".req-state, .req-status")).toBeNull();
-  expect([...about()!.querySelectorAll(".req-row")].map(row => [row.className, row.textContent, row.querySelector("button")?.textContent])).toEqual([["req-row req-result", "Nothing savedResume", "Resume"]]);
+  expect([...about()!.querySelectorAll(".req-row")].map(row => [row.className, row.textContent, row.querySelector("button")?.textContent])).toEqual([["req-row req-result", "Nothing savedResume", "恢复"]]);
   expect(about()?.closest("li")?.querySelector(":scope > button .simple-pass-label")?.textContent).toBe(STAGED[0]!.reason);
   // Done without changing anything: it stays, since Scarlet's words are the only place that says why.
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === "task_about" ? { ...t, state: "done" as const, summary: "That breath is the join; cutting more clips the next word." } : t) }));
@@ -8320,12 +8320,12 @@ it("keeps a request about one cut in the conversation while it's paused for a tr
   const about = () => container.querySelector<HTMLElement>('.subunit[data-run="task_about"]');
   const stands = () => [about()?.closest("li")?.querySelector(":scope > button .simple-pass-label")?.textContent,
     about()?.querySelector(".subunit-msg > .unit-state")?.textContent, about()?.querySelector(".run-wait button")?.textContent];
-  expect(stands()).toEqual([STAGED[0]!.reason, "Paused", "Transcribe"]);
+  expect(stands()).toEqual([STAGED[0]!.reason, "已暂停", "Transcribe"]);
   // Paused with the cut already revised: the pass comes back with it, and the request is still there to finish.
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === "task_about" ? { ...t, changeIds: ["chg_revised"] } : t),
     changes: [...d.changes.map(c => c.id === "chg_ready" ? { ...c, state: "rejected" as const, replacedBy: "chg_revised" } : c),
       { ...d.changes.find(c => c.id === "chg_ready")!, id: "chg_revised", taskId: "task_about", createdAt: new Date().toISOString() }] }));
-  expect(stands()).toEqual([STAGED[0]!.reason, "Paused", "Transcribe"]);
+  expect(stands()).toEqual([STAGED[0]!.reason, "已暂停", "Transcribe"]);
 });
 
 it("keeps a pass finished when its closing check couldn't run, with Retry after the line that says so", async () => {
@@ -8340,7 +8340,7 @@ it("keeps a pass finished when its closing check couldn't run, with Retry after 
   expect(unit.querySelector(".unit-msg .unit-state")?.textContent ?? "").not.toBe("Couldn’t finish");
   const line = [...unit.querySelectorAll(".req-say.is-note")].find(p => p.textContent?.startsWith("The closing check for repeats didn’t run."))!;
   expect(line.textContent).toBe("The closing check for repeats didn’t run.Retry");
-  await click(buttonIn(line as HTMLElement, "Retry")!);
+  await click(buttonIn(line as HTMLElement, "重试")!);
   expect(retryTask).toHaveBeenCalledWith("task_done", { agent: "claude", model: "opus" });
 });
 
@@ -8378,7 +8378,7 @@ it("keeps a stopped request about one call under its cut, with Resume once the p
   // The same words about another cut, asked later and done, are another request: they don't take its Resume.
   await event(d => ({ ...d, tasks: [...d.tasks, callRequest("task_same", 1, { kind: "edit" as const, state: "done" as const, createdAt: at(3000), startedAt: at(3000), finishedAt: at(4000) })] }));
   expect(stands()).toEqual(stopped);
-  await click(buttonIn(about()!, "Resume")!);
+  await click(buttonIn(about()!, "恢复")!);
   expect(retryTask).toHaveBeenCalledWith("task_about", { agent: "claude", model: "opus" });
   // A later request about the same cut waits its turn: nothing is offered meanwhile. Once Scarlet begins it, it takes
   // the stopped one's place under the row.
@@ -8406,7 +8406,7 @@ it("says Scarlet's note on a revised cut once, on its call's row, when the revis
   // It stays under its call's row, which has the revised cut and Scarlet's note on it. Under the row, the request has its
   // word and its one action, and doesn't say the note a second time (2026-11-10).
   expect(about().closest("li")?.querySelector(":scope > button .simple-pass-label")?.textContent).toBe("A cleaner retake, from its first word.");
-  expect([about().querySelector(".subunit-msg > .unit-state")?.textContent, ...[...about().querySelectorAll(".req-row")].map(row => row.textContent)]).toEqual(["Stopped", "Resume"]);
+  expect([about().querySelector(".subunit-msg > .unit-state")?.textContent, ...[...about().querySelectorAll(".req-row")].map(row => row.textContent)]).toEqual(["Stopped", "恢复"]);
   expect(about().textContent).not.toContain("A cleaner retake");
 });
 
@@ -8453,17 +8453,17 @@ it("keeps a request about one call that couldn't finish under its cut, whatever 
   const about = () => container.querySelector<HTMLElement>('.subunit[data-run="task_about"]');
   /** What the row it sits under says, where it stands, and its one action. */
   const stands = () => [passRow(STAGED[1]!.reason).querySelector(".simple-pass-value")?.textContent, about()?.closest("li")?.querySelector(":scope > button .simple-pass-label")?.textContent,
-    about()?.querySelector(".subunit-msg > .unit-state")?.textContent, about() && buttonIn(about()!, "Retry")?.textContent];
+    about()?.querySelector(".subunit-msg > .unit-state")?.textContent, about() && buttonIn(about()!, "重试")?.textContent];
   // The revision couldn't finish, so the cut is as the editor approved it. The request doesn't leave with the call that
   // was already on the cut: the chat says it couldn't finish, under its cut, with Retry (2026-11-09: it left at once,
   // and the row read Approved as if nothing had been asked).
-  expect(stands()).toEqual(["Approved", STAGED[1]!.reason, "Couldn’t finish", "Retry"]);
+  expect(stands()).toEqual(["已批准", STAGED[1]!.reason, "Couldn’t finish", "重试"]);
   // A call made since leaves it there too: nothing says which call came after the request.
   await click(passRow(STAGED[1]!.reason));
-  expect(call().querySelector(".edit-card-count")?.textContent).toBe("Cut 2");
+  expect(call().querySelector(".edit-card-count")?.textContent).toBe("剪点 2");
   await press("s");
   await act(async () => {});
-  expect(stands()).toEqual(["Skipped", STAGED[1]!.reason, "Couldn’t finish", "Retry"]);
+  expect(stands()).toEqual(["已跳过", STAGED[1]!.reason, "Couldn’t finish", "重试"]);
   // The pass is applied: every call is made, and the request leaves with them.
   await event(d => ({ ...d, changes: d.changes.map(c => c.id === "chg_ready" ? { ...c, state: "approved" as const, appliedVersion: c.toVersion } : c) }));
   await act(async () => {});
@@ -8517,7 +8517,7 @@ it("shows a request about one cut as its work while Scarlet is on it, without wh
   const about = () => container.querySelector<HTMLElement>('.subunit[data-run="task_about"]')!;
   // Under its call: the editor's words with Stop after them, and Scarlet's work. Its reply isn't there.
   expect(wordsOf(about().querySelector(".subunit-msg p"))).toBe("Start it later.");
-  expect(about().querySelector('.subunit-msg > .unit-actions [aria-label^="Stop this edit"]')).not.toBeNull();
+  expect(about().querySelector('.subunit-msg > .unit-actions [aria-label^="停止此剪辑"]')).not.toBeNull();
   expect(about().querySelector('[aria-label="Scarlet’s work"]')).not.toBeNull();
   // While Scarlet works on it, one line says what it is doing this moment, as for any request: no stages.
   const doing = () => about().querySelector('.req-now [role="status"]')?.textContent;
@@ -8552,7 +8552,7 @@ it("keeps a call open on its new version when its revision lands", async () => {
   // ↑ from the first call still waiting steps to the one being revised.
   await reviewCalls();
   await press("ArrowUp");
-  expect(call().querySelector(".edit-card-status")?.textContent).toBe("Revising…");
+  expect(call().querySelector(".edit-card-status")?.textContent).toBe("正在修改…");
   // Scarlet saves a draft revision, then changes it again. The row keeps the note the editor sent back while the
   // other two calls remain available, until Scarlet finishes the requested revision.
   windows.mockClear();
@@ -8565,15 +8565,15 @@ it("keeps a call open on its new version when its revision lands", async () => {
   expect(windows.mock.calls.some(([, version, range]) => version === "ver_revised" && range.start === 0)).toBe(false);
   expect(passRows().map(r => r.querySelector(".simple-pass-label")?.textContent)).toEqual(STAGED.map(r => r.reason));
   expect(call().querySelector(".edit-card-title")?.textContent).toBe(STAGED[0]!.reason);
-  expect(call().querySelector(".edit-card-status")?.textContent).toBe("Revising…");
-  expect(buttonIn(call(), "Approve")).toBeUndefined();
+  expect(call().querySelector(".edit-card-status")?.textContent).toBe("正在修改…");
+  expect(buttonIn(call(), "批准")).toBeUndefined();
   await event(d => ({ ...d, changes: d.changes.map(c => c.id === "chg_revised"
     ? { ...c, cutAssessments: c.cutAssessments!.map(a => a.index === 0 ? { ...a, reason: "Keeps the first breath." } : a) } : c) }));
   expect(passRows()[0]?.textContent).not.toContain("Keeps the first breath.");
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === "task_revise" ? { ...t, state: "done" as const, finishedAt: new Date().toISOString() } : t) }));
   await act(async () => {});
   expect(call().querySelector(".edit-card-title")?.textContent).toBe("Keeps the first breath.");
-  expect(buttonIn(call(), "Approve")).toBeDefined();
+  expect(buttonIn(call(), "批准")).toBeDefined();
   expect(call().querySelector(".edit-version")?.textContent).toBe("v2");
   // The finished revision has joined the conversation.
   expect(container.querySelector('.unit[data-run="task_revise"]')?.closest(".simple-chat")).not.toBeNull();
@@ -8600,16 +8600,16 @@ it("opens a finished request's edits from the review controls, with no chevron, 
   await showFolded();
   await act(async () => {});
   const turn = turnFor("chg_approved_2");
-  const listOpen = () => !!turn.querySelector('.simple-edits[aria-label="Edits in this thread"]');
+  const listOpen = () => !!turn.querySelector('.simple-edits[aria-label="此对话的剪辑"]');
   expect(listOpen()).toBe(false);
-  expect(reviewModes(turn)).toEqual([["For you", "true"], ["See all", "false"]]);
+  expect(reviewModes(turn)).toEqual([["待审阅", "true"], ["查看全部", "false"]]);
   expect(turn.querySelector(".simple-pass-chevron, .run-chevron")).toBeNull();
   // Scarlet's updates along the way aren't kept in the finished request.
   expect(turn.querySelector(".req-time, .req-step, .req-steps")).toBeNull();
   expect(turn.textContent).not.toContain("Laying the music under the whole edit.");
   await click(seeAll(turn)!);
   expect(listOpen()).toBe(true);
-  expect(reviewModes(turn)).toEqual([["For you", "false"], ["See all", "true"]]);
+  expect(reviewModes(turn)).toEqual([["待审阅", "false"], ["查看全部", "true"]]);
   await click(turn.querySelector(".simple-pass-need")!);
   expect(listOpen()).toBe(false);
 });
@@ -8767,14 +8767,14 @@ it("keeps a request's line as it was while the list for a change that just lande
   await showFolded();
   await act(async () => {});
   const line = () => [turnFor("chg_approved_2").querySelector(".simple-made b")?.textContent, seeAll(turnFor("chg_approved_2"))?.textContent].join(" · ");
-  expect(line()).toBe("2 · See both");
+  expect(line()).toBe("2 · 查看两项");
   // The change is saved again and the list is asked for again. Until it arrives, the line doesn't fall back to the
   // saved three and then return to two.
   later.hold(later.earlier);
   await event(d => ({ ...d, changes: d.changes.map(c => c.id === "chg_approved_2" ? { ...c, appliedVersion: "ver_3" } : c) }));
-  expect(line()).toBe("2 · See both");
+  expect(line()).toBe("2 · 查看两项");
   await later.release();
-  expect(line()).toBe("2 · See both");
+  expect(line()).toBe("2 · 查看两项");
 });
 
 it("doesn't offer Resume on a stopped request that was asked again and finished", async () => {
@@ -8787,12 +8787,12 @@ it("doesn't offer Resume on a stopped request that was asked again and finished"
   await show();
   await act(async () => {});
   const unit = () => units().find(u => u.dataset.run === "task_stopped")!;
-  expect(buttonIn(unit(), "Resume")).toBeDefined();
+  expect(buttonIn(unit(), "恢复")).toBeDefined();
   // The same request, asked again and done: picking the stopped one up would do the work twice.
   await act(async () => useProjectStore.setState(s => ({ current: { ...s.current!, tasks: [...s.current!.tasks,
     { ...stopped, id: "task_again", state: "done" as const, context: { threadId: "task_again", message: "/dialogue-pass" }, createdAt: new Date().toISOString(), finishedAt: new Date().toISOString() }] } })));
   expect(unit().textContent).toContain("Stopped");
-  expect(buttonIn(unit(), "Resume")).toBeUndefined();
+  expect(buttonIn(unit(), "恢复")).toBeUndefined();
 });
 
 it("keeps Resume on a stopped request about one cut when the same words finish on another request's edit", async () => {
@@ -8802,14 +8802,14 @@ it("keeps Resume on a stopped request about one cut when the same words finish o
   const sent = new Date(Date.now() - 60_000).toISOString();
   await event(d => ({ ...d, tasks: [...d.tasks, callRequest("task_about", 0, { kind: "revise" as const, state: "cancelled" as const, createdAt: sent, startedAt: sent, finishedAt: sent })] }));
   const about = () => container.querySelector<HTMLElement>('.subunit[data-run="task_about"]')!;
-  expect(buttonIn(about(), "Resume")).toBeDefined();
+  expect(buttonIn(about(), "恢复")).toBeDefined();
   // The same words, sent later about an edit of another request, and done. That work was on the other edit: this
   // cut's revision was never done, so it can still be picked up.
   const now = new Date().toISOString();
   await event(d => ({ ...d, tasks: [...d.tasks, callRequest("task_elsewhere", 0, { kind: "edit" as const, state: "done" as const, startedAt: now, finishedAt: now,
     context: { threadId: threadWith("chg_approved_2").id, changeId: "chg_approved_2", editIndex: 1, message: "Start it later." } })] }));
   expect(about().querySelector(".subunit-msg > .unit-state")?.textContent).toBe("Stopped");
-  expect(buttonIn(about(), "Resume")).toBeDefined();
+  expect(buttonIn(about(), "恢复")).toBeDefined();
 });
 
 it("ends a finished dialogue pass on its calls, without Scarlet's closing message under it", async () => {
@@ -8820,7 +8820,7 @@ it("ends a finished dialogue pass on its calls, without Scarlet's closing messag
   await show();
   await act(async () => {});
   // The pass ends on what needs the editor: its calls. Scarlet's closing message isn't under it.
-  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toMatch(/^\d+ need you$/);
+  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toMatch(/^\d+ 项待审阅$/);
   expect(passRows().length).toBeGreaterThan(0);
   expect(container.querySelector(".req-report")).toBeNull();
   expect(container.textContent).not.toContain("The first dialogue pass is saved");
@@ -8845,18 +8845,18 @@ it("leaves ← and → to the player, and ↑ and ↓ too while a pass has no ca
   window.addEventListener("keydown", after, true);
   try {
     expect([await arrow("ArrowRight"), await arrow("ArrowDown")]).toEqual([false, false]);
-    expect(container.querySelector('[aria-label="Call"]')).toBeNull();
+    expect(container.querySelector('[aria-label="剪点"]')).toBeNull();
     // With calls waiting, ↑ and ↓ step between them. ← and → still go to the player, so watching never opens a call.
     flagged();
     await event(d => ({ ...d, changes: data.changes }));
     await act(async () => {});
     expect([await arrow("ArrowRight"), await arrow("ArrowLeft")]).toEqual([false, false]);
-    expect(container.querySelector('[aria-label="Call"]')).toBeNull();
+    expect(container.querySelector('[aria-label="剪点"]')).toBeNull();
     expect(await arrow("ArrowDown")).toBe(true);
-    expect(container.querySelector('[aria-label="Call"]')).not.toBeNull();
+    expect(container.querySelector('[aria-label="剪点"]')).not.toBeNull();
     // And with a call open, ← and → leave it open.
     expect(await arrow("ArrowRight")).toBe(false);
-    expect(container.querySelector('[aria-label="Call"]')).not.toBeNull();
+    expect(container.querySelector('[aria-label="剪点"]')).not.toBeNull();
   } finally { window.removeEventListener("keydown", after, true); }
 });
 
@@ -8874,14 +8874,14 @@ it("opens a clip from Media at its start, without the cut's marks, and returns t
   usePlayerStore.setState({ time: 12.5 });
   await click(mediaButton());
   await act(async () => { await vi.dynamicImportSettled(); });
-  const play = await vi.waitFor(() => { const b = container.querySelector<HTMLButtonElement>('button[aria-label^="Preview source"]'); if (!b) throw new Error("no Media row yet"); return b; });
+  const play = await vi.waitFor(() => { const b = container.querySelector<HTMLButtonElement>('button[aria-label^="预览素材"]'); if (!b) throw new Error("no Media row yet"); return b; });
   await click(play);
-  expect(container.querySelector('[aria-label="Source preview"]')).not.toBeNull();
+  expect(container.querySelector('[aria-label="素材预览"]')).not.toBeNull();
   // The clip starts at its own beginning, and the pass's amber dots aren't drawn on its timeline.
   expect(usePlayerStore.getState().time).toBe(0);
   expect(container.querySelectorAll(".simple-timeline-mark").length).toBe(0);
   usePlayerStore.setState({ time: 3 });
-  await click(buttonIn(container, "Back to the video")!);
+  await click(buttonIn(container, "返回成片")!);
   expect(usePlayerStore.getState().time).toBe(12.5);
   expect(container.querySelectorAll(".simple-timeline-mark").length).toBeGreaterThan(0);
 });
@@ -8895,20 +8895,20 @@ it("returns the cut to an open cut's join when a clip from Media was played over
         beforeCut: { version: "v_before", removed: { start: 10, end: 12.4 } }, previous: [] }] }));
   vi.spyOn(api, "timeline").mockImplementation(async (_, version = "head") => ({ timeline: { ...data.timeline!, version } }));
   await show();
-  await click(buttonIn(turnFor("chg_approved_2"), "See edit")!);
+  await click(buttonIn(turnFor("chg_approved_2"), "查看剪辑")!);
   await act(async () => {});
-  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing “Keep the image test” · After");
+  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing “Keep the image test” · 剪辑后");
   // The editor is inside the cut's passage, on that earlier version's clock.
   await act(async () => usePlayerStore.setState({ time: 11 }));
   await click(mediaButton());
   await act(async () => { await vi.dynamicImportSettled(); });
-  const play = await vi.waitFor(() => { const b = container.querySelector<HTMLButtonElement>('button[aria-label^="Preview source"]'); if (!b) throw new Error("no Media row yet"); return b; });
+  const play = await vi.waitFor(() => { const b = container.querySelector<HTMLButtonElement>('button[aria-label^="预览素材"]'); if (!b) throw new Error("no Media row yet"); return b; });
   await click(play);
-  expect(container.querySelector('[aria-label="Source preview"]')).not.toBeNull();
+  expect(container.querySelector('[aria-label="素材预览"]')).not.toBeNull();
   expect(usePlayerStore.getState().time).toBe(0);
   await act(async () => usePlayerStore.setState({ time: 3 }));
   // Back on the video the playhead is where closing the cut leaves it, at its join: 0:11 was a time on a version that no longer plays.
-  await click(buttonIn(container, "Back to the video")!);
+  await click(buttonIn(container, "返回成片")!);
   expect(usePlayerStore.getState().time).toBe(6);
   expect(editPanel()).toBeNull();
 });
@@ -8944,15 +8944,15 @@ it("bookmarks a place in the video itself while a suggestion, an open cut or a c
   await act(async () => usePlayerStore.setState({ time: 5.5 }));
   expect(place()).toBe(`/p/${PRJ}`);
   // Its Before is the video.
-  await click(compareButton(container.querySelector('[aria-label="Suggestion"]')!));
+  await click(compareButton(container.querySelector('[aria-label="剪辑建议"]')!));
   await act(async () => usePlayerStore.setState({ time: 4.5 }));
   expect(place()).toBe(`/p/${PRJ}?t=4.5`);
   await press("Escape");
-  expect(container.querySelector('[aria-label="Suggestion"]')).toBeNull();
+  expect(container.querySelector('[aria-label="剪辑建议"]')).toBeNull();
   // An open cut plays on the version before it. Its place is its join, where closing it goes.
-  await click(buttonIn(turnFor("chg_approved_2"), "See edit")!);
+  await click(buttonIn(turnFor("chg_approved_2"), "查看剪辑")!);
   await act(async () => {});
-  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing “Keep the image test” · After");
+  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing “Keep the image test” · 剪辑后");
   await act(async () => usePlayerStore.setState({ time: 11 }));
   // The cut that's open goes with the place, so a launch after a quit opens it again.
   expect(place()).toBe(`/p/${PRJ}?t=6&open=${encodeURIComponent(`edit:${threadWith("chg_approved_2").id}:chg_approved_2:0`)}`);
@@ -8962,9 +8962,9 @@ it("bookmarks a place in the video itself while a suggestion, an open cut or a c
   await act(async () => usePlayerStore.setState({ time: 12.5 }));
   await click(mediaButton());
   await act(async () => { await vi.dynamicImportSettled(); });
-  const play = await vi.waitFor(() => { const b = container.querySelector<HTMLButtonElement>('button[aria-label^="Preview source"]'); if (!b) throw new Error("no Media row yet"); return b; });
+  const play = await vi.waitFor(() => { const b = container.querySelector<HTMLButtonElement>('button[aria-label^="预览素材"]'); if (!b) throw new Error("no Media row yet"); return b; });
   await click(play);
-  expect(container.querySelector('[aria-label="Source preview"]')).not.toBeNull();
+  expect(container.querySelector('[aria-label="素材预览"]')).not.toBeNull();
   await act(async () => usePlayerStore.setState({ time: 3 }));
   expect(place()).toBe(`/p/${PRJ}?t=12.5`);
 });
@@ -8980,13 +8980,13 @@ it("names a clip from Media once on the Transcript's heading, and keeps Mark unu
   await act(async () => {});
   await click(mediaButton());
   await act(async () => { await vi.dynamicImportSettled(); });
-  const play = await vi.waitFor(() => { const b = container.querySelector<HTMLButtonElement>('button[aria-label^="Preview source"]'); if (!b) throw new Error("no Media row yet"); return b; });
+  const play = await vi.waitFor(() => { const b = container.querySelector<HTMLButtonElement>('button[aria-label^="预览素材"]'); if (!b) throw new Error("no Media row yet"); return b; });
   await click(play);
   await openTranscript();
   // The clip's name is on the heading with the clip's own figures, and the pane has no title to say it again.
   const { row, pane, said } = transcriptHeading();
-  expect(row).toBe("Transcript · interview-take2.mp4");
-  expect(said).toEqual(["Transcript", "interview-take2.mp4"]);
+  expect(row).toBe("转写稿 · interview-take2.mp4");
+  expect(said).toEqual(["转写稿", "interview-take2.mp4"]);
   // What else the pane's toolbar held for a clip stays in the pane, on a row under the heading.
   expect(pane.querySelector(".transcript-search .btn-quiet")?.textContent).toBe("Mark unused words");
 });
@@ -8997,8 +8997,8 @@ it("names the footage on the Transcript's heading before the first cut, where th
   await show();
   await openTranscript();
   const { row, pane, said } = transcriptHeading();
-  expect(row).toBe("Transcript · interview-take2.mp4");
-  expect(said).toEqual(["Transcript", "interview-take2.mp4"]);
+  expect(row).toBe("转写稿 · interview-take2.mp4");
+  expect(said).toEqual(["转写稿", "interview-take2.mp4"]);
   // With no cut there are no unused words to mark, so nothing sits under the heading.
   expect(pane.querySelector(".transcript-search .btn-quiet")).toBeNull();
 });
@@ -9015,9 +9015,9 @@ it("writes a time past the first hour with its hour, over the player as on the l
   await act(async () => {});
   await reviewCalls();
   expect(save).not.toHaveBeenCalled();
-  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing cut at 1:02:07 · 1 of 1 · After");
+  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing cut at 1:02:07 · 1 of 1 · 剪辑后");
   // The call goes by its number in the box; the line that names the aim says where it is.
-  expect(boxTag()).toBe("Cut 1");
+  expect(boxTag()).toBe("剪点 1");
   expect(container.querySelector(".simple-target")?.textContent).toContain("Revising the cut at 1:02:07");
 });
 
@@ -9026,7 +9026,7 @@ it("opens Media for a project that was just made without footage, and draws no b
   await act(async () => root.render(<MemoryRouter initialEntries={["/p/x?panel=media"]}><SimpleWorkspace /></MemoryRouter>));
   await act(async () => { await vi.dynamicImportSettled(); });
   // The drawer has the name of the menu row that opens it.
-  await vi.waitFor(() => expect(container.querySelector("dialog[open] h2")?.textContent).toBe("Media"));
+  await vi.waitFor(() => expect(container.querySelector("dialog[open] h2")?.textContent).toBe("媒体"));
   // Pausing changes nothing under the header: Media's rows and the menu say it.
   await event(d => ({ ...d, project: { ...d.project, mediaPaused: true } }));
   expect(container.querySelector(".simple-banner")).toBeNull();
@@ -9082,7 +9082,7 @@ it("keeps a stopped pass's unchecked cuts as calls, and the pass in its place, a
   useProjectStore.setState({ current: data });
   await showFolded();
   await act(async () => {});
-  expect(container.querySelector(".simple-pass-need")?.getAttribute("title")).toBe("2 need you");
+  expect(container.querySelector(".simple-pass-need")?.getAttribute("title")).toBe("2 项待审阅");
   const asked = units().find(u => u.querySelector(".simple-pass"))!.querySelector(".unit-msg")!.textContent;
   // The editor sends the asked cut back, and its revision lands as a new pass made by that request.
   const base = data.tasks.find(t => t.id === "task_done")!;
@@ -9095,7 +9095,7 @@ it("keeps a stopped pass's unchecked cuts as calls, and the pass in its place, a
         createdAt: new Date().toISOString() }] }));
   await act(async () => {});
   // The cut Scarlet never checked is still the editor's call: the pass stopped, whichever request made this version.
-  expect(container.querySelector(".simple-pass-need")?.getAttribute("title")).toBe("2 need you");
+  expect(container.querySelector(".simple-pass-need")?.getAttribute("title")).toBe("2 项待审阅");
   // And the pass, waiting on those calls, still holds the place above the message box.
   const pinned = container.querySelector<HTMLElement>(".simple-pin .unit")!;
   expect(pinned.querySelector(".unit-msg")?.textContent).toBe(asked);
@@ -9279,9 +9279,9 @@ it("gives the message box the cursor on N, about the moment the playhead is on, 
 it("leaves a box aimed at an edit or at Scarlet's question as it is when a point is picked", async () => {
   // Scarlet has asked a question: the box answers it, and skipping through the video doesn't change that.
   await show();
-  expect(boxTag()).toBe("Answer");
+  expect(boxTag()).toBe("回答");
   await press("ArrowRight");
-  expect([boxTag(), useUiStore.getState().agentContext]).toEqual(["Answer", null]);
+  expect([boxTag(), useUiStore.getState().agentContext]).toEqual(["回答", null]);
   // With an edit open the box revises that edit, wherever the playhead goes.
   appliedEdits();
   await show();
@@ -9351,15 +9351,15 @@ it("aims words chosen in the transcript with a call open at that call when they'
   await show();
   await act(async () => {});
   // "N need you" opens the first call: Scarlet's cut from 2 s to 3 s.
-  await click(container.querySelector('[aria-label="Dialogue pass"] .simple-pass-need')!);
+  await click(container.querySelector('[aria-label="口播粗剪"] .simple-pass-need')!);
   expect(call().querySelector(".edit-card-title")?.textContent).toBe("A clean retake.");
-  expect(boxTag()).toBe("Cut 1");
+  expect(boxTag()).toBe("剪点 1");
   await openTranscript();
   // "I", from 2.3 s to 2.5 s, is inside the open call's cut. The message is about that call, and says where the editor
   // was looking. A message being written comes along.
   await act(async () => useUiStore.getState().setAgentDraft("Keep this word"));
   await askAboutWord(4);
-  expect(boxTag()).toBe("Cut 1");
+  expect(boxTag()).toBe("剪点 1");
   expect(useUiStore.getState().agentContext).toMatchObject({ changeId: "chg_ready", cutIndex: 0, version: data.project.head, time: expect.closeTo(2.3, 1), end: expect.closeTo(2.5, 1), label: "“I”" });
   expect(useUiStore.getState().agentDraft).toBe("Keep this word");
   expect(aimLine()).toBe("Revising the cut at 0:02");
@@ -9367,7 +9367,7 @@ it("aims words chosen in the transcript with a call open at that call when they'
   await askAboutWord(30);
   expect(boxTag()).toBeUndefined();
   expect(boxNow()).toEqual(["Keep this word", { version: data.project.head, time: expect.closeTo(14.2, 1), end: expect.closeTo(14.5, 1), clipIds: expect.any(Array), label: "“is”" }, JSON.stringify([PRJ, null])]);
-  expect(aimLine()).toBe("Starting a new edit");
+  expect(aimLine()).toBe("发起新剪辑");
   // So do words in another call's cut: "useful" is in the second call's, 6 s to 7 s.
   await askAboutWord(13);
   expect(boxTag()).toBeUndefined();
@@ -9376,7 +9376,7 @@ it("aims words chosen in the transcript with a call open at that call when they'
   // The call is still open. Words chosen in its passage bring the message back to it.
   expect(call().querySelector(".edit-card-title")?.textContent).toBe("A clean retake.");
   await askAboutWord(4);
-  expect(boxTag()).toBe("Cut 1");
+  expect(boxTag()).toBe("剪点 1");
   expect(useUiStore.getState().agentDraft).toBe("Keep this word");
 });
 
@@ -9385,8 +9385,8 @@ it("keeps words chosen in the transcript with a call open on an empty box, for t
   idle();
   await show();
   await act(async () => {});
-  await click(container.querySelector('[aria-label="Dialogue pass"] .simple-pass-need')!);
-  expect(boxTag()).toBe("Cut 1");
+  await click(container.querySelector('[aria-label="口播粗剪"] .simple-pass-need')!);
+  expect(boxTag()).toBe("剪点 1");
   await openTranscript();
   // Words outside the call, with nothing typed: the box leaves the call for a new edit about those words, and keeps them
   // through the move, as an empty box with nothing open does.
@@ -9399,7 +9399,7 @@ it("keeps words chosen in the transcript with a call open on an empty box, for t
   // Words inside the call, with nothing typed: the box is that call's, about those words, never the whole pass.
   await act(async () => useUiStore.getState().setAgentDraft(""));
   await askAboutWord(4);
-  expect(boxTag()).toBe("Cut 1");
+  expect(boxTag()).toBe("剪点 1");
   expect(useUiStore.getState().agentContext).toMatchObject({ changeId: "chg_ready", cutIndex: 0, label: "“I”", time: expect.closeTo(2.3, 1) });
 });
 
@@ -9478,11 +9478,11 @@ it("gives Space back to the player after a decision is clicked, so it can't pres
   await act(async () => {});
   await reviewCalls();
   // Approve stays on the card for the next call. Pressed with the keyboard it keeps the focus: Tab goes on from there.
-  const approve = buttonIn(call(), "Approve")!;
+  const approve = buttonIn(call(), "批准")!;
   approve.focus();
   await act(async () => { approve.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, detail: 0 })); });
   expect(save).toHaveBeenCalledTimes(1);
-  expect(buttonIn(call(), "Approve")).toBe(approve);
+  expect(buttonIn(call(), "批准")).toBe(approve);
   expect(document.activeElement).toBe(approve);
   // Clicked, it lets go of the focus, so Space is the player's while the video is paused, where a focused button
   // would have been pressed again by it.
@@ -9491,15 +9491,15 @@ it("gives Space back to the player after a decision is clicked, so it can't pres
   expect(document.activeElement).not.toBe(approve);
   expect(await spaceWhilePaused()).toBe(true);
   // Skip is the same.
-  const skip = call().querySelector<HTMLButtonElement>('[aria-label="Skip"]')!;
+  const skip = call().querySelector<HTMLButtonElement>('[aria-label="跳过"]')!;
   await pointerClick(skip);
   expect(save).toHaveBeenCalledTimes(3);
-  expect(call().querySelector('[aria-label="Skip"]')).toBe(skip);
+  expect(call().querySelector('[aria-label="跳过"]')).toBe(skip);
   expect(document.activeElement).not.toBe(skip);
   expect(await spaceWhilePaused()).toBe(true);
   // Space decided nothing: the last call still waits.
   expect(save).toHaveBeenCalledTimes(3);
-  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 needs you");
+  expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 项待审阅");
 });
 
 it("gives Space back to the player after Keep is clicked on an applied edit", async () => {
@@ -9515,10 +9515,10 @@ it("gives Space back to the player after Keep is clicked on an applied edit", as
   await click(turnFor("chg_approved_2").querySelector(".simple-pass-need")!);
   await act(async () => {});
   expect(openTitle()).toBe("captions");
-  const keep = buttonIn(editPanel()!, "Keep")!;
+  const keep = buttonIn(editPanel()!, "保留")!;
   await pointerClick(keep);
   expect(openTitle()).toBe("wrap");
-  expect(buttonIn(editPanel()!, "Keep")).toBe(keep);
+  expect(buttonIn(editPanel()!, "保留")).toBe(keep);
   expect(document.activeElement).not.toBe(keep);
   expect(await spaceWhilePaused()).toBe(true);
   expect(openTitle()).toBe("wrap");
@@ -9546,23 +9546,23 @@ it("gives Space back to the player after a row of the menu is clicked, and after
   // A row that changes the page in place: the menu closes and lets go of the focus, so Space is the player's, where
   // it would have pressed ⋯ and opened the menu again.
   await pointerClick(more);
-  await pointerClick(menuItem("Transcript"));
+  await pointerClick(menuItem("转写稿"));
   expect(container.querySelector('[role="menu"]')).toBeNull();
   expect(document.activeElement).toBe(document.body);
   expect(await spaceWhilePaused()).toBe(true);
   // A row that opens a drawer: closed again, the drawer hands focus back to what had it, which isn't ⋯ either.
   await pointerClick(more);
-  await pointerClick(menuItem("Export"));
+  await pointerClick(menuItem("导出"));
   await act(async () => { await vi.dynamicImportSettled(); });
   const drawer = document.querySelector<HTMLElement>("dialog[open]")!;
   expect(drawer.querySelector("#export-range")).not.toBeNull();
-  await pointerClick(drawer.querySelector<HTMLElement>('[aria-label="Close"]')!);
+  await pointerClick(drawer.querySelector<HTMLElement>('[aria-label="关闭"]')!);
   expect(document.querySelector("dialog[open]")).toBeNull();
   expect(document.activeElement).toBe(document.body);
   expect(await spaceWhilePaused()).toBe(true);
   // Chosen with the keyboard, a row hands focus back to ⋯, and Tab goes on from there. Esc on the open menu does too.
   await click(more);
-  await click(menuItem("Hide transcript"));
+  await click(menuItem("隐藏转写稿"));
   expect(document.activeElement).toBe(more);
   await click(more);
   await press("Escape");
@@ -9580,7 +9580,7 @@ it("keeps a pass's calls where they are, the made ones in their place, when Scar
   await show();
   await act(async () => {});
   // Nothing runs, so the pass waiting on its calls holds the place above the message box.
-  const pass = () => container.querySelector<HTMLElement>('[aria-label="Dialogue pass"]')!;
+  const pass = () => container.querySelector<HTMLElement>('[aria-label="口播粗剪"]')!;
   const inPin = () => !!pass().closest(".simple-pin");
   expect(inPin()).toBe(true);
   await click(pass().querySelector(".simple-pass-need")!);
@@ -9588,8 +9588,8 @@ it("keeps a pass's calls where they are, the made ones in their place, when Scar
   // A call is its number, amber while it waits, and a word once it's decided or sent back.
   const rows = () => [...pass().querySelectorAll(".simple-pass-list > li > button")].map(r => [r.querySelector(".edit-badge")?.textContent,
     r.querySelector(".edit-badge")?.classList.contains("is-check"), r.querySelector(".simple-pass-value")?.textContent]);
-  expect(pass().querySelector(".simple-pass-list")?.getAttribute("aria-label")).toBe("Calls that need you");
-  expect(rows()).toEqual([["1", false, "Approved"], ["2", true, undefined], ["3", true, undefined]]);
+  expect(pass().querySelector(".simple-pass-list")?.getAttribute("aria-label")).toBe("待确认的剪点");
+  expect(rows()).toEqual([["1", false, "已批准"], ["2", true, undefined], ["3", true, undefined]]);
   // The editor sends the last call back. Scarlet starts on it inside the pass's block, under that call's row, so the
   // pass keeps the place above the box and no new block joins the conversation.
   const base = data.tasks.find(t => t.id === "task_done")!;
@@ -9602,9 +9602,9 @@ it("keeps a pass's calls where they are, the made ones in their place, when Scar
   const revising = container.querySelector<HTMLElement>('.simple-pin .subunit[data-run="task_revise"]')!;
   expect(revising.closest("li")?.querySelector(":scope > button .edit-badge")?.textContent).toBe("3");
   // The calls are as they were: the same ones, the decided one in its place.
-  expect(pass().querySelector(".simple-pass-list")?.getAttribute("aria-label")).toBe("Calls that need you");
-  expect(rows()).toEqual([["1", false, "Approved"], ["2", true, undefined], ["3", false, "Revising…"]]);
-  expect(pass().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 needs you");
+  expect(pass().querySelector(".simple-pass-list")?.getAttribute("aria-label")).toBe("待确认的剪点");
+  expect(rows()).toEqual([["1", false, "已批准"], ["2", true, undefined], ["3", false, "正在修改…"]]);
+  expect(pass().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 项待审阅");
 });
 
 it("lists a pass staged again by its calls, with none of them open, after the pass before it was thrown away", async () => {
@@ -9613,7 +9613,7 @@ it("lists a pass staged again by its calls, with none of them open, after the pa
   idle();
   await show();
   await act(async () => {});
-  const pass = () => container.querySelector<HTMLElement>('[aria-label="Dialogue pass"]');
+  const pass = () => container.querySelector<HTMLElement>('[aria-label="口播粗剪"]');
   await click(pass()!.querySelector(".simple-pass-need")!);
   expect(pass()!.querySelector(".simple-pass-list")).not.toBeNull();
   // The pass is thrown away: its line goes, and the list with it.
@@ -9624,9 +9624,9 @@ it("lists a pass staged again by its calls, with none of them open, after the pa
   await event(d => ({ ...d, changes: [...d.changes, { ...ready, id: "chg_again", createdAt: new Date().toISOString() }],
     tasks: d.tasks.map(t => t.id === "task_done" ? { ...t, changeIds: [...t.changeIds, "chg_again"] } : t) }));
   await act(async () => {});
-  expect(pass()!.querySelector(".simple-pass-need")?.getAttribute("title")).toBe("2 need you");
+  expect(pass()!.querySelector(".simple-pass-need")?.getAttribute("title")).toBe("2 项待审阅");
   expect([pass()!.querySelector(".simple-pass-list")?.getAttribute("aria-label"), pass()!.querySelectorAll(".simple-pass-list > li").length,
-    pass()!.querySelector('.simple-pass-list [aria-current="true"]')]).toEqual(["Calls that need you", 2, null]);
+    pass()!.querySelector('.simple-pass-list [aria-current="true"]')]).toEqual(["待确认的剪点", 2, null]);
 });
 
 it("marks the fixes a pass's final check applies as New in its list while the check runs", async () => {
@@ -9650,11 +9650,11 @@ it("marks the fixes a pass's final check applies as New in its list while the ch
     }))) : [] }));
   await show();
   await act(async () => {});
-  const pass = () => container.querySelector<HTMLElement>('[aria-label="Dialogue pass"]')!;
+  const pass = () => container.querySelector<HTMLElement>('[aria-label="口播粗剪"]')!;
   await click(seeAll(pass())!);
   await act(async () => {});
   expect([...pass().querySelectorAll(".simple-pass-list > li")].map(li => [li.querySelector(".simple-pass-words")?.textContent, li.querySelector(".is-new")?.textContent ?? null]))
-    .toEqual([["An um.", null], ["A repeated line.", "New"]]);
+    .toEqual([["An um.", null], ["A repeated line.", "新"]]);
 });
 
 it("opens the edits so far and keeps the selected cut open when a running pass saves another part", async () => {
@@ -9677,12 +9677,12 @@ it("opens the edits so far and keeps the selected cut open when a running pass s
     }))) : [] }));
   await showFolded();
   await act(async () => {});
-  const pass = () => container.querySelector<HTMLElement>('[aria-label="Dialogue pass"]')!;
+  const pass = () => container.querySelector<HTMLElement>('[aria-label="口播粗剪"]')!;
   const link = () => pass().querySelector<HTMLButtonElement>(".simple-pass-toggle")!;
   const rows = () => [...pass().querySelectorAll<HTMLButtonElement>(".simple-pass-list > li > button")];
   // No sentence sums the pass up yet, so the link alone says what it opens, and counts it.
   expect(pass().querySelector(".simple-made")).toBeNull();
-  expect([link().textContent, link().title]).toEqual(["See 1 edit so far", "Show the edits Scarlet has made so far, in order"]);
+  expect([link().textContent, link().title]).toEqual(["See 1 edit so far", "按顺序显示 Scarlet 已完成的剪辑"]);
   expect(numbered()).toEqual([["1", undefined]]);
   await withSimpleSheet(async () => {
     expect(styled(link(), "color", "text-decoration-color")).toEqual(["#eae5da", "#ae9d79"]);
@@ -9690,7 +9690,7 @@ it("opens the edits so far and keeps the selected cut open when a running pass s
   await click(link());
   await act(async () => {});
   expect([pass().querySelector(".simple-pass-list")?.getAttribute("aria-label"), pass().querySelectorAll(".simple-pass-list > li").length, link().textContent])
-    .toEqual(["Every edit", 1, "Hide"]);
+    .toEqual(["全部剪辑", 1, "隐藏"]);
   await click(rows()[0]!);
   expect(editPanel()?.querySelector(".edit-card-title")?.textContent).toBe("An um.");
 
@@ -9711,7 +9711,7 @@ it("opens the edits so far and keeps the selected cut open when a running pass s
   expect(approve).not.toHaveBeenCalled();
   // Done: the sentence says what the pass made, and See all, under it in the tabs' place, no longer says "so far".
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === "task_done" ? { ...t, state: "done" as const, finishedAt: new Date().toISOString() } : t) }));
-  expect([link(), reviewModes(pass())]).toEqual([null, [["See both", "false"]]]);
+  expect([link(), reviewModes(pass())]).toEqual([null, [["查看两项", "false"]]]);
 });
 
 it("wraps the line of a pass scheduled while Scarlet still works, so its link and its status never run over each other", async () => {
@@ -9735,10 +9735,10 @@ it("wraps the line of a pass scheduled while Scarlet still works, so its link an
   await withSimpleSheet(async () => {
     await show();
     await act(async () => {});
-    const line = container.querySelector<HTMLElement>('[aria-label="Dialogue pass"] .simple-pass-line')!;
-    // "See 2 edits so far" and "Goes in when Scarlet finishes" can be wider than a chat at its 320px least, inside its
+    const line = container.querySelector<HTMLElement>('[aria-label="口播粗剪"] .simple-pass-line')!;
+    // "See 2 edits so far" and "Scarlet 完成后自动应用" can be wider than a chat at its 320px least, inside its
     // margins. What doesn't fit goes to the next line. The schedule is a status: there is no link to take it back.
-    expect([...line.children].map(part => part.textContent)).toEqual(["See 2 edits so far", "Goes in when Scarlet finishes", ""]);
+    expect([...line.children].map(part => part.textContent)).toEqual(["See 2 edits so far", "Scarlet 完成后自动应用", ""]);
     expect(styled(line, "flex-wrap")).toEqual(["wrap"]);
   });
 });
@@ -9758,21 +9758,21 @@ it("leaves another request's edit open when a pass with its full list open leave
     : threadId === other ? [{ changeId: "chg_approved_2", spot: 0, label: "music bed", range: { start: 0, end: 16 }, previous: [] }] : [] }));
   await show();
   await act(async () => {});
-  const pass = () => container.querySelector<HTMLElement>('[aria-label="Dialogue pass"]')!;
+  const pass = () => container.querySelector<HTMLElement>('[aria-label="口播粗剪"]')!;
   const list = () => pass().querySelector(".simple-pass-list")?.getAttribute("aria-label");
   expect(pass().closest(".simple-pin")).not.toBeNull();
   // The link is worded for the rows it opens: the applied cut and the pass's two calls, which are listed among its
   // edits. So it isn't "See it".
-  expect(reviewModes(pass())).toEqual([["For you", "true"], ["See all", "false"]]);
+  expect(reviewModes(pass())).toEqual([["待审阅", "true"], ["查看全部", "false"]]);
   // Its full list is open. While it waits on the editor only its calls and flagged edits are marked: its applied cut
   // isn't, and neither is a call this staged pass can't place on the working cut.
   await click(seeAll(pass())!);
   await act(async () => {});
-  expect(list()).toBe("Every edit");
+  expect(list()).toBe("全部剪辑");
   expect(pass().querySelectorAll(".simple-pass-list > li")).toHaveLength(3);
   expect(ticks()).toEqual([]);
   // The editor opens an edit of the other request, with the list still open.
-  await click(buttonIn(turnFor("chg_approved_2"), "See edit")!);
+  await click(buttonIn(turnFor("chg_approved_2"), "查看剪辑")!);
   await act(async () => {});
   expect(openTitle()).toBe("music bed");
   // Scarlet starts on a call sent back earlier, and that request takes the place above the box. The pass's line is
@@ -9784,7 +9784,7 @@ it("leaves another request's edit open when a pass with its full list open leave
   await event(d => ({ ...d, tasks: [...d.tasks, revision], changes: d.changes.map(c => c.id === "chg_ready" ? { ...c, state: "revising" as const } : c) }));
   await act(async () => {});
   expect(pass().closest(".simple-pin")).toBeNull();
-  expect(list()).toBe("Every edit");
+  expect(list()).toBe("全部剪辑");
   expect(openTitle()).toBe("music bed");
   expect(editPanel()).not.toBeNull();
   // Closed, the timeline goes back to the pass's open list. While its call is revised nothing of it waits on the
@@ -9816,7 +9816,7 @@ it("says a stopped pass's cut wasn't checked, lists a skipped call as Skipped, a
   const note = () => call().querySelector<HTMLElement>(".edit-card-title")!;
   // "2 need you" opens the first of them on the timeline: the cut Scarlet never got to. Its card says so before the note.
   await reviewCalls();
-  expect(note().querySelector(".edit-card-unchecked")?.textContent).toBe("Not checked yet. ");
+  expect(note().querySelector(".edit-card-unchecked")?.textContent).toBe("尚未检查。 ");
   expect(note().textContent).toBe("Not checked yet. Repeated aside.");
   expect(note().title).toBe("Repeated aside.");
   // S skips it, and the next call opens. Scarlet asked about this one, so it reads as its note alone.
@@ -9827,30 +9827,30 @@ it("says a stopped pass's cut wasn't checked, lists a skipped call as Skipped, a
   // Every call of the pass is listed, in timeline order, the one made before the pass stopped included. The skipped
   // call keeps its place, its number no longer amber, and says how it was decided. A call's number is its place among
   // all three of the pass's calls.
-  expect(passCard().querySelector(".simple-pass-list")?.getAttribute("aria-label")).toBe("Calls that need you");
+  expect(passCard().querySelector(".simple-pass-list")?.getAttribute("aria-label")).toBe("待确认的剪点");
   expect(passRows().map(r => [r.querySelector(".edit-badge")?.textContent, r.querySelector(".edit-badge")?.classList.contains("is-check"),
     r.querySelector(".simple-pass-label")?.textContent, r.querySelector(".simple-pass-value")?.textContent]))
-    .toEqual([["1", false, "A clean retake.", "Approved"], ["3", false, "Repeated aside.", "Skipped"], ["2", true, "Breath before the price.", undefined]]);
-  expect(call().querySelector(".edit-card-count")?.textContent).toBe("Cut 2");
-  expect(buttonIn(call(), "Approve")?.getAttribute("aria-pressed")).toBe("false");
+    .toEqual([["1", false, "A clean retake.", "已批准"], ["3", false, "Repeated aside.", "已跳过"], ["2", true, "Breath before the price.", undefined]]);
+  expect(call().querySelector(".edit-card-count")?.textContent).toBe("剪点 2");
+  expect(buttonIn(call(), "批准")?.getAttribute("aria-pressed")).toBe("false");
   // The last call applies the pass, leaving in what was skipped. The working cut had moved on, so the engine refused
   // it: the card closes and the pass's line says why.
   const said = () => passCard().querySelector('.simple-error[role="alert"]')?.textContent;
   await press("s");
   await act(async () => {});
   expect(approve).toHaveBeenLastCalledWith("chg_ready", undefined, [1, 2]);
-  expect(container.querySelector('[aria-label="Call"]')).toBeNull();
+  expect(container.querySelector('[aria-label="剪点"]')).toBeNull();
   expect(said()).toBe(MOVED);
   // Every call is made, so the pass would go in by itself, but an apply that failed isn't tried again unasked: the line
   // offers Retry. A failure there says the engine's reason, in place of the last one.
   expect(approve).toHaveBeenCalledTimes(1);
-  expect(buttonIn(passCard(), "Apply")).toBeFalsy();
-  await click(buttonIn(passCard(), "Retry")!);
+  expect(buttonIn(passCard(), "应用")).toBeFalsy();
+  await click(buttonIn(passCard(), "重试")!);
   expect(said()).toBe("The engine stopped.");
-  await click(buttonIn(passCard(), "Retry")!);
-  expect(said()).toBe("The video changed while this was waiting. Scarlet is redoing it on the video as it is now.");
+  await click(buttonIn(passCard(), "重试")!);
+  expect(said()).toBe("等待期间视频已变化，Scarlet 正在用当前版本重新剪辑。");
   // Once it applies, nothing is left to say.
-  await click(buttonIn(passCard(), "Retry")!);
+  await click(buttonIn(passCard(), "重试")!);
   expect(approve).toHaveBeenCalledTimes(4);
   expect(said()).toBeUndefined();
 });
@@ -9878,7 +9878,7 @@ it("says under a request why Stop or Resume failed, until the same press works",
   await stopOne("task_running");
   expect(cancelTask).toHaveBeenCalledTimes(2);
   expect(said()).toEqual([]);
-  const resume = () => buttonIn(units().find(u => u.dataset.run === "task_stopped")!, "Resume")!;
+  const resume = () => buttonIn(units().find(u => u.dataset.run === "task_stopped")!, "恢复")!;
   await click(resume());
   // It runs on the model picked now.
   expect(retryTask).toHaveBeenCalledWith("task_stopped", { agent: "claude", model: "opus" });
@@ -9996,7 +9996,7 @@ it("says the pass's cuts couldn't be loaded instead of applying without them, an
   expect(approve).not.toHaveBeenCalled();
   expect(passCard().querySelector('[role="alert"]')?.textContent).toBe("Couldn’t load this pass’s cuts: The engine is restarting.");
   expect(cuts).toHaveBeenCalledTimes(2);
-  await click(buttonIn(passCard(), "Retry")!);
+  await click(buttonIn(passCard(), "重试")!);
   expect(approve).toHaveBeenCalledWith("chg_ready", undefined, [2]);
 });
 
@@ -10009,24 +10009,24 @@ it("says under a suggestion's decisions why it couldn't be applied, and leaves i
   await show();
   await click(suggestion("chg_ready"));
   await act(async () => {});
-  const decide = () => container.querySelector('[aria-label="Suggestion"]');
+  const decide = () => container.querySelector('[aria-label="剪辑建议"]');
   const said = () => decide()?.querySelector('[role="alert"]')?.textContent;
-  await click(buttonIn(decide()!, "Apply")!);
+  await click(buttonIn(decide()!, "应用")!);
   // While it applies, the button says so and nothing can be pressed twice.
-  const applying = buttonIn(decide()!, "Applying…")!;
-  expect([applying.disabled, buttonIn(decide()!, "Revise")!.disabled]).toEqual([true, true]);
+  const applying = buttonIn(decide()!, "正在应用…")!;
+  expect([applying.disabled, buttonIn(decide()!, "修改")!.disabled]).toEqual([true, true]);
   await press("a");
   expect(approve).toHaveBeenCalledTimes(1);
   // Esc closes the card, but not while it applies: the card stays up until the apply lands.
   await press("Escape");
-  expect(buttonIn(decide()!, "Applying…")).toBeDefined();
+  expect(buttonIn(decide()!, "正在应用…")).toBeDefined();
   await act(async () => fail(new Error("The engine stopped.")));
   expect(said()).toBe("The engine stopped.");
-  expect(buttonIn(decide()!, "Apply")?.disabled).toBe(false);
+  expect(buttonIn(decide()!, "应用")?.disabled).toBe(false);
   // The working cut moved on while it waited: Scarlet redoes it, and the strip says so in place of the last reason.
   await press("a");
-  expect(said()).toBe("The video changed while this was waiting. Scarlet is redoing it on the video as it is now.");
-  await click(buttonIn(decide()!, "Apply")!);
+  expect(said()).toBe("等待期间视频已变化，Scarlet 正在用当前版本重新剪辑。");
+  await click(buttonIn(decide()!, "应用")!);
   expect(approve).toHaveBeenCalledTimes(3);
   expect(decide()).toBeNull();
 });
@@ -10060,19 +10060,19 @@ it("says in a suggestion's request why the video moved on from it, queues the re
   await show();
   await click(suggestion("chg_ready"));
   await act(async () => {});
-  await click(buttonIn(container.querySelector('[aria-label="Suggestion"]')!, "Apply")!);
+  await click(buttonIn(container.querySelector('[aria-label="剪辑建议"]')!, "应用")!);
   await act(async () => {});
   expect(approveChange).toHaveBeenCalledTimes(1);
   // The strip closes without a line of its own: the request it came from says why, as Scarlet's line. The request
   // isn't at work yet, so it has no Stop and no row that says it waits: the redo waits its turn in the tray.
-  expect(container.querySelector('[aria-label="Suggestion"]')).toBeNull();
+  expect(container.querySelector('[aria-label="剪辑建议"]')).toBeNull();
   const unit = () => container.querySelector<HTMLElement>('.simple-chat .unit[data-run="task_done"], .simple-pin .unit[data-run="task_done"]')!;
   const said = () => [...unit().querySelectorAll(".req-say")].map(p => p.textContent);
   expect(said().at(-1)).toBe(REDO_WAITS);
   expect([unit().querySelector(".unit-msg > p")?.textContent, unit().querySelector(".unit-stop"), unit().querySelector(".req-status")])
     .toEqual([requestTextFor("task_done"), null, null]);
   // In the tray it is the request's own words, tagged as its suggestion: not the engine's name for the task.
-  expect(queueLines()).toEqual([["Next", "Suggestion", requestTextFor("task_done")]]);
+  expect(queueLines()).toEqual([["Next", "剪辑建议", requestTextFor("task_done")]]);
   expect(units().filter(u => u.dataset.run === "task_redo")).toEqual([]);
   expect(container.querySelector(".simple-thread")!.textContent).not.toMatch(/Redo on the current edit|Sent back|The agent/);
   // Scarlet starts on it. It is the same request at work again, as on Retry: it leaves the tray for its own block,
@@ -10081,7 +10081,7 @@ it("says in a suggestion's request why the video moved on from it, queues the re
   expect(queueLines()).toEqual([]);
   expect(unit().closest(".simple-pin")).not.toBeNull();
   expect(units().filter(u => u.dataset.run === "task_redo")).toEqual([]);
-  expect([unit().querySelector(".unit-msg > p")?.textContent, unit().querySelector('[aria-label^="Stop this edit"]')?.getAttribute("aria-label")]).toEqual([requestTextFor("task_done"), `Stop this edit: ${requestTextFor("task_done")}`]);
+  expect([unit().querySelector(".unit-msg > p")?.textContent, unit().querySelector('[aria-label^="停止此剪辑"]')?.getAttribute("aria-label")]).toEqual([requestTextFor("task_done"), `Stop this edit: ${requestTextFor("task_done")}`]);
   expect(said().at(-1)).toBe(REDOING);
   // With tokens shown, what it has used so far sits in the heading before Stop, and climbs as the host reports it.
   useUiStore.getState().setShowRunTokens(true);
@@ -10098,11 +10098,11 @@ it("says in a suggestion's request why the video moved on from it, queues the re
   expect(headingEnd()).toEqual([expect.stringMatching(/s · 212K tokens$/)]);
   expect(unit().querySelectorAll(".run-tokens").length).toBe(1);
   useUiStore.getState().setShowRunTokens(false);
-  expect(unit().querySelector(".unit-state")?.textContent).toBe("Suggestion");
+  expect(unit().querySelector(".unit-state")?.textContent).toBe("剪辑建议");
   expect(unit().querySelector(".simple-suggest")?.textContent).toBe("Trimmed the pause where it sits now.");
   expect(unit().textContent).not.toMatch(/The video changed|Redo on the current edit|Sent back/);
   // Nothing opened by itself along the way.
-  expect(container.querySelector('[aria-label="Suggestion"]')).toBeNull();
+  expect(container.querySelector('[aria-label="剪辑建议"]')).toBeNull();
 });
 
 /**
@@ -10135,15 +10135,15 @@ it("redoes a suggestion a pass left under the pass's own request, as any request
   const unit = () => container.querySelector<HTMLElement>(".simple-pin .unit")!;
   await click(unit().querySelector(".simple-suggest")!);
   await act(async () => {});
-  await click(buttonIn(container.querySelector('[aria-label="Suggestion"]')!, "Apply")!);
+  await click(buttonIn(container.querySelector('[aria-label="剪辑建议"]')!, "应用")!);
   await act(async () => {});
   // The pass's request is at work again, with Stop after what still needs the editor. It lists no stages of a pass:
   // the redo reads no dialogue. Its calls stay where they were.
-  expect([unit().dataset.run, unit().querySelector('[aria-label^="Stop this edit"]')?.getAttribute("aria-label")]).toEqual(["task_done", `Stop this edit: ${requestTextFor("task_done")}`]);
+  expect([unit().dataset.run, unit().querySelector('[aria-label^="停止此剪辑"]')?.getAttribute("aria-label")]).toEqual(["task_done", `Stop this edit: ${requestTextFor("task_done")}`]);
   expect(units().filter(u => u.dataset.run === "task_redo")).toEqual([]);
   expect(unit().querySelector('.req-stages[aria-label="Stages"]')).toBeNull();
   expect([...unit().querySelectorAll(".req-say")].map(p => p.textContent)).toEqual(["The video changed while this suggestion was waiting. I’m redoing it on the video as it is now."]);
-  expect(unit().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("3 need you");
+  expect(unit().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("3 项待审阅");
   expect(container.querySelector(".simple-thread")!.textContent).not.toMatch(/Redo on the current edit|Sent back/);
 });
 
@@ -10164,24 +10164,24 @@ it("plays a suggestion a pass left before it saved its calls, as it does one lef
   const unit = () => container.querySelector<HTMLElement>(".simple-pin .unit")!;
   // Its calls wait. The suggestion is in the pass's block with its play mark, and its heading says one waits to be
   // played (2026-11-10: it read as plain words until the pass was applied).
-  expect(unit().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("3 need you");
+  expect(unit().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("3 项待审阅");
   expect([unit().querySelector(".unit-state")?.textContent, unit().querySelector(".simple-suggest")?.textContent])
-    .toEqual(["Suggestion", "Show the host camera full-frame for the intro."]);
+    .toEqual(["剪辑建议", "Show the host camera full-frame for the intro."]);
   // The line plays it, and the calls stay where they were.
   await click(unit().querySelector(".simple-suggest")!);
-  expect(container.querySelector('.edit-card[aria-label="Suggestion"] .edit-card-title')?.textContent).toBe("Show the host camera full-frame for the intro.");
-  expect(unit().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("3 need you");
+  expect(container.querySelector('.edit-card[aria-label="剪辑建议"] .edit-card-title')?.textContent).toBe("Show the host camera full-frame for the intro.");
+  expect(unit().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("3 项待审阅");
   await press("Escape");
   // The editor sends the first call back, and Scarlet makes the pass again with that cut revised, under the revision's
   // own request. The suggestion is still the pass's, and still plays.
   await event(d => ({ ...d, tasks: [...d.tasks, callRequest("task_revise", 0, { kind: "revise" as const, state: "running" as const, startedAt: new Date().toISOString() })] }));
   await revisedCut("task_revise", "chg_ready", 0, { start: 2.2, end: 3 }, "A cleaner retake, from its first word.");
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === "task_revise" ? { ...t, state: "done" as const, finishedAt: new Date().toISOString() } : t) }));
-  expect(container.querySelector('.edit-card[aria-label="Suggestion"]')).toBeNull();
+  expect(container.querySelector('.edit-card[aria-label="剪辑建议"]')).toBeNull();
   expect([unit().querySelector(".unit-state")?.textContent, unit().querySelector(".simple-suggest")?.textContent])
-    .toEqual(["Suggestion", "Show the host camera full-frame for the intro."]);
+    .toEqual(["剪辑建议", "Show the host camera full-frame for the intro."]);
   await click(unit().querySelector(".simple-suggest")!);
-  expect(container.querySelector('.edit-card[aria-label="Suggestion"] .edit-card-title')?.textContent).toBe("Show the host camera full-frame for the intro.");
+  expect(container.querySelector('.edit-card[aria-label="剪辑建议"] .edit-card-title')?.textContent).toBe("Show the host camera full-frame for the intro.");
 });
 
 it("keeps a request about one edit under that edit's row while Scarlet makes its suggestion again, with the line that says why", async () => {
@@ -10207,23 +10207,23 @@ it("keeps a request about one edit under that edit's row while Scarlet makes its
   const sub = () => container.querySelector<HTMLElement>('.subunit[data-run="task_fix"]');
   const row = () => sub()!.previousElementSibling?.querySelector(".simple-edit-title")?.textContent;
   const said = () => [...sub()!.querySelectorAll(".req-say, .said")].map(p => p.textContent);
-  expect([row(), sub()!.querySelector(".unit-state")?.textContent]).toEqual(["captions", "Suggestion"]);
+  expect([row(), sub()!.querySelector(".unit-state")?.textContent]).toEqual(["captions", "剪辑建议"]);
   // The suggestion is one line, the one that plays it: no second row names it and opens the edit above instead.
   expect(sub()!.querySelector(".req-result")).toBeNull();
   await click(sub()!.querySelector(".simple-suggest")!);
   await act(async () => {});
-  await click(buttonIn(container.querySelector('[aria-label="Suggestion"]')!, "Apply")!);
+  await click(buttonIn(container.querySelector('[aria-label="剪辑建议"]')!, "应用")!);
   await act(async () => {});
   // The video had moved on, so the suggestion is with Scarlet again. Its request stays where it was, under its edit's
   // row, and says why. The redo waits its turn in the tray under the request's own words.
   expect([row(), sub()!.querySelector(".unit-stop")]).toEqual(["captions", null]);
   expect(said().at(-1)).toBe(REDO_WAITS);
-  expect(queueLines()).toEqual([["Next", "Suggestion", "Make the captions bigger."]]);
+  expect(queueLines()).toEqual([["Next", "剪辑建议", "Make the captions bigger."]]);
   // Scarlet starts on it: the request is at work again in the same place, with Stop, and the line still says why.
   // The redo names no edit of its own, and takes no block for itself.
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === "task_redo" ? { ...t, state: "running" as const, startedAt: new Date().toISOString() } : t) }));
   expect(row()).toBe("captions");
-  expect(sub()!.querySelector('.subunit-msg > .unit-actions [aria-label^="Stop this edit"]')).not.toBeNull();
+  expect(sub()!.querySelector('.subunit-msg > .unit-actions [aria-label^="停止此剪辑"]')).not.toBeNull();
   expect(said().at(-1)).toBe(REDOING);
   expect(container.querySelector('.unit[data-run="task_fix"], [data-run="task_redo"]')).toBeNull();
   expect(queueLines()).toEqual([]);
@@ -10231,7 +10231,7 @@ it("keeps a request about one edit under that edit's row while Scarlet makes its
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === "task_redo" ? { ...t, state: "done" as const, finishedAt: new Date().toISOString(), changeIds: ["chg_bigger_2"],
       summary: "Captions at 120%, where they sit now." } : t),
     changes: [...d.changes, { ...bigger, id: "chg_bigger_2", taskId: "task_redo", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }] }));
-  expect([row(), sub()!.querySelector(".unit-state")?.textContent, sub()!.querySelector(".simple-suggest")?.textContent]).toEqual(["captions", "Suggestion", "Captions at 120%, where they sit now."]);
+  expect([row(), sub()!.querySelector(".unit-state")?.textContent, sub()!.querySelector(".simple-suggest")?.textContent]).toEqual(["captions", "剪辑建议", "Captions at 120%, where they sit now."]);
   expect(sub()!.textContent).not.toMatch(/The video changed/);
   // Applied, what it did is on its edit: the request leaves the chat, as any request about one edit does.
   await event(d => ({ ...d, changes: d.changes.map(c => c.id === "chg_bigger_2" ? { ...c, state: "approved" as const, appliedVersion: c.toVersion } : c) }));
@@ -10256,12 +10256,12 @@ it("keeps a redo the engine holds in the tray, which says what it waits for, and
   const unit = () => container.querySelector<HTMLElement>('.unit[data-run="task_zoom"]')!;
   await click(unit().querySelector(".simple-suggest")!);
   await act(async () => {});
-  await click(buttonIn(container.querySelector('[aria-label="Suggestion"]')!, "Apply")!);
+  await click(buttonIn(container.querySelector('[aria-label="剪辑建议"]')!, "应用")!);
   await act(async () => {});
   // The engine holds the redo until the pass's calls are made. The tray says so on its line, where Next would be, and
   // the request's block doesn't say it is being redone, or that it waits to start: Scarlet isn't on it.
   const tray = () => container.querySelector<HTMLElement>('[aria-label="Queued requests"]')!;
-  expect(queueLines()).toEqual([["Waits for your calls", "Suggestion", "Zoom in on the demo."]]);
+  expect(queueLines()).toEqual([["等待你确认剪点", "剪辑建议", "Zoom in on the demo."]]);
   expect(tray().querySelector(".queue-next")?.classList.contains("is-waiting")).toBe(true);
   expect([...unit().querySelectorAll(".req-say")].map(p => p.textContent).at(-1)).toBe(REDO_WAITS);
   expect([unit().querySelector(".unit-stop"), unit().querySelector(".req-status")]).toEqual([null, null]);
@@ -10274,12 +10274,12 @@ it("keeps a redo the engine holds in the tray, which says what it waits for, and
 });
 
 it("lets the tag and the words on the tray's line give way together, so beside what the request waits for the words keep a share and the controls stay in", async () => {
-  // "Waits for your answer" (about 126px), "Cut at 1:02:07" (91px), "3 queued" (55px), the chevron and the gaps take about
+  // "等待你的回答" (about 126px), "Cut at 1:02:07" (91px), "3 queued" (55px), the chevron and the gaps take about
   // 326px, nearly all of the 335px a tray has at the chat's usual 380px, and more than its 275px at the 320px least.
   const items = [{ id: "a", text: "Make it shorter, and keep the laugh.", target: "Cut at 1:02:07" }, { id: "b", text: "Add a lower third." }, { id: "c", text: "Fade the outro." }];
   await withSimpleSheet(async () => {
     for (const queued of [items, items.slice(0, 1)]) {
-      await act(async () => root.render(<QueueTray items={queued} waits="Waits for your answer" onRemove={() => {}} onReword={() => {}} />));
+      await act(async () => root.render(<QueueTray items={queued} waits="等待你的回答" onRemove={() => {}} onReword={() => {}} />));
       const line = container.querySelector<HTMLElement>(".queue-head, .queue-row")!;
       // The tag and the words share what is left, each cut short with an ellipsis. What the request waits for and the
       // line's controls keep their size, so the line never runs out of the tray.
@@ -10308,17 +10308,17 @@ it("says a suggestion no request made is being made again in Scarlet's words, qu
   const turn = () => turnFor("chg_fillers");
   await click(suggestion("chg_fillers"));
   await act(async () => {});
-  await click(buttonIn(container.querySelector('[aria-label="Suggestion"]')!, "Apply")!);
+  await click(buttonIn(container.querySelector('[aria-label="剪辑建议"]')!, "应用")!);
   await act(async () => {});
   // The chat says it at once, as Scarlet's line under the suggestion, and the tray lists the redo under the
   // suggestion's own words: nothing here is the engine's name for the task.
   expect([...turn().querySelectorAll(".said")].map(p => p.textContent)).toEqual(["Cut 6 filler words (um, uh, you know).", REDO_WAITS]);
-  expect(queueLines()).toEqual([["Next", "Suggestion", "Cut 6 filler words (um, uh, you know)"]]);
+  expect(queueLines()).toEqual([["Next", "剪辑建议", "Cut 6 filler words (um, uh, you know)"]]);
   expect(container.querySelector(".simple-thread")!.textContent).not.toMatch(/Redo on the current edit|Sent back|The agent/);
   // Scarlet starts on it. Its work has no heading, since no request is behind it, and every request keeps its block.
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === "task_redo" ? { ...t, state: "running" as const, startedAt: new Date().toISOString() } : t) }));
   const work = container.querySelector<HTMLElement>('.simple-pin .unit[data-run="task_redo"]')!;
-  expect([work.querySelector(".unit-msg"), work.querySelector('[aria-label^="Stop this edit"]')?.getAttribute("aria-label")]).toEqual([null, "Stop this edit"]);
+  expect([work.querySelector(".unit-msg"), work.querySelector('[aria-label^="停止此剪辑"]')?.getAttribute("aria-label")]).toEqual([null, "停止此剪辑"]);
   expect(blocks().filter(run => run !== "task_redo")).toEqual(before);
   expect([...turn().querySelectorAll(".said")].map(p => p.textContent).at(-1)).toBe(REDOING);
   expect(container.querySelector(".simple-thread")!.textContent).not.toMatch(/Redo on the current edit|Sent back|The agent/);
@@ -10343,16 +10343,16 @@ it("closes only the suggestion it applied when the apply lands: a call opened me
   await act(async () => {});
   await click(container.querySelector(".simple-pin .unit .simple-suggest")!);
   await act(async () => {});
-  await click(buttonIn(container.querySelector('[aria-label="Suggestion"]')!, "Apply")!);
-  expect(container.querySelector('[aria-label="Suggestion"]')).toBeNull();
+  await click(buttonIn(container.querySelector('[aria-label="剪辑建议"]')!, "应用")!);
+  expect(container.querySelector('[aria-label="剪辑建议"]')).toBeNull();
   // While the engine works, ↓ opens the pass's first call. It can't be decided until the apply has landed.
   await press("ArrowDown");
   expect(call().textContent).toContain("A clean retake.");
-  expect(buttonIn(call(), "Approve")!.disabled).toBe(true);
+  expect(buttonIn(call(), "批准")!.disabled).toBe(true);
   const pause = vi.spyOn(player, "pause");
   await act(async () => land({ change: { ...reframe, state: "approved" }, project: data.project, outcome: "applied" }));
   expect(call().textContent).toContain("A clean retake.");
-  expect(buttonIn(call(), "Approve")!.disabled).toBe(false);
+  expect(buttonIn(call(), "批准")!.disabled).toBe(false);
   expect(pause).not.toHaveBeenCalled();
 });
 
@@ -10365,17 +10365,17 @@ it("leaves a clip the editor started from Media playing when a suggestion's appl
   await show();
   await click(suggestion("chg_ready"));
   await act(async () => {});
-  await click(buttonIn(container.querySelector('[aria-label="Suggestion"]')!, "Apply")!);
-  expect(container.querySelector('[aria-label="Suggestion"]')).toBeNull();
+  await click(buttonIn(container.querySelector('[aria-label="剪辑建议"]')!, "应用")!);
+  expect(container.querySelector('[aria-label="剪辑建议"]')).toBeNull();
   // While the engine works, the editor plays a clip from Media. Nothing they review is on screen then.
   await click(mediaButton());
   await act(async () => { await vi.dynamicImportSettled(); });
-  await click(await vi.waitFor(() => { const b = container.querySelector<HTMLButtonElement>('button[aria-label^="Preview source"]'); if (!b) throw new Error("no Media row yet"); return b; }));
-  expect(container.querySelector('[aria-label="Source preview"]')).not.toBeNull();
+  await click(await vi.waitFor(() => { const b = container.querySelector<HTMLButtonElement>('button[aria-label^="预览素材"]'); if (!b) throw new Error("no Media row yet"); return b; }));
+  expect(container.querySelector('[aria-label="素材预览"]')).not.toBeNull();
   const pause = vi.spyOn(player, "pause");
   await act(async () => land({ change: { ...data.changes.find(c => c.id === "chg_ready")!, state: "approved" }, project: data.project, outcome: "applied" }));
   // The clip isn't the change that was applied: the landing leaves it up and doesn't pause it.
-  expect(container.querySelector('[aria-label="Source preview"]')).not.toBeNull();
+  expect(container.querySelector('[aria-label="素材预览"]')).not.toBeNull();
   expect(pause).not.toHaveBeenCalled();
 });
 
@@ -10384,12 +10384,12 @@ it("shows edit actions while working or asking, and a status once the request st
   const state = (id: string) => container.querySelector<HTMLElement>(`.unit[data-run="${id}"] > .unit-msg > .unit-state`)!;
   expect([state("task_running").innerHTML, editActionsOf("task_running").getAttribute("aria-label")]).toEqual(["", `Stop this edit: ${requestTextFor("task_running")}`]);
   expect([state("task_waiting").querySelector(".unit-dot")?.getAttribute("aria-hidden"), state("task_waiting").textContent, editActionsOf("task_waiting").getAttribute("aria-label")]).toEqual(["true", "", `Stop this edit: ${requestTextFor("task_waiting")}`]);
-  // A question is that dot, the question and Answer: no row under the heading says "Needs your answer" over it.
+  // A question is that dot, the question and Answer: no row under the heading says "等待你的回答" over it.
   const asking = container.querySelector<HTMLElement>('.unit[data-run="task_waiting"] .req')!;
   expect(asking.querySelector(".req-status")).toBeNull();
   expect([...asking.querySelectorAll(".req-say")].map(p => p.textContent)).toEqual([`${data.tasks.find(t => t.id === "task_waiting")!.question}Answer`]);
   // A suggestion waiting to be played says so, and its line under the band plays it.
-  expect(state("task_done").textContent).toBe("Suggestion");
+  expect(state("task_done").textContent).toBe("剪辑建议");
   expect(container.querySelector('.unit[data-run="task_done"] .simple-suggest')).not.toBeNull();
   // Stopped early: the band says so, and the one action is under what the run left, not beside a second "Stopped".
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === "task_running" ? { ...t, state: "cancelled" as const, finishedAt: new Date().toISOString() } : t) }));
@@ -10450,10 +10450,10 @@ it("underlines the chat actions, makes edit result links stand out, and keeps am
     await click(every);
     expect(styled(every, "color", "border-bottom-color")).toEqual(["white", "white"]);
     expect(styled(needed, "color", "border-bottom-color")).toEqual(["silver", "transparent"]);
-    expect(look("Answer")).toBe("orange underline orange");
+    expect(look("回答")).toBe("orange underline orange");
     // The one action of a request that stopped early is a link like the rest, not white.
     await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === "task_running" ? { ...t, state: "cancelled" as const, finishedAt: new Date().toISOString() } : t) }));
-    expect(look("Resume")).toBe("silver underline gray");
+    expect(look("恢复")).toBe("silver underline gray");
   } finally {
     sheet.remove();
   }
@@ -10484,18 +10484,18 @@ it("draws a revision of one applied edit under that edit's row, at work, and und
   expect(owner().querySelector(":scope > .unit-msg .simple-revising")).toBeNull();
   // While only the edit that needs the editor is listed it sits under what the request made: named for its edit, with
   // the editor's words and Scarlet at work.
-  expect(owner().querySelector(".simple-edits")?.getAttribute("aria-label")).toBe("Edits that need you");
+  expect(owner().querySelector(".simple-edits")?.getAttribute("aria-label")).toBe("待确认的剪辑");
   expect(sub().parentElement?.classList.contains("simple-pass")).toBe(true);
   expect([tagIn(sub()), wordsOf(sub().querySelector(".subunit-msg p"))]).toEqual(["Edit at 0:00", "Make the captions bigger."]);
   expect(sub().querySelector('[aria-label="Scarlet’s work"] .working-text')).not.toBeNull();
   // Its Stop is its own heading's last word, and the request that holds it has none: Scarlet isn't on that one.
-  expect(sub().querySelector('.subunit-msg > .unit-actions [aria-label^="Stop this edit"]')).not.toBeNull();
+  expect(sub().querySelector('.subunit-msg > .unit-actions [aria-label^="停止此剪辑"]')).not.toBeNull();
   expect(owner().querySelector(":scope > .unit-msg > .unit-stop")).toBeNull();
   // Opened, the list has it directly under the row it revises, and that row's word moves while Scarlet works.
   await click(seeAll(owner())!);
   const row = sub().previousElementSibling as HTMLElement;
   expect([row.className, row.querySelector(".simple-edit-title")?.textContent]).toEqual(["simple-edit", "captions"]);
-  expect([row.querySelector(".simple-edit-check")?.textContent, row.querySelector(".simple-edit-check")?.classList.contains("working-text")]).toEqual(["Revising…", true]);
+  expect([row.querySelector(".simple-edit-check")?.textContent, row.querySelector(".simple-edit-check")?.classList.contains("working-text")]).toEqual(["正在修改…", true]);
   expect(owner().querySelectorAll(".subunit").length).toBe(1);
   // Done, with the edit revised: it leaves, and the request has the fixed place no longer.
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === "task_fix" ? { ...t, state: "done" as const, finishedAt: new Date().toISOString(), changeIds: ["chg_fixed"] } : t),
@@ -10521,7 +10521,7 @@ it("keeps the list of what needs the editor, and only that, once one of its edit
   // "1 needs you" lists the flagged edit alone and opens it. Its row has no line under it: the reason is on its card.
   await click(owner().querySelector(".simple-pass-need")!);
   await act(async () => {});
-  expect([list()?.getAttribute("aria-label"), rows(), openTitle()]).toEqual(["Edits that need you", [["wrap", undefined]], "wrap"]);
+  expect([list()?.getAttribute("aria-label"), rows(), openTitle()]).toEqual(["待确认的剪辑", [["wrap", undefined]], "wrap"]);
   // The editor sends a revision of it. Scarlet takes it up, so the request moves above the message box, mounted anew.
   const now = new Date().toISOString();
   await event(d => ({ ...d, tasks: [...d.tasks, { ...base, id: "task_fix", kind: "edit" as const, state: "running" as const, summary: null, changeIds: [], instruction: "Keep the last word.",
@@ -10531,9 +10531,9 @@ it("keeps the list of what needs the editor, and only that, once one of its edit
   expect(owner().closest(".simple-pin")).not.toBeNull();
   // The list is still just that edit, now Revising…, with the request directly under its row. The count disappears
   // while Scarlet works on it, and See all remains available.
-  expect([list()?.getAttribute("aria-label"), rows()]).toEqual(["Edits that need you", [["wrap", "Revising…"]]]);
+  expect([list()?.getAttribute("aria-label"), rows()]).toEqual(["待确认的剪辑", [["wrap", "正在修改…"]]]);
   expect(container.querySelector('.subunit[data-run="task_fix"]')!.previousElementSibling?.querySelector(".simple-edit-title")?.textContent).toBe("wrap");
-  expect(reviewModes(owner())).toEqual([["For you", "true"], ["See all", "false"]]);
+  expect(reviewModes(owner())).toEqual([["待审阅", "true"], ["查看全部", "false"]]);
   expect(owner().querySelector(".simple-review-tab-count")).toBeNull();
   // The revision lands with nothing to check, and the edit is still open on its card. The list goes: the request,
   // back in the conversation, doesn't open the list of every edit by itself.
@@ -10564,7 +10564,7 @@ it("draws a request about one place of an edit made in several once, under that 
   await showFolded();
   await act(async () => {});
   const block = () => container.querySelector<HTMLElement>('.unit[data-run="task_made"]')!;
-  expect(block().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 needs you");
+  expect(block().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 项待审阅");
   // "1 needs you" lists that edit as one row for both its places.
   await click(block().querySelector(".simple-pass-need")!);
   await act(async () => {});
@@ -10632,7 +10632,7 @@ it("keeps an edit in the need-you list where it was once it's kept, until nothin
   const rows = () => [...turn.querySelectorAll<HTMLButtonElement>(".simple-edits .simple-edit")].map(r =>
     [r.querySelector(".edit-badge")?.textContent?.trim(), r.querySelector(".simple-edit-title")?.textContent, r.querySelector(".edit-badge")?.classList.contains("is-kept")]);
   // Just those two are listed without a click, numbered as in the whole list. "2 need you" opens the first.
-  expect([need()?.getAttribute("title"), rows()]).toEqual(["2 need you", [["2", "captions", false], ["3", "wrap", false]]]);
+  expect([need()?.getAttribute("title"), rows()]).toEqual(["2 项待审阅", [["2", "captions", false], ["3", "wrap", false]]]);
   await click(need()!);
   await act(async () => {});
   expect(rows()).toEqual([["2", "captions", false], ["3", "wrap", false]]);
@@ -10640,7 +10640,7 @@ it("keeps an edit in the need-you list where it was once it's kept, until nothin
   // Kept, it stays in its place, filled, while the count goes down and the next one opens.
   await press("k");
   await act(async () => {});
-  expect([need()?.getAttribute("title"), openTitle()]).toEqual(["1 needs you", "wrap"]);
+  expect([need()?.getAttribute("title"), openTitle()]).toEqual(["1 项待审阅", "wrap"]);
   expect(rows()).toEqual([["2", "captions", true], ["3", "wrap", false]]);
   // The last one kept, nothing needs the editor: the list goes with the link.
   await press("k");
@@ -10714,7 +10714,7 @@ it("opens a cut unlit with its words folded when it is opened again, after Befor
   vi.spyOn(api, "timeline").mockResolvedValue({ timeline: { ...data.timeline!, version: "v_before" } } as never);
   const audition = vi.spyOn(player, "audition");
   await show();
-  await click(buttonIn(turnFor("chg_approved_2"), "See edit")!);
+  await click(buttonIn(turnFor("chg_approved_2"), "查看剪辑")!);
   await act(async () => {});
   await press("\\");
   await click(transcriptLink());
@@ -10723,10 +10723,10 @@ it("opens a cut unlit with its words folded when it is opened again, after Befor
   // Closed with Esc and opened again from its row: it plays as the video runs, and its words are folded.
   await press("Escape");
   expect(editPanel()).toBeNull();
-  await click(buttonIn(turnFor("chg_approved_2"), "See edit")!);
+  await click(buttonIn(turnFor("chg_approved_2"), "查看剪辑")!);
   await act(async () => {});
-  expect(beforeIcon(editPanel()!)).toEqual(["", "Before", "false", "Play Before (\\)"]);
-  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing “Keep the image test” · After");
+  expect(beforeIcon(editPanel()!)).toEqual(["", "剪辑前", "false", "播放剪辑前 (\\)"]);
+  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing “Keep the image test” · 剪辑后");
   expect(transcriptLink().getAttribute("aria-expanded")).toBe("false");
   expect(openHead()!.querySelector(".edit-passage")).toBeNull();
   expect(audition).toHaveBeenLastCalledWith({ start: 8, end: 15.4, skips: [{ start: 10, end: 12.4, removed: true }] }, expect.any(Number));
@@ -10737,14 +10737,14 @@ it("opens a cut unlit with its words folded when it is opened again, after Befor
   const plays = audition.mock.calls.length, band = container.querySelector(".simple-timeline-band")?.getAttribute("style");
   await click(cutRow());
   await act(async () => {});
-  expect(beforeIcon(editPanel()!)).toEqual(["", "Before", "false", "Play Before (\\)"]);
+  expect(beforeIcon(editPanel()!)).toEqual(["", "剪辑前", "false", "播放剪辑前 (\\)"]);
   expect(audition.mock.calls.length).toBe(plays + 1);
   // After, from the top of the listen: it steps over the cut again.
   expect(audition.mock.lastCall?.[0]).toEqual({ start: 8, end: 15.4, skips: [{ start: 10, end: 12.4, removed: true }] });
   expect(container.querySelector(".simple-timeline-band")?.getAttribute("style")).toBe(band);
   // Closed with Esc and opened again: no flash and no clicked point.
   await press("Escape");
-  await click(buttonIn(turnFor("chg_approved_2"), "See edit")!);
+  await click(buttonIn(turnFor("chg_approved_2"), "查看剪辑")!);
   await act(async () => {});
   expect(beforeIcon(editPanel()!)?.[2]).toBe("false");
   expect(editPanel()!.querySelector(".edit-card-before.is-flash")).toBeNull();
@@ -10772,10 +10772,10 @@ it("plays a cut again from the top when the line of the request that made it is 
   await act(async () => {});
   // The follow-up has no list of its own: its line opens the cut it made.
   const line = () => container.querySelector<HTMLButtonElement>('.unit[data-run="task_follow"] .req-result button')!;
-  expect([line().textContent, line().title]).toEqual(["The false start", "Show on the timeline"]);
+  expect([line().textContent, line().title]).toEqual(["The false start", "在时间线上显示"]);
   await click(line());
   await act(async () => {});
-  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing “The false start” · After");
+  expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing “The false start” · 剪辑后");
   expect(boxTag()).toBe("Cut at 0:10");
   await press("\\");
   await click(transcriptLink());
@@ -10831,7 +10831,7 @@ it("plays a call again when its open row is pressed again, and leaves it open wi
   expect(plays).toBeGreaterThan(0);
   await click(row());
   await act(async () => {});
-  expect(container.querySelector('[aria-label="Call"]')).not.toBeNull();
+  expect(container.querySelector('[aria-label="剪点"]')).not.toBeNull();
   expect(row()).toBeDefined();
   expect(words().getAttribute("aria-expanded")).toBe("true");
   // The same listen, started over.
@@ -10840,7 +10840,7 @@ it("plays a call again when its open row is pressed again, and leaves it open wi
   expect(container.querySelector(".simple-timeline-band")?.getAttribute("style")).toBe(band);
   // Esc is what closes it.
   await press("Escape");
-  expect(container.querySelector('[aria-label="Call"]')).toBeNull();
+  expect(container.querySelector('[aria-label="剪点"]')).toBeNull();
 });
 
 it("gives Space back to the player after a cut's row or one of its card's icons is clicked", async () => {
@@ -10848,7 +10848,7 @@ it("gives Space back to the player after a cut's row or one of its card's icons 
   vi.spyOn(api, "timeline").mockResolvedValue({ timeline: { ...data.timeline!, version: "v_before" } } as never);
   await show();
   // The row stays on screen while its cut is open. Pressed again it would play the cut from the top again.
-  await click(buttonIn(turnFor("chg_approved_2"), "See edit")!);
+  await click(buttonIn(turnFor("chg_approved_2"), "查看剪辑")!);
   await pointerClick(cutRow());
   await act(async () => {});
   expect(document.activeElement).not.toBe(cutRow());
@@ -10876,7 +10876,7 @@ it("leaves the Before key alone until the version before a cut has arrived", asy
   vi.spyOn(api, "timeline").mockImplementation(() => new Promise(resolve => { arrive = () => resolve({ timeline: { ...data.timeline!, version: "v_before" } } as never); }));
   const audition = vi.spyOn(player, "audition");
   await show();
-  await click(buttonIn(turnFor("chg_approved_2"), "See edit")!);
+  await click(buttonIn(turnFor("chg_approved_2"), "查看剪辑")!);
   await act(async () => {});
   // Nothing to play Before on yet: the key does what the disabled icon does, nothing.
   const shown = container.querySelector(".watch-monitor")!.textContent;
@@ -10899,7 +10899,7 @@ it("keeps a cut's card open while the version before it loads: ← → and the t
   const seek = vi.spyOn(player, "seek");
   const audition = vi.spyOn(player, "audition");
   await show();
-  await click(buttonIn(turnFor("chg_approved_2"), "See edit")!);
+  await click(buttonIn(turnFor("chg_approved_2"), "查看剪辑")!);
   await act(async () => {});
   expect(editPanel()).not.toBeNull();
   expect(audition).not.toHaveBeenCalled();
@@ -10941,17 +10941,17 @@ it("says so in a cut's words when the version before it can't be loaded, offers 
   });
   const audition = vi.spyOn(player, "audition");
   await show();
-  await click(buttonIn(turnFor("chg_approved_2"), "See edit")!);
+  await click(buttonIn(turnFor("chg_approved_2"), "查看剪辑")!);
   for (let i = 0; i < 4; i++) await act(async () => {});
   expect(version.mock.calls.filter(([, v]) => v === "v_before").length).toBeGreaterThan(0);
   const monitor = container.querySelector<HTMLElement>(".watch-monitor")!;
-  expect(monitor.querySelector('[role="alert"]')?.textContent).toBe("Couldn’t load the earlier version.");
-  expect(buttonIn(monitor, "Retry")).toBeDefined();
+  expect(monitor.querySelector('[role="alert"]')?.textContent).toBe("无法加载较早版本。");
+  expect(buttonIn(monitor, "重试")).toBeDefined();
   // A cut's card has no Before/After switch: its one icon waits for a version to play it on, as while that loads,
   // and \ plays no Before of anyone else's meanwhile.
   const card = editPanel()!;
   expect(card.querySelector(".compare-switch")).toBeNull();
-  expect(beforeIcon(card)).toEqual(["", "Before", "false", "Play Before (\\)"]);
+  expect(beforeIcon(card)).toEqual(["", "剪辑前", "false", "播放剪辑前 (\\)"]);
   expect(card.querySelector<HTMLButtonElement>(".edit-card-before")!.disabled).toBe(true);
   await press("\\");
   for (let i = 0; i < 4; i++) await act(async () => {});
@@ -10963,14 +10963,14 @@ it("says so in a cut's words when the version before it can't be loaded, offers 
   for (let i = 0; i < 4; i++) await act(async () => {});
   const passage = () => editPanel()!.querySelector<HTMLElement>(".thread-passage")!;
   expect([passage().querySelector(".edit-passage-cut")?.textContent, passage().querySelector(".edit-passage-wait"),
-    buttonIn(passage(), "Retry transcript")?.title]).toEqual(["2.4 s", null, "The engine is restarting."]);
+    buttonIn(passage(), "重试加载转写稿")?.title]).toEqual(["2.4 s", null, "The engine is restarting."]);
   expect(passage().querySelector(".review-voice, .review-join, .review-passage")).toBeNull();
   // Asked again, the version comes in: the cut plays on it and its icon works.
   failing = false;
-  await click(buttonIn(passage(), "Retry transcript")!);
+  await click(buttonIn(passage(), "重试加载转写稿")!);
   for (let i = 0; i < 4; i++) await act(async () => {});
-  expect(buttonIn(passage(), "Retry transcript")).toBeUndefined();
-  expect(buttonIn(monitor, "Retry")).toBeUndefined();
+  expect(buttonIn(passage(), "重试加载转写稿")).toBeUndefined();
+  expect(buttonIn(monitor, "重试")).toBeUndefined();
   expect(editPanel()!.querySelector<HTMLButtonElement>(".edit-card-before")!.disabled).toBe(false);
   expect(audition).toHaveBeenLastCalledWith({ start: 8, end: 15.4, skips: [{ start: 10, end: 12.4, removed: true }] }, expect.any(Number));
 });
@@ -10985,13 +10985,13 @@ it("reads nothing of a cut's words on the video as it runs now while the version
   vi.spyOn(api, "timeline").mockImplementation((_, version = "head") => version === "v_before" ? new Promise(() => {})
     : Promise.resolve({ timeline: { ...data.timeline!, version } } as never));
   await show();
-  await click(buttonIn(turnFor("chg_approved_2"), "See edit")!);
+  await click(buttonIn(turnFor("chg_approved_2"), "查看剪辑")!);
   await act(async () => {});
   await click(transcriptLink());
   for (let i = 0; i < 6; i++) await act(async () => {});
   // The mark stands alone and says the words are on their way: no words, speaker tags or join mark of the working cut.
   const passage = editPanel()!.querySelector<HTMLElement>(".thread-passage")!;
-  expect([passage.querySelector(".edit-passage-cut")?.textContent, passage.querySelector(".edit-passage-wait")?.textContent]).toEqual(["2.4 s", "Loading the words…"]);
+  expect([passage.querySelector(".edit-passage-cut")?.textContent, passage.querySelector(".edit-passage-wait")?.textContent]).toEqual(["2.4 s", "正在加载台词…"]);
   expect(passage.querySelector(".review-voice, .review-join, .review-passage")).toBeNull();
 });
 
@@ -11020,24 +11020,24 @@ it("works the suggestion's card as an edit's: it plays as it opens, its keys are
   vi.spyOn(api, "timeline").mockImplementation(async (_, version = "head") => ({ timeline: { ...data.timeline!, version } }));
   const play = vi.spyOn(player, "play");
   await show();
-  // The line says "Play this suggestion", and it does, as an edit's row plays its edit: once the suggested version is up.
-  expect(suggestion("chg_ready").title).toBe("Play this suggestion");
+  // The line says "播放此建议", and it does, as an edit's row plays its edit: once the suggested version is up.
+  expect(suggestion("chg_ready").title).toBe("播放此建议");
   await click(suggestion("chg_ready"));
   await act(async () => {});
   expect(play).toHaveBeenCalledTimes(1);
-  const strip = container.querySelector<HTMLElement>('[aria-label="Suggestion"]')!;
+  const strip = container.querySelector<HTMLElement>('[aria-label="剪辑建议"]')!;
   // No key is drawn on the card and there is no Close: Esc closes it, and Revise and Apply name their keys on hover.
-  expect(buttonIn(strip, "Close")).toBeUndefined();
+  expect(buttonIn(strip, "关闭")).toBeUndefined();
   expect(strip.querySelector(".simple-key, kbd")).toBeNull();
   expect([...strip.querySelectorAll(".review-actions button")].map(b => [b.textContent, b.getAttribute("aria-keyshortcuts"), b.getAttribute("title")]))
-    .toEqual([["Revise", "R", "Revise (R)"], ["Apply", "A", "Apply (A)"]]);
+    .toEqual([["修改", "R", "修改 (R)"], ["应用", "A", "应用 (A)"]]);
   expect(compareButton(strip).getAttribute("aria-keyshortcuts")).toBe("\\");
-  expect(beforeIcon(strip)).toEqual(["", "Before", "false", "Play Before (\\)"]);
+  expect(beforeIcon(strip)).toEqual(["", "剪辑前", "false", "播放剪辑前 (\\)"]);
   await press("\\");
-  expect(beforeIcon(strip)).toEqual(["", "Before", "true", "Back to After (\\)"]);
+  expect(beforeIcon(strip)).toEqual(["", "剪辑前", "true", "返回剪辑后 (\\)"]);
   await press("\\");
   await act(async () => {});
-  expect(beforeIcon(strip)).toEqual(["", "Before", "false", "Play Before (\\)"]);
+  expect(beforeIcon(strip)).toEqual(["", "剪辑前", "false", "播放剪辑前 (\\)"]);
   // Only the press on the line played it: a switch of sides is no press to play.
   expect(play).toHaveBeenCalledTimes(1);
 });
@@ -11052,8 +11052,8 @@ it("plays a suggestion only on the editor's press on its line: its card comes ba
   await click(suggestion("chg_ready"));
   await act(async () => {});
   expect(play).toHaveBeenCalledTimes(1);
-  const strip = () => container.querySelector<HTMLElement>('[aria-label="Suggestion"]');
-  await click(buttonIn(strip()!, "Apply")!);
+  const strip = () => container.querySelector<HTMLElement>('[aria-label="剪辑建议"]');
+  await click(buttonIn(strip()!, "应用")!);
   expect(strip()).toBeNull();
   await act(async () => refuse(new Error("The engine stopped.")));
   await act(async () => {});
@@ -11081,10 +11081,10 @@ it("starts a clip played from Media once: once it plays, nothing tells its playe
   await act(async () => {});
   await click(mediaButton());
   await act(async () => { await vi.dynamicImportSettled(); });
-  const row = await vi.waitFor(() => { const b = container.querySelector<HTMLButtonElement>('button[aria-label^="Preview source"]'); if (!b) throw new Error("no Media row yet"); return b; });
+  const row = await vi.waitFor(() => { const b = container.querySelector<HTMLButtonElement>('button[aria-label^="预览素材"]'); if (!b) throw new Error("no Media row yet"); return b; });
   await click(row);
   const clip = () => container.querySelector<HTMLVideoElement>(".watch-monitor video")!;
-  expect(container.querySelector('[aria-label="Source preview"]')).not.toBeNull();
+  expect(container.querySelector('[aria-label="素材预览"]')).not.toBeNull();
   // Its player is told to start by itself.
   expect(clip().autoplay).toBe(true);
   // The clip plays. From here a pause is the editor's: a saved file taking over from the stream, or Media, History
@@ -11096,7 +11096,7 @@ it("starts a clip played from Media once: once it plays, nothing tells its playe
   // Played again from Media, it starts again.
   await click(mediaButton());
   await act(async () => { await vi.dynamicImportSettled(); });
-  await click(await vi.waitFor(() => { const b = container.querySelector<HTMLButtonElement>('button[aria-label^="Preview source"]'); if (!b) throw new Error("no Media row yet"); return b; }));
+  await click(await vi.waitFor(() => { const b = container.querySelector<HTMLButtonElement>('button[aria-label^="预览素材"]'); if (!b) throw new Error("no Media row yet"); return b; }));
   expect(clip().autoplay).toBe(true);
 });
 
@@ -11143,7 +11143,7 @@ const openCutThenRevise = async () => {
   vi.spyOn(api, "timeline").mockImplementation(async (_, version) => ({ timeline: version === "v_before" ? before : { ...working, version: version! } }));
   const spies = { audition: vi.spyOn(player, "audition"), passage: vi.spyOn(player, "previewRange"), play: vi.spyOn(player, "play") };
   await show();
-  await click(buttonIn(turnFor("chg_approved_2"), "See edit")!);
+  await click(buttonIn(turnFor("chg_approved_2"), "查看剪辑")!);
   await act(async () => {});
   // Opening it played it once. The editor then paused it and sent a note on it.
   expect(spies.play).toHaveBeenCalledTimes(1);
@@ -11167,7 +11167,7 @@ it("takes up an open cut as it was when its revision lands, and doesn't play it 
   expect(play).not.toHaveBeenCalled();
   expect(audition).toHaveBeenLastCalledWith(expect.objectContaining({ start: 8.4, skips: [{ start: 10.4, end: 10.8, removed: true }] }), expect.any(Number), true);
   // The side the editor was on stays theirs too, and pressing the row again plays the cut from its top.
-  expect(beforeIcon(editPanel()!)).toEqual(["", "Before", "false", "Play Before (\\)"]);
+  expect(beforeIcon(editPanel()!)).toEqual(["", "剪辑前", "false", "播放剪辑前 (\\)"]);
   await click(turnFor("chg_approved_2").querySelector(".simple-edits .simple-edit")!);
   expect(play).toHaveBeenCalledTimes(1);
   expect(audition.mock.calls.at(-1)).toHaveLength(2);
@@ -11181,7 +11181,7 @@ it("takes up an open cut as it was when its revision puts footage back, so it is
   // It takes up the listen already in progress.
   expect(editPanel()!.querySelector(".edit-card-length.is-added")?.textContent).toBe("Added");
   expect(editPanel()!.querySelector(".edit-card-words")).toBeNull();
-  expect(beforeIcon(editPanel()!)).toEqual(["", "Before", "false", "Play Before (\\)"]);
+  expect(beforeIcon(editPanel()!)).toEqual(["", "剪辑前", "false", "播放剪辑前 (\\)"]);
   expect(audition).toHaveBeenCalledTimes(listens);
   expect(passage).toHaveBeenLastCalledWith({ start: 7.6, end: 13.6 }, expect.any(Number), undefined, true);
   expect(play).not.toHaveBeenCalled();
@@ -11317,12 +11317,12 @@ it("gives a request's list the place of Scarlet's reply while it's open, and bri
   const drawn = block();
   // With every edit listed, the list has the reply's place and the block stays mounted.
   await click(seeAll(block())!);
-  expect([block().querySelector(".simple-edits")?.getAttribute("aria-label"), reply()]).toEqual(["Edits in this thread", undefined]);
+  expect([block().querySelector(".simple-edits")?.getAttribute("aria-label"), reply()]).toEqual(["此对话的剪辑", undefined]);
   expect(block()).toBe(drawn);
   // For you opens the flagged edit. Once its card closes, the reply is back with just that edit listed.
   await click(block().querySelector(".simple-pass-need")!);
   await press("Escape");
-  expect([block().querySelector(".simple-edits")?.getAttribute("aria-label"), reply()]).toEqual(["Edits that need you", "Check edit 3 to hear how the ending lands."]);
+  expect([block().querySelector(".simple-edits")?.getAttribute("aria-label"), reply()]).toEqual(["待确认的剪辑", "Check edit 3 to hear how the ending lands."]);
 });
 
 it("keeps a revision whose new version couldn't be prepared, since nothing else would say it came to nothing", async () => {
@@ -11369,7 +11369,7 @@ it("keeps a list the editor opened on a request open when a revision of one of i
   await act(async () => {});
   expect(block().closest(".simple-pin")).not.toBeNull();
   expect(block().querySelectorAll(".simple-edits .simple-edit").length).toBe(3);
-  expect(reviewModes(block())).toEqual([["For you", "false"], ["See all", "true"]]);
+  expect(reviewModes(block())).toEqual([["待审阅", "false"], ["查看全部", "true"]]);
   // And back in the conversation once the revision is done.
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === "task_fix" ? { ...t, state: "done" as const, finishedAt: new Date().toISOString(), changeIds: ["chg_fixed"] } : t),
     changes: [...d.changes, { ...d.changes.find(c => c.id === "chg_approved_2")!, id: "chg_fixed", taskId: "task_fix", threadId: thread.id, createdAt: new Date().toISOString(),
@@ -11401,7 +11401,7 @@ it("keeps a request that is tried again in its one block, and out of the queue",
   // One block, now in line again: it says Queued, as a cut's card and the tray do. It isn't a second request in the tray.
   expect(blocks().length).toBe(1);
   expect(blocks()[0]!.getAttribute("data-run")).toBe("task_zoom");
-  expect(blocks()[0]!.querySelector('.req-status [role="status"]')?.textContent).toBe("Queued");
+  expect(blocks()[0]!.querySelector('.req-status [role="status"]')?.textContent).toBe("排队中");
   expect(container.querySelector(".queue-row")).toBeNull();
   // Once Scarlet is on it, the same block holds the place above the message box.
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === "task_busy" ? { ...t, state: "done" as const, finishedAt: new Date().toISOString() }
@@ -11458,10 +11458,10 @@ it("leaves full screen on the first Esc and keeps the open edit, which the next 
   await click(turnFor("chg_approved_2").querySelector(".simple-edit")!);
   expect(editPanel()).not.toBeNull();
   // This window has no full screen of its own, so the page stands in for it.
-  await click(container.querySelector('button[aria-label="Full screen"]')!);
+  await click(container.querySelector('button[aria-label="全屏"]')!);
   await act(async () => {});
   expect(container.querySelector(".cut-preview")!.hasAttribute("data-expanded")).toBe(true);
-  const speed = container.querySelector<HTMLButtonElement>('.monitor-controls button[title="Playback speed"]')!;
+  const speed = container.querySelector<HTMLButtonElement>('.monitor-controls button[title="播放速度"]')!;
   await click(speed);
   await act(async () => { speed.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true })); });
   expect(speed.getAttribute("aria-expanded")).toBe("false");
@@ -11501,7 +11501,7 @@ it("comes back from Settings or a restart to update at the speed the editor was 
   await reopen(place);
   expect(asked).toEqual([12.5]);
   expect([usePlayerStore.getState().time, usePlayerStore.getState().rate]).toEqual([12.5, 1.5]);
-  expect(container.querySelector('.monitor-controls button[title="Playback speed"]')?.textContent).toBe("1.5×");
+  expect(container.querySelector('.monitor-controls button[title="播放速度"]')?.textContent).toBe("1.5×");
   // The place is used once: the address is the project's own again.
   expect(container.querySelector("#address")?.textContent).toBe(`/p/${PRJ}`);
   // At the ordinary speed the way back says only where.
@@ -11519,7 +11519,7 @@ it("opens again, after a quit, the call or the cut that was open, without playin
   await act(async () => {});
   await openCall("Repeated aside.");
   await act(async () => {});
-  const card = () => container.querySelector<HTMLElement>('[aria-label="Call"]');
+  const card = () => container.querySelector<HTMLElement>('[aria-label="剪点"]');
   const note = card()!.querySelector(".edit-note")?.textContent ?? card()!.textContent;
   // The editor opened it, so it played.
   expect(listen.mock.calls.length).toBeGreaterThan(0);
@@ -11563,7 +11563,7 @@ it("opens again, after a quit, the applied cut that was open, on its card and pa
   vi.spyOn(api, "timeline").mockImplementation(async (_, version = "head") => ({ timeline: { ...data.timeline!, version } }));
   const listen = vi.spyOn(player, "audition");
   await show();
-  await click(buttonIn(turnFor("chg_approved_2"), "See edit")!);
+  await click(buttonIn(turnFor("chg_approved_2"), "查看剪辑")!);
   await act(async () => {});
   expect(editPanel()).not.toBeNull();
   const place = bookmark();
@@ -11626,7 +11626,7 @@ it("keeps the conversation and the cut on screen when the edit moves on and its 
   const alert = container.querySelector<HTMLElement>('.simple-chat [role="alert"]')!;
   expect([units().length, alert.firstChild?.textContent, alert === container.querySelector(".simple-chat")!.lastElementChild, !!video()])
     .toEqual([before, "Couldn’t load the updated timeline: The engine is busy.", true, true]);
-  await click(buttonIn(alert, "Retry")!);
+  await click(buttonIn(alert, "重试")!);
   expect(useProjectStore.getState().load).toHaveBeenCalledWith(PRJ);
 });
 
@@ -11655,14 +11655,14 @@ it("aims an emptied box at the edit that's open now, not the one its deleted mes
 it("leaves the box where it is on Revise and Answer while a message is being spoken into it", async () => {
   vi.spyOn(api, "timeline").mockImplementation(async (_, version = "head") => ({ timeline: { ...data.timeline!, version } }));
   await show();
-  expect(boxTag()).toBe("Answer");
+  expect(boxTag()).toBe("回答");
   await click(suggestion("chg_ready"));
   await act(async () => {});
   const before = boxNow();
   // Aiming the box builds it again, which would drop the recording without a word. R waits until it is out.
   await act(async () => useUiStore.getState().setSpeaking(true));
   await press("r");
-  expect([boxTag(), boxNow()]).toEqual(["Answer", before]);
+  expect([boxTag(), boxNow()]).toEqual(["回答", before]);
   await act(async () => useUiStore.getState().setSpeaking(false));
   await press("r");
   expect(boxTag()).toBe("Whole edit");
@@ -11709,7 +11709,7 @@ it("keeps the call the editor is on, and the list of calls, when another call's 
     cutAssessments: old.cutAssessments!.map(a => a.index === 0 ? { index: 0, start: 1.5, end: 3, verdict: "ask" as const, reason: "Starts in the pause." } : a) };
   const asItWas = () => {
     expect(call()?.querySelector(".edit-card-title")?.textContent).toContain("Breath before the price.");
-    expect(buttonIn(call(), "Approve")).toBeDefined();
+    expect(buttonIn(call(), "批准")).toBeDefined();
     expect(passRows().map(r => r.querySelector(".simple-pass-label")?.textContent)).toEqual(STAGED.map(c => c.reason));
   };
   await event(d => ({ ...d, changes: [...d.changes, revised] }));
@@ -11770,7 +11770,7 @@ it("leaves full screen when Revise hands the keyboard to the message box, which 
   await click(turnFor("chg_approved_2").querySelectorAll<HTMLElement>(".simple-edits .simple-edit")[0]!);
   await act(async () => {});
   const stage = container.querySelector<HTMLElement>(".cut-preview")!;
-  await click(container.querySelector<HTMLButtonElement>('.monitor-controls [aria-label="Full screen"]')!);
+  await click(container.querySelector<HTMLButtonElement>('.monitor-controls [aria-label="全屏"]')!);
   expect(stage.dataset.expanded).toBe("true");
   // The card is still on screen over the timeline, with its keys. R aims the box at the edit and puts the caret in it.
   useUiStore.setState({ composerFocus: 0 });
@@ -11787,10 +11787,10 @@ it("takes a clip that's already showing back to its start, and plays it, when it
   const fromMedia = async () => {
     await click(mediaButton());
     await act(async () => { await vi.dynamicImportSettled(); });
-    await click(await vi.waitFor(() => { const b = container.querySelector<HTMLButtonElement>('button[aria-label^="Preview source"]'); if (!b) throw new Error("no Media row yet"); return b; }));
+    await click(await vi.waitFor(() => { const b = container.querySelector<HTMLButtonElement>('button[aria-label^="预览素材"]'); if (!b) throw new Error("no Media row yet"); return b; }));
   };
   await fromMedia();
-  expect(container.querySelector('[aria-label="Source preview"]')).not.toBeNull();
+  expect(container.querySelector('[aria-label="素材预览"]')).not.toBeNull();
   // Some way into the clip, the editor plays it from Media again. Its player is already up, so nothing opens it anew.
   await act(async () => usePlayerStore.setState({ time: 7 }));
   const seek = vi.spyOn(player, "seek"), play = vi.spyOn(player, "play").mockImplementation(() => {});
@@ -12030,11 +12030,11 @@ it("steps through See all in list order when approving a call or keeping a flagg
   expect(cardTitle()).toBe("intro trim");
   // Keep intro trim -> goes to Cut 1 (For you call).
   await press("k");
-  expect(call().querySelector(".edit-card-count")?.textContent).toBe("Cut 1");
+  expect(call().querySelector(".edit-card-count")?.textContent).toBe("剪点 1");
   // Approve Cut 1 on See all -> goes to mid trim (non-For-you edit), NOT skipping to Cut 2 or mid check!
   await press("a");
   await act(async () => {});
-  expect(container.querySelector('[aria-label="Call"]')).toBeNull();
+  expect(container.querySelector('[aria-label="剪点"]')).toBeNull();
   expect(cardTitle()).toBe("mid trim");
   // Keep mid trim -> goes to mid check (flagged For you edit).
   await press("k");
@@ -12044,12 +12044,12 @@ it("steps through See all in list order when approving a call or keeping a flagg
   expect(cardTitle()).toBe("late trim");
   // Keep late trim -> goes to Cut 2 (next in See all).
   await press("k");
-  expect(call().querySelector(".edit-card-count")?.textContent).toBe("Cut 2");
+  expect(call().querySelector(".edit-card-count")?.textContent).toBe("剪点 2");
   // Approve Cut 2 (last waiting call) on See all -> schedules the pass and moves to outro trim instead of closing!
   await press("a");
   await act(async () => {});
   expect(save).toHaveBeenLastCalledWith("chg_ready", expect.objectContaining({ applyWhenDone: true }));
-  expect(container.querySelector('[aria-label="Call"]')).toBeNull();
+  expect(container.querySelector('[aria-label="剪点"]')).toBeNull();
   expect(cardTitle()).toBe("outro trim");
   // Keep outro trim -> every item in See all is done, so the card closes.
   await press("k");
@@ -12115,14 +12115,14 @@ it("offers Make shorts in the ⋯ menu after Export, and makes them from a form 
   await act(async () => root.render(<MemoryRouter initialEntries={[`/p/${PRJ}`]}><SimpleWorkspace /><Address /></MemoryRouter>));
   await openMenu();
   const items = [...container.querySelectorAll('[role="menu"] [role="menuitem"]')].map(item => item.textContent?.trim());
-  expect(items.indexOf("Make shorts")).toBe(items.indexOf("Export") + 1);
-  await click([...container.querySelectorAll('[role="menuitem"]')].find(item => item.textContent?.trim() === "Make shorts")!);
+  expect(items.indexOf("制作短视频")).toBe(items.indexOf("导出") + 1);
+  await click([...container.querySelectorAll('[role="menuitem"]')].find(item => item.textContent?.trim() === "制作短视频")!);
   const dialog = container.ownerDocument.querySelector('dialog[open]')!;
-  expect(dialog.querySelector("h2")?.textContent).toBe("Make shorts");
+  expect(dialog.querySelector("h2")?.textContent).toBe("制作短视频");
   expect([...dialog.querySelectorAll("label")].map(l => l.textContent)).toEqual(["How many", "Shape", "Length", "Captions"]);
   expect([...dialog.querySelectorAll('[role="combobox"]')].map(b => b.textContent)).toEqual(["Up to 3", "Vertical · 9:16", "Under 60 s each", "On"]);
   expect(dialog.textContent).toContain("Makes a new project for each short, starting from this video’s finished edit. This video isn’t changed.");
-  await click(buttonIn(dialog, "Make shorts")!);
+  await click(buttonIn(dialog, "制作短视频")!);
   expect(made).toHaveBeenCalledWith(PRJ, { count: 3, aspect: "9:16", maxSeconds: 60, captions: true, agent: "claude", model: "opus" });
   expect(container.querySelector("#address")?.textContent).toBe("/p/prj_short1");
 });
@@ -12132,11 +12132,11 @@ it("names the video a short was made from under its title, and links to it", asy
   await asShort(false);
   const title = container.querySelector(".simple-header h1")!;
   expect(title.querySelector(".simple-header-name")?.textContent).toBe("Agents fail without tools");
-  expect(title.querySelector(".simple-header-source")?.textContent).toBe("From Weekly interview");
+  expect(title.querySelector(".simple-header-source")?.textContent).toBe("来自 Weekly interview");
   expect(title.querySelector(".simple-header-source a")?.getAttribute("href")).toBe("/p/prj_long");
   // A short isn't made into shorts again.
   await openMenu();
-  expect([...container.querySelectorAll('[role="menuitem"]')].map(item => item.textContent?.trim())).not.toContain("Make shorts");
+  expect([...container.querySelectorAll('[role="menuitem"]')].map(item => item.textContent?.trim())).not.toContain("制作短视频");
   // Once that video is gone, its name stays, without a link.
   await event(d => ({ ...d, project: { ...d.project, source: { ...d.project.source!, gone: true } } }));
   expect(container.querySelector(".simple-header-source a")).toBeNull();
@@ -12151,9 +12151,9 @@ it("opens a short's chat with a line that says it is a new project, which stays 
   await asShort();
   const note = container.querySelector<HTMLElement>(".simple-chat > .simple-source-note")!;
   expect(container.querySelector(".simple-chat")!.firstElementChild).toBe(note);
-  expect(note.querySelector("p")?.textContent).toBe("New project, made from Weekly interview. That video isn’t changed.");
+  expect(note.querySelector("p")?.textContent).toBe("此项目来自 Weekly interview，原视频保持原样。");
   expect(note.querySelector("a")?.getAttribute("href")).toBe("/p/prj_long");
-  await click(note.querySelector('[aria-label="Dismiss"]')!);
+  await click(note.querySelector('[aria-label="关闭提示"]')!);
   expect(container.querySelector(".simple-source-note")).toBeNull();
   expect(saved).toHaveBeenCalledWith(PRJ, { sourceNotice: false });
   // Dismissed, it stays so when the chat is drawn again.

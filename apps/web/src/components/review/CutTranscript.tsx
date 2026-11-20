@@ -1,6 +1,7 @@
 import { Fragment, useMemo, useState } from "react";
 import { timelineDuration, withHandles, type MediaAsset, type TimeRange, type Timeline } from "@scarlet/timeline";
 import { cutWords, type MappedWord } from "../../lib/transcriptMap";
+import { zhReview } from "../../lib/zhReview";
 import { useTranscriptWindow } from "../transcript/useTranscriptWindow";
 import { Icon } from "../ui/primitives";
 
@@ -73,7 +74,7 @@ function KeptRun({ items, others }: { items: MappedWord[]; others: TimeRange[] }
   return <>{runs.map((run, i) => {
     const words = <Words items={run.items} />;
     return <Fragment key={run.items[0]!.index}>{i > 0 && " "}{run.other
-      ? <del className="review-removed is-other" title="Another edit removes these words">{words}</del>
+      ? <del className="review-removed is-other" title={zhReview.cutTranscript.removedElsewhere}>{words}</del>
       : <span className="review-kept">{words}</span>}</Fragment>;
   })}</>;
 }
@@ -97,18 +98,18 @@ export function EditPassage({ timeline, media, range, length, others = [], curre
   const struck = <del className="review-removed"><Words items={removed} /></del>;
   const mark = current ? <Words items={removed} /> : folds
     ? <button type="button" className="edit-passage-cut" aria-expanded={open} onClick={() => setOpen(o => !o)}
-      title={open ? "Hide the cut words" : `Show the ${removed.length} cut words`}><Icon name="scissors" size={12} />{length}</button>
+      title={open ? zhReview.cutTranscript.hideRemoved : zhReview.cutTranscript.showRemoved(removed.length)}><Icon name="scissors" size={12} />{length}</button>
     : removed.length ? <span className="edit-passage-cut is-words" title={length}><Icon name="scissors" size={12} />{struck}</span>
     : <CutMark length={length} />;
-  return <div className="edit-passage" role="group" aria-label={current ? "Words in the current passage" : "Words this cut removes"}>
+  return <div className="edit-passage" role="group" aria-label={current ? zhReview.cutTranscript.current : zhReview.cutTranscript.removed}>
     <p className="review-spoken">
       {lead.items.length > 0 && <>{lead.clipped && "… "}<KeptRun others={others} items={lead.items} />{" "}</>}
       {mark}
       {folds && open && <>{" "}{struck}</>}
       {tail.items.length > 0 && <>{" "}<KeptRun others={others} items={tail.items} />{tail.clipped && " …"}</>}
       {/* Until the words arrive the passage says so: a lone mark reads as a cut with nothing said around it. */}
-      {pending && <>{" "}<span className="edit-passage-wait working-text" role="status">Loading the words…</span></>}
-      {error && <>{" "}<button type="button" className="btn-quiet" onClick={retry}>Retry transcript</button></>}
+      {pending && <>{" "}<span className="edit-passage-wait working-text" role="status">{zhReview.cutTranscript.loading}</span></>}
+      {error && <>{" "}<button type="button" className="btn-quiet" onClick={retry}>{zhReview.cutTranscript.retry}</button></>}
     </p>
   </div>;
 }

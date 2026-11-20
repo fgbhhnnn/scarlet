@@ -4011,7 +4011,9 @@ export function SimpleWorkspace() {
             change={draftVersion && !appliedCut ? viewed : undefined} spot={shownPlace} approval={!!draftVersion && !appliedCut} playChange={reviewPlays}
             active={workspaceActive} onMedia={() => setPanel("media")} joined={joinedPlayer} />
           <ManualTimeline key={current.id} open={manualOpen} projectId={current.id} timeline={timeline ?? undefined} media={media} fps={fps}
-            canEdit={onWorkingClock && !previewVersion || (emptyWorkingTimeline && !appliedCut && !previewVersion && !listening)} onClose={() => setManualOpen(false)} onMedia={() => setPanel("media")}
+            canEdit={onWorkingClock && !previewVersion || (emptyWorkingTimeline && !appliedCut && !previewVersion && !listening)}
+            allowFirstVideo={emptyWorkingTimeline && !appliedCut && !previewVersion && !listening}
+            onClose={() => setManualOpen(false)} onMedia={() => setPanel("media")}
             onAddFirstVideo={async () => { await addFirstVideo(); }} />
           {chosenSource && hasCut && source === chosenSource && <div className="simple-decide" role="region" aria-label="Source preview">
             <span className="simple-decide-text"><small>Source clip</small>{chosenSource.name}</span>

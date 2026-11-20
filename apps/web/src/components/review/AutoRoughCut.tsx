@@ -3,7 +3,6 @@ import { api, errorMessage } from "../../lib/client";
 import { runIsActive } from "../../lib/taskRun";
 import { isPreparingMedia } from "../../lib/upload";
 import { useProjectStore } from "../../stores/project";
-import { commandSkillIds } from "../../stores/skills";
 import { useUiStore } from "../../stores/ui";
 import { useAgentAvailability } from "../agent/AgentChip";
 import { Icon, InlineError, Modal } from "../ui/primitives";
@@ -47,7 +46,6 @@ function AutoRoughCutSheet({ importing, onClose, onQueued }: {
     setBusy(true);
     setError("");
     try {
-      const skillIds = await commandSkillIds(instruction);
       // A new project has no head until its first timeline is read. The timeline route creates that
       // initial version transactionally, so the edit task always starts against a real version.
       let version = current.project.head ?? undefined;
@@ -60,7 +58,7 @@ function AutoRoughCutSheet({ importing, onClose, onQueued }: {
         kind: "edit",
         ...effective,
         instruction,
-        context: { version, skillIds },
+        context: { version },
       });
       onQueued();
       onClose();

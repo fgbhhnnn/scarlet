@@ -20,13 +20,14 @@ function clipName(clip: Clip, media: ReadonlyMap<string, MediaAsset>) {
   return clip.label || media.get(clip.mediaId)?.name || "素材";
 }
 
-export function ManualTimeline({ open, projectId, timeline, media, fps, canEdit, onClose, onMedia, onAddFirstVideo }: {
+export function ManualTimeline({ open, projectId, timeline, media, fps, canEdit, allowFirstVideo = false, onClose, onMedia, onAddFirstVideo }: {
   open: boolean;
   projectId: string;
   timeline?: Timeline;
   media: MediaAsset[];
   fps: number;
   canEdit: boolean;
+  allowFirstVideo?: boolean;
   onClose(): void;
   onMedia(): void;
   onAddFirstVideo?(): Promise<void>;
@@ -164,12 +165,12 @@ export function ManualTimeline({ open, projectId, timeline, media, fps, canEdit,
     {!canEdit && timeline && <p role="status">回到当前成片的预览后即可编辑。</p>}
     {!timeline && <>
       <p role="status">导入素材后即可编辑时间线。</p>
-      <button type="button" className={toolClass} disabled={!onAddFirstVideo || addingFirstVideo}
+      <button type="button" className={toolClass} disabled={!onAddFirstVideo || !allowFirstVideo || addingFirstVideo}
         onClick={() => void addFirstVideo()}>
         {addingFirstVideo ? "正在添加…" : "将首个视频添加到 V1"}
       </button>
     </>}
-    {timeline && canAddFirstVideo && <button type="button" className={toolClass} disabled={disabled || addingFirstVideo}
+    {timeline && canAddFirstVideo && <button type="button" className={toolClass} disabled={!allowFirstVideo || addingFirstVideo}
       onClick={() => {
         if (!v1 || !firstVideo || !(firstVideo.duration && firstVideo.duration >= 1 / fps)) return;
         void submit([{ op: "addClip", trackId: v1.id, clip: makeMediaClip(firstVideo.id, 0, firstVideo.duration, 0, { label: firstVideo.name }) }], "将首个视频添加到 V1");

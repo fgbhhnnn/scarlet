@@ -28,12 +28,12 @@ afterEach(async () => {
 it("offers the first video in an initialized empty timeline", async () => {
   const timeline = emptyTimeline("prj_first");
   await act(async () => root.render(<ManualTimeline open projectId="prj_first" timeline={timeline} media={[video]} fps={30}
-    canEdit={false} onClose={vi.fn()} onMedia={vi.fn()} />));
+    canEdit={false} allowFirstVideo={false} onClose={vi.fn()} onMedia={vi.fn()} />));
   const button = [...container.querySelectorAll<HTMLButtonElement>("button")].find(button => button.textContent?.includes("将首个视频添加到 V1"));
   expect(button).toBeDefined();
   expect(button!.disabled).toBe(true);
   await act(async () => root.render(<ManualTimeline open projectId="prj_first" timeline={timeline} media={[video]} fps={30}
-    canEdit onClose={vi.fn()} onMedia={vi.fn()} />));
+    canEdit allowFirstVideo onClose={vi.fn()} onMedia={vi.fn()} />));
   const enabled = [...container.querySelectorAll<HTMLButtonElement>("button")].find(button => button.textContent?.includes("将首个视频添加到 V1"));
   expect(enabled?.disabled).toBe(false);
 });
@@ -41,7 +41,7 @@ it("offers the first video in an initialized empty timeline", async () => {
 it("keeps the V1 entry point enabled even when the empty workspace is read-only", async () => {
   const onAddFirstVideo = vi.fn().mockResolvedValue(undefined);
   await act(async () => root.render(<ManualTimeline open projectId="prj_first" timeline={undefined} media={[video]} fps={30}
-    canEdit={false} onClose={vi.fn()} onMedia={vi.fn()} onAddFirstVideo={onAddFirstVideo} />));
+    canEdit={false} allowFirstVideo onClose={vi.fn()} onMedia={vi.fn()} onAddFirstVideo={onAddFirstVideo} />));
 
   const button = [...container.querySelectorAll<HTMLButtonElement>("button")].find(button => button.textContent?.includes("将首个视频添加到 V1"));
   expect(button).toBeDefined();

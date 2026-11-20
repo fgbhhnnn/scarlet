@@ -81,6 +81,14 @@ function requestedDialogue(ctx: Ctx, text: string) {
   if (names.length) return dialogueCommand(text, ctx.repos.skills.select("name IN (SELECT value FROM json_each(?))", [JSON.stringify(names)]));
 }
 
+/** The one-click first-cut request keeps the editor's short words in context.message. */
+const AUTOMATIC_FIRST_CUT_MESSAGE = "Make first cut";
+const AUTOMATIC_FIRST_CUT_INSTRUCTION = "Make a first cut from this project’s footage and send it to me for review.";
+
+function automaticFirstCut(input: { instruction: string; context?: Task["context"] }) {
+  return input.context?.message === AUTOMATIC_FIRST_CUT_MESSAGE && input.instruction.startsWith(AUTOMATIC_FIRST_CUT_INSTRUCTION);
+}
+
 /** Upgrade old requests and their answers once, before a host or the renderer reads them. */
 export function migrateDialogueOperations(ctx: Ctx) {
   ctx.db.transaction(() => {
@@ -141,7 +149,7 @@ export function createTask(
     expectedSeconds: recentDuration(ctx, input.kind, input.agent, input.model, input.context?.skillIds),
     context: { ...input.context, ...(input.context?.time !== undefined && (!input.context.version || input.context.version === "head") &&
       { version: ctx.repos.projects.header(input.projectId)?.head ?? undefined }), ...(editsDialogue(input.kind) && { dialogueOperation: input.context?.dialogueOperation ??
-      requestedDialogue(ctx, input.context?.message ?? input.instruction) ?? "none" }), branch: input.context?.branch ?? ctx.repos.projects.header(input.projectId)?.branch, threadId: input.context?.threadId ?? id },
+      (automaticFirstCut(input) ? "first-cut" : requestedDialogue(ctx, input.context?.message ?? input.instruction)) ?? "none" }), branch: input.context?.branch ?? ctx.repos.projects.header(input.projectId)?.branch, threadId: input.context?.threadId ?? id },
     state: input.state ?? "queued",
     createdBy: input.createdBy,
     hostId: null,

@@ -310,10 +310,16 @@ jobs:
         shell: pwsh
         run: ./.github/scripts/early-access-upgrade-windows.ps1 -Previous "$env:RUNNER_TEMP\$env:PREVIOUS_EA_INSTALLER" -Candidate "$env:RUNNER_TEMP\scarlet-installers\$env:CANDIDATE_EA_INSTALLER" -Version $env:RELEASE_VERSION
 
+      - name: Record the build version and commit
+        if: github.repository != 'Forward-Future/scarlet'
+        shell: bash
+        run: |
+          printf 'version=%s\ncommit=%s\ntarget=%s\n' "$RELEASE_VERSION" "$GITHUB_SHA" '${{ matrix.triple }}' > "$RUNNER_TEMP/scarlet-installers/build-info.txt"
+
       - name: Upload verified installers
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: ${{ inputs.early_access && format('scarlet-early-access-{0}', inputs.version) || 'scarlet-desktop' }}-${{ matrix.triple }}
+          name: ${{ inputs.early_access && 'scarlet-early-access' || 'scarlet-desktop' }}-${{ inputs.version }}-${{ matrix.triple }}-${{ github.sha }}
           path: ${{ runner.temp }}/scarlet-installers/
           if-no-files-found: error
           overwrite: true

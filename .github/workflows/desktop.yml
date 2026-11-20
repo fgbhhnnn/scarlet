@@ -2,7 +2,7 @@ name: Desktop
 
 on:
   push:
-    branches: [main, first-release]
+    branches: [main, first-release, 'ci/**']
   workflow_dispatch:
     inputs:
       early_access_version:

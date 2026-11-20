@@ -15,7 +15,7 @@ class DesktopPermissionsTest < Minitest::Test
   def test_main_builds_all_installers
     # Psych versions using YAML 1.1 read the key 'on' as true.
     trigger = @entry["on"] || @entry.fetch(true)
-    assert_equal({"branches" => ["main", "first-release"]}, trigger.fetch("push"))
+    assert_equal({"branches" => ["main", "first-release", "ci/**"]}, trigger.fetch("push"))
     assert_equal %w[aarch64-apple-darwin x86_64-apple-darwin x86_64-pc-windows-msvc],
       @build.dig("strategy", "matrix", "include").map { |target| target.fetch("triple") }.sort
     assert_equal false, @build.dig("strategy", "fail-fast")
@@ -135,6 +135,8 @@ class DesktopPermissionsTest < Minitest::Test
     upload = @build.fetch("steps").find { |step| step["uses"].to_s.start_with?("actions/upload-artifact@") }
     refute upload.key?("if"), "Failed native jobs must not upload a release candidate"
     assert_equal "error", upload.fetch("with").fetch("if-no-files-found")
+    assert_includes upload.dig("with", "name"), "inputs.version"
+    assert_includes upload.dig("with", "name"), "github.sha"
   end
 
   def test_only_upstream_release_packages_use_the_public_update_feed

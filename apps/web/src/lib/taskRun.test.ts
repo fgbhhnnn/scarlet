@@ -32,12 +32,12 @@ it("turns a run's events into short updates and one line per finished step", () 
   ];
   expect(runItems(task, events, [assembly, pass])).toEqual([
     { kind: "note", at: at(4), text: "I’m using the dialogue-pass workflow to review the full recording." },
-    { kind: "step", at: at(5), verb: "Read", detail: "the project" },
+    { kind: "step", at: at(5), verb: "读取", detail: "项目" },
     { kind: "note", at: at(9), text: "I’m placing the full recording on the empty timeline." },
     { kind: "step", at: at(46), verb: "Placed", detail: "the full recording at 0:00 so its picture and dialogue can be edited together", edit: true },
-    { kind: "step", at: at(47), verb: "Scanned", detail: "all 57:47 of dialogue", pending: false, background: true },
-    { kind: "step", at: at(60), verb: "Looked at", detail: "the picture in 5 places" },
-    { kind: "step", at: at(64), verb: "Checked", detail: "the sound" },
+    { kind: "step", at: at(47), verb: "扫描", detail: "全部 57:47 的对白", pending: false, background: true },
+    { kind: "step", at: at(60), verb: "查看", detail: "画面（5 处）" },
+    { kind: "step", at: at(64), verb: "检查", detail: "声音" },
     { kind: "note", at: at(240), text: "I found a complete DeepSeek introduction after the mic checks. I’m checking the joins around those takes." },
   ]);
 });
@@ -63,13 +63,13 @@ it("takes what the request will come to from the agent's first words, only when 
 it("counts every cut a multi-cut inspection checks, and a whole-picture look as one", () => {
   const events = [tool(1, "dialogue_review_inspect", { index: 0, count: 4 }), tool(3, "dialogue_review_inspect", { index: 4, count: 3 }),
     tool(5, "dialogue_review_inspect", { index: 2, count: 4, wholePicture: true })];
-  expect(runItems({ ...task, state: "running" }, events, [])).toEqual([{ kind: "step", at: at(1), verb: "Checked", detail: "8 suggested cuts" }]);
+  expect(runItems({ ...task, state: "running" }, events, [])).toEqual([{ kind: "step", at: at(1), verb: "检查", detail: "8 个剪点" }]);
 });
 
 it("keeps an unfinished scan pending so the live row can show it", () => {
   const events = [log(1, "", { kind: "editor_progress", scanPage: { mediaId: "med", from: 0, to: 600, end: 3467.597 } })];
   expect(runItems({ ...task, state: "running" }, events, [])).toEqual([
-    { kind: "step", at: at(1), verb: "Scanned", detail: "10:00 of 57:47 of dialogue", pending: true, background: true },
+    { kind: "step", at: at(1), verb: "扫描", detail: "10:00 / 57:47 的对白", pending: true, background: true },
   ]);
 });
 
@@ -85,9 +85,9 @@ it("says where each step looked, and drops repeats of the same call", () => {
       tool(9, "transcript_search", { mediaId: "cam", query: "DeepSeek" }),
     ];
     expect(runItems({ ...task, state: "running" }, events, []).map(i => i.kind === "step" ? `${i.verb} ${i.detail}` : i.text)).toEqual([
-      "Read the transcript from 0:00 to 57:47",
-      "Looked at the picture in 5 places from 0:24 to 54:50",
-      "Searched the transcript for “DeepSeek”",
+      "读取转写稿，范围 0:00–57:47",
+      "查看画面（5 处），范围 0:24–54:50",
+      "搜索“DeepSeek”对应的转写稿",
     ]);
     const few = runItems({ ...task, state: "running" }, events.slice(1, 4), []);
     expect(few).toEqual([{ kind: "step", at: at(2), verb: "Looked at", detail: "the picture at 0:24, 1:33 and 3:05" }]);
@@ -103,12 +103,12 @@ it("shows a wait for the transcript as one row instead of every call that checks
     ];
     const running = { ...task, state: "running" } as Task;
     expect(runItems(running, events, [])).toEqual([
-      { kind: "step", at: at(10), verb: "Waiting", detail: "for the transcript", background: true },
-      { kind: "step", at: at(30), verb: "Looked at", detail: "the picture at 0:24 and 1:33" },
+      { kind: "step", at: at(10), verb: "等待", detail: "转写稿", background: true },
+      { kind: "step", at: at(30), verb: "查看", detail: "画面，位于 0:24 和 1:33" },
     ]);
     const done = [...events, wait(370, true), tool(371, "transcript_get", read)];
     expect(runItems(running, done, []).map(i => i.kind === "step" && `${i.verb} ${i.detail}`)).toEqual([
-      "Waited 6:00 for the transcript", "Looked at the picture at 0:24 and 1:33", "Read the transcript from 0:00 to 57:47",
+      "已等待 6:00，转写稿", "Looked at the picture at 0:24 and 1:33", "读取转写稿，范围 0:00–57:47",
     ]);
     // The wait ran alongside the other steps, so it takes no time of its own in the list.
     expect(runLines(running, done, runItems(running, done, []), Date.parse(at(400))).map(l => l.took)).toEqual([undefined, 341_000, 29_000]);
@@ -119,7 +119,7 @@ it("covers a read of several recordings with the wait for any one of them", () =
     const wait = (s: number) => log(s, "", { kind: "media_wait", wait: "transcript", mediaId: "cam" });
     const running = { ...task, state: "running" } as Task;
     expect(runItems(running, [tool(10, "transcript_get", read), wait(25), tool(40, "transcript_get", read)], [])).toEqual([
-      { kind: "step", at: at(10), verb: "Waiting", detail: "for the transcript", background: true },
+      { kind: "step", at: at(10), verb: "等待", detail: "转写稿", background: true },
     ]);
 });
 
@@ -135,38 +135,38 @@ it("gives each step the time until the next one starts, so the steps add up to t
     const running = { ...task, state: "running" } as Task;
     const lines = runLines(running, events, runItems(running, events, []), Date.parse(at(200)));
     expect(lines).toEqual([
-      { kind: "step", text: "Read the project", took: 10_000 },
+      { kind: "step", text: "读取项目", took: 10_000 },
       // Started together, so their time can't be split.
-      { kind: "step", text: "Lined up the sound and looked at the picture from 0:16 to 0:18", took: 44_000 },
+      { kind: "step", text: "同步声音，查看画面，范围 0:16–0:18", took: 44_000 },
       { kind: "note", text: "The presenter and screen are synced." },
       // Time spent waiting for your answer never counts.
-      { kind: "step", text: "Checked the sound from 0:25 to 0:31", took: 20_000 },
-      { kind: "step", text: "Checking a join", took: 20_000, live: true },
+      { kind: "step", text: "检查声音，范围 0:25–0:31", took: 20_000 },
+      { kind: "step", text: "正在检查 1 个衔接", took: 20_000, live: true },
     ]);
     const finished = { ...task, finishedAt: at(190) } as Task;
-    expect(runLines(finished, events, runItems(finished, events, []), Date.now()).at(-1)).toEqual({ kind: "step", text: "Checked a join", took: 10_000 });
+    expect(runLines(finished, events, runItems(finished, events, []), Date.now()).at(-1)).toEqual({ kind: "step", text: "检查 1 个衔接", took: 10_000 });
     // Three steps started together read as one sentence. An edit always keeps its own line.
     const together = [tool(1, "dialogue_check_join"), tool(1.2, "project_get"), tool(1.4, "media_frame", { t: 5 }),
       { at: at(1.6), type: "change" as const, text: "", data: { changeId: "chg_assembly" } }];
     expect(runLines(finished, together, runItems(finished, together, [assembly]), Date.now()).map(l => l.text)).toEqual([
-      "Checked a join, read the project and looked at the picture at 0:05",
+      "检查 1 个衔接，读取项目和查看画面，位于 0:05",
       "Placed the full recording at 0:00 so its picture and dialogue can be edited together",
     ]);
 });
 
 it("sums up a run in a few words", () => {
-  expect(runSummary(task, pass)).toBe("Suggested 1:12 in 2 cuts");
-  expect(runSummary(task, { ...pass, state: "approved" } as Change)).toBe("Removed 1:12 in 2 cuts");
+  expect(runSummary(task, pass)).toBe("建议移除 1:12，共 2 个剪点");
+  expect(runSummary(task, { ...pass, state: "approved" } as Change)).toBe("已移除 1:12，共 2 个剪点");
   // It reads as a cut's own length does: to a tenth under ten seconds, and what rounds up to a minute as one, never "60 s".
   const removing = (seconds: number) => runSummary(task, { ...pass, cutReasons: [{ ...pass.cutReasons![0]!, start: 10, end: 10 + seconds }] } as Change);
-  expect(removing(0.2)).toBe("Suggested 0.2 s in 1 cut");
-  expect(removing(59.4)).toBe("Suggested 59 s in 1 cut");
-  expect(removing(59.6)).toBe("Suggested 1:00 in 1 cut");
-  expect(removing(65.7)).toBe("Suggested 1:06 in 1 cut");
+  expect(removing(0.2)).toBe("建议移除 0.2 s，共 1 个剪点");
+  expect(removing(59.4)).toBe("建议移除 59 s，共 1 个剪点");
+  expect(removing(59.6)).toBe("建议移除 1:00，共 1 个剪点");
+  expect(removing(65.7)).toBe("建议移除 1:06，共 1 个剪点");
   expect(runSummary(task, assembly)).toBe("Placed the full recording at 0:00…");
   expect(runSummary(task, { ...assembly, timelineEdits: [{ label: "Synchronized camera and screen", range: { start: 0, end: 1 } }] } as Change))
     .toBe("Synchronized camera and screen");
-  expect(runSummary({ ...task, state: "failed" } as Task)).toBe("Couldn’t finish");
+  expect(runSummary({ ...task, state: "failed" } as Task)).toBe("未能完成");
   expect(runSummary({ ...task, state: "failed" } as Task, assembly)).toBe("Placed the full recording at 0:00…");
   const zoom = { ...assembly, description: "From 0:03 to 56:41, a fixed 14% zoom enlarges the app windows and trims the taskbar.",
     timelineEdits: [{ label: "the screen demonstrations", range: { start: 3, end: 3401 } }] } as Change;

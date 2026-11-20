@@ -72,10 +72,10 @@ it.each(["empty", "populated"])("can start a project from the %s library guide a
     await act(() => button("添加文件…").click());
     await act(() => { input.dispatchEvent(new Event("cancel", { bubbles: true })); });
     expect(name.value).toBe("Interview");
-    expect(container.querySelector('[aria-label="Selected files"]')?.textContent).toBe("take-one.mov");
+    expect(container.querySelector('[aria-label="已选文件"]')?.textContent).toBe("take-one.mov");
     expect(create).not.toHaveBeenCalled();
     expect(container.querySelector("dialog")?.textContent).not.toMatch(/optional|Clear|format will match|on this computer/);
-    await act(() => container.querySelector<HTMLButtonElement>('[aria-label="Remove take-one.mov"]')!.click());
+    await act(() => container.querySelector<HTMLButtonElement>('[aria-label="移除 take-one.mov"]')!.click());
     await act(async () => button("创建项目").click());
     expect(create).toHaveBeenCalledExactlyOnceWith({ name: "Interview" });
     expect(container.textContent).toContain("Project workspace");
@@ -104,7 +104,7 @@ it("offers New project in an empty library, names the project for the first vide
   document.body.append(container);
   const root = createRoot(container);
   const buttons = (text: string) => [...container.querySelectorAll("button")].filter(b => b.textContent?.trim() === text);
-  const chosen = () => [...container.querySelectorAll('[aria-label="Selected files"] li')].map(li => li.textContent);
+  const chosen = () => [...container.querySelectorAll('[aria-label="已选文件"] li')].map(li => li.textContent);
   try {
     await act(async () => root.render(<MemoryRouter><ProjectsPage /></MemoryRouter>));
     const welcome = container.querySelector(".library-first-edit")!;
@@ -123,7 +123,7 @@ it("offers New project in an empty library, names the project for the first vide
     expect(chosen()).toEqual(["Sam interview.mov", "b-roll.mov", "Dana interview.mov"]);
     expect(name.value).toBe("Sam interview");
     // Each video has its own ×. Until the editor names it, the project follows the first video left.
-    await act(() => container.querySelector<HTMLButtonElement>('[aria-label="Remove Sam interview.mov"]')!.click());
+    await act(() => container.querySelector<HTMLButtonElement>('[aria-label="移除 Sam interview.mov"]')!.click());
     expect(chosen()).toEqual(["b-roll.mov", "Dana interview.mov"]);
     expect(name.value).toBe("b-roll");
     // A name the editor typed is theirs: changing the videos leaves it.
@@ -179,7 +179,7 @@ it("creates a named project from a drop, handles a bad file, and matches the fir
       <Route path="/" element={<ProjectsPage />} /><Route path="/p/:id" element={<Workspace />} />
     </Routes></MemoryRouter>));
     expect(container.textContent).toContain("开始第一次剪辑");
-    expect(container.textContent).not.toContain("sent to OpenAI");
+    expect(container.textContent).not.toContain("发送到 OpenAI");
     const files = new DataTransfer();
     files.items.add(new File(["x"], "bad.mov"));
     files.items.add(new File(["y"], "portrait.mp4"));
@@ -188,7 +188,7 @@ it("creates a named project from a drop, handles a bad file, and matches the fir
     await act(() => { container.querySelector("main")!.dispatchEvent(drop); });
     const name = container.querySelector<HTMLInputElement>("#np-name")!;
     expect(name.value).toBe("bad");
-    expect(container.querySelector("dialog")?.textContent).toContain("sent to OpenAI");
+    expect(container.querySelector("dialog")?.textContent).toContain("发送到 OpenAI");
     await act(() => {
       Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(name, "First interview");
       name.dispatchEvent(new Event("input", { bubbles: true }));
@@ -202,7 +202,7 @@ it("creates a named project from a drop, handles a bad file, and matches the fir
     expect(container.textContent).toContain("Unreadable");
     await act(async () => finishImport(video));
     expect(format).toHaveBeenCalledExactlyOnceWith(PRJ, { settings: { width: 720, height: 1280, fps: 24, aspect: "9:16" }, expectedFormat: { settings: project.settings, head: project.head } });
-    await act(() => container.querySelectorAll<HTMLButtonElement>('[aria-label="Dismiss"]').forEach(button => button.click()));
+    await act(() => container.querySelectorAll<HTMLButtonElement>('[aria-label="关闭"]').forEach(button => button.click()));
   } finally {
     await act(() => root.unmount());
     container.remove();
@@ -290,7 +290,7 @@ it("manages a project from either library layout", async () => {
     (button as HTMLButtonElement).click();
   });
   const textButton = (text: string) => [...container.querySelectorAll("button")].find(b => b.textContent?.trim() === text);
-  const actions = () => tap(container.querySelector('[aria-label="Actions for Interview"]'));
+  const actions = () => tap(container.querySelector('[aria-label="Interview的操作"]'));
   try {
     await act(async () => root.render(<MemoryRouter><ProjectsPage /></MemoryRouter>));
     expect(container.querySelector(".library-count")).toBeNull();
@@ -306,7 +306,7 @@ it("manages a project from either library layout", async () => {
     await tap(textButton("暂停"));
     expect(update).toHaveBeenLastCalledWith(PRJ, { mediaPaused: true });
     expect(useProjectStore.getState().list[0]?.mediaPaused).toBe(true);
-    await tap(container.querySelector('[aria-label="Grid view"]'));
+    await tap(container.querySelector('[aria-label="网格视图"]'));
     await actions();
     expect(textButton("恢复")?.title).toBe("恢复媒体处理");
     await tap(textButton("恢复"));
@@ -315,7 +315,7 @@ it("manages a project from either library layout", async () => {
     expect(update).toHaveBeenLastCalledWith(PRJ, { archived: true });
     expect(container.querySelector(".project-link")).toBeNull();
     await tap(textButton("已归档"));
-    await tap(container.querySelector('[aria-label="List view"]'));
+    await tap(container.querySelector('[aria-label="列表视图"]'));
     await actions(); await tap(textButton("取消归档"));
     await tap(textButton("进行中"));
     await actions(); await tap(textButton("重命名"));
@@ -382,7 +382,7 @@ it("selects visible projects across layouts and retries only failed bulk actions
   const click = (element: HTMLElement, modifiers: MouseEventInit = {}) => act(async () => {
     element.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, ...modifiers }));
   });
-  const row = (id: string) => check(`Select ${id}`).closest(".project-entry")!.querySelector<HTMLElement>(".project-link")!;
+  const row = (id: string) => check(`选择${id}`).closest(".project-entry")!.querySelector<HTMLElement>(".project-link")!;
   const selected = () => [...container.querySelectorAll<HTMLInputElement>(".project-selector input:checked")].map(el => el.id);
   const shortcut = (key: string, options: KeyboardEventInit = {}) => act(() => {
     (document.activeElement ?? document.body).dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true, ...options }));
@@ -411,7 +411,7 @@ it("selects visible projects across layouts and retries only failed bulk actions
     expect(check("选择所有可见项目")).toBe(everyBox);
     // The grid has no heading row, so its box sits beside the layout switch, and knows what is selected. Its bar is in
     // the page's top row too, straight after the title it lies over.
-    await click(container.querySelector('[aria-label="Grid view"]')!);
+    await click(container.querySelector('[aria-label="网格视图"]')!);
     expect(container.querySelectorAll('input[aria-label="选择所有可见项目"]')).toHaveLength(1);
     expect(check("选择所有可见项目").closest(".library-heading")).toBeTruthy();
     expect(check("选择所有可见项目").indeterminate).toBe(true);
@@ -431,12 +431,12 @@ it("selects visible projects across layouts and retries only failed bulk actions
     expect(update.mock.calls).toEqual([["A", { archived: true }], ["C", { archived: true }]]);
     expect(selected()).toEqual([]);
 
-    await click(check("Select B"));
+    await click(check("选择B"));
     await click(button("已归档"));
     expect(selected()).toEqual([]);
     await shortcut("a", { ctrlKey: true });
     expect(selected()).toEqual(["project-select-A", "project-select-C", "project-select-E"]);
-    await click(check("Select E"));
+    await click(check("选择E"));
     await click(button("取消归档"));
     expect(update.mock.calls.slice(2)).toEqual([["A", { archived: false }], ["C", { archived: false }]]);
 
@@ -445,8 +445,8 @@ it("selects visible projects across layouts and retries only failed bulk actions
     expect(check("选择所有可见项目").checked).toBe(true);
     await shortcut("Escape");
     expect(selected()).toEqual([]);
-    await click(check("Select C"));
-    await click(check("Select A"), { shiftKey: true });
+    await click(check("选择C"));
+    await click(check("选择A"), { shiftKey: true });
     await click(button("移到废纸篓"));
     expect(container.querySelector("dialog")?.textContent).toContain("将 3 个项目移到废纸篓？");
     await shortcut("a", { metaKey: true });
@@ -536,11 +536,11 @@ it("says a project's length, then its files, with its frame's size only when it 
   try {
     await act(async () => root.render(<MemoryRouter><ProjectsPage /></MemoryRouter>));
     // The frame reads as its size: "9:16" after a length would read as a second time.
-    expect([...container.querySelectorAll(".project-caption p")].map(el => el.textContent)).toEqual(["2560×1600·0 files", "16:42·3 files", "1:06:40·1080×1920·1 file", "2 files"]);
-    expect(container.querySelector(".project-date")?.textContent).toBe("just now");
+    expect([...container.querySelectorAll(".project-caption p")].map(el => el.textContent)).toEqual(["2560×1600·0 个文件", "16:42·3 个文件", "1:06:40·1080×1920·1 个文件", "2 个文件"]);
+    expect(container.querySelector(".project-date")?.textContent).toBe("刚刚");
     // The library is unchanged, so nothing else redraws the row.
     await act(async () => { vi.advanceTimersByTime(3 * 60_000); });
-    expect(container.querySelector(".project-date")?.textContent).toBe("3m ago");
+    expect(container.querySelector(".project-date")?.textContent).toBe("3 分钟前");
   } finally {
     await act(() => root.unmount());
     container.remove();
@@ -698,17 +698,17 @@ it("shows one window-wide update on Projects while building and when ready", asy
   enableUpdateStatus();
   try {
     await act(async () => root.render(<><UpdateButton /><MemoryRouter><ProjectsPage /></MemoryRouter></>));
-    const controls = () => container.querySelectorAll('[aria-label="Scarlet update"]');
+    const controls = () => container.querySelectorAll('[aria-label="Scarlet 更新"]');
     expect(controls()).toHaveLength(0);
     const revision = "d".repeat(40);
     status.mockResolvedValue({ ready: null, building: { revision, done: 0.6, step: 0, stepStarted: 0, stepSeconds: 1 } });
     await act(async () => refreshUpdateStatus());
     expect(controls()).toHaveLength(1);
-    expect(controls()[0]!.querySelector("[role=status]")?.textContent).toBe("Updating60%");
+    expect(controls()[0]!.querySelector("[role=status]")?.textContent).toBe("更新中60%");
     status.mockResolvedValue({ ready: revision, building: null });
     await act(async () => refreshUpdateStatus());
     expect(controls()).toHaveLength(1);
-    expect(controls()[0]!.querySelector("button")?.textContent).toBe("Restart to update");
+    expect(controls()[0]!.querySelector("button")?.textContent).toBe("重启并更新");
   } finally {
     await act(() => root.unmount());
     container.remove();
@@ -748,7 +748,7 @@ it("lists each short under the video it was made from, in the order they were ma
     expect(cards.map(card => [card.querySelector("h2")?.textContent, card.classList.contains("is-short")])).toEqual([
       ["Tech brief", false], ["Weekly interview", false], ["Agents fail without tools", true], ["The wrong flight", true], ["From an archived video", false]]);
     expect(cards.map(card => card.querySelector(".project-caption p")?.textContent)).toEqual([
-      "0:41·1 file", "40:00·3 files·2 shorts", "0:41·1080×1920·From Weekly interview", "0:41·1080×1920·From Weekly interview", "0:41·1080×1920·From Old talk"]);
+      "0:41·1 个文件", "40:00·3 个文件·2 条短视频", "0:41·1080×1920·来自 Weekly interview", "0:41·1080×1920·来自 Weekly interview", "0:41·1080×1920·来自 Old talk"]);
   } finally {
     await act(() => root.unmount());
     container.remove();

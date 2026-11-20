@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { PLATFORM_KEY, SHORTCUTS } from "../../lib/hotkeys";
 import { useUiStore } from "../../stores/ui";
 import { Kbd, Modal } from "../ui/primitives";
+import { shellZh } from "../../lib/zh-shell";
 
 export function ShortcutsModal() {
   const open = useUiStore((s) => s.shortcutsOpen);
@@ -21,7 +22,7 @@ export function ShortcutsModal() {
   // The list names the keys of the computer it is on.
   const platformKey = navigator.userAgent.includes("Macintosh") ? "⌘" : "Ctrl";
   return (
-    <Modal open={open} onClose={() => setOpen(false)} title="Keyboard shortcuts" width={520}>
+    <Modal open={open} onClose={() => setOpen(false)} title={shellZh.shortcuts} width={520}>
       <table className="w-full text-[12.5px]">
         <tbody>
           {SHORTCUTS.map((s) => (

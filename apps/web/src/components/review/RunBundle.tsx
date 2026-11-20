@@ -10,6 +10,7 @@ import { runProgress } from "../../lib/runProgress";
 import { runNow, STARTING } from "../../lib/runNow";
 import { runningTranscription, transcriptionProgressLabel, transcriptsProgress } from "../../lib/transcriptionProgress";
 import { runAim, runIsActive, runItems, runLines, runSummary, workTime, workTimeLabel, type RunItem, type RunLine } from "../../lib/taskRun";
+import { zh } from "../../lib/zh";
 import { pendingMediaWaits, TRANSCRIPT_WAIT } from "../../lib/taskActivity";
 
 /**
@@ -73,15 +74,15 @@ function Tokens({ usage, className, time, details = [] }: {
       document.removeEventListener("keydown", closeOnEscape, true);
     };
   }, [open]);
-  if (!usage?.totalTokens) return time ? <span className={`run-dim ${className ?? ""}`} title="Active time">
-    <span className="sr-only">Active time </span><span className="run-work-time">{time}</span>
+  if (!usage?.totalTokens) return time ? <span className={`run-dim ${className ?? ""}`} title={zh.ui.review.activeTime}>
+    <span className="sr-only">{zh.ui.review.activeTime} </span><span className="run-work-time">{time}</span>
   </span> : null;
   const parts: [string, number][] = [
     ["Input", usage.inputTokens], ["Output", usage.outputTokens], ["Cache read", usage.cacheReadTokens],
     ["Cache write", usage.cacheWriteTokens],
   ];
   const label = tokenLabel(usage.totalTokens);
-  const [count, unit] = label.split(" ");
+  const [count, ...unit] = label.split(" ");
   const breakdown = tokenBreakdown({ ...usage, runs: undefined });
   const cost = formatEstimatedCost(usage.estimatedApiCostUsd);
   const costDescription = usage.estimatedApiCostUsd == null
@@ -96,14 +97,14 @@ function Tokens({ usage, className, time, details = [] }: {
     onFocus={() => setMode(value => value ?? "preview")} onBlur={() => setMode(null)}
     onClick={() => setMode(value => value === "pinned" ? null : "pinned")}>
     {time && <><span className="run-work-time">{time}</span> <span className="unit-metrics-dot" aria-hidden>·</span>{" "}</>}
-    {count}<span className="unit-token-word"> {unit}</span>
+    {count}<span className="unit-token-word"> {unit.join(" ")}</span>
   </button>{open && createPortal(<span ref={panel} id={id} className="tokens-tip" aria-hidden data-escape-owner>
-      {time && <span><span>Active time</span><b>{time}</b></span>}
+      {time && <span><span>{zh.ui.review.activeTime}</span><b>{time}</b></span>}
       {details.map(([name, value]) => <span key={name}><span>{name}</span><b>{value}</b></span>)}
       {parts.filter(([label, n]) => n || label === "Input" || label === "Output").map(([label, n]) =>
         <span key={label}><span>{label}</span><b>{n.toLocaleString()}</b></span>)}
-      <span className="tokens-tip-total"><span>Total</span><b>{usage.totalTokens.toLocaleString()}</b></span>
-      <span title={costDescription} style={mode === "pinned" ? { pointerEvents: "auto" } : undefined}><span>Est Cost</span><b>{cost}</b></span>
+      <span className="tokens-tip-total"><span>{zh.ui.review.total}</span><b>{usage.totalTokens.toLocaleString()}</b></span>
+      <span title={costDescription} style={mode === "pinned" ? { pointerEvents: "auto" } : undefined}><span>{zh.ui.review.estimatedCost}</span><b>{cost}</b></span>
     </span>, document.body)}</>;
 }
 

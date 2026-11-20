@@ -5,12 +5,13 @@ import { useProjectStore } from "../../stores/project";
 import { useUiStore } from "../../stores/ui";
 import { PreferenceSelect } from "../ui/PreferenceSelect";
 import { ConfirmDialog, Drawer, Field, InlineError, Spinner } from "../ui/primitives";
+import { shellZh } from "../../lib/zh-shell";
 
 const ASPECTS: Array<{ value: ProjectSettings["aspect"]; label: string; dims: string }> = [
-  { value: "16:9", label: "16:9 landscape", dims: "1920×1080" },
-  { value: "9:16", label: "9:16 vertical", dims: "1080×1920" },
-  { value: "1:1", label: "1:1 square", dims: "1080×1080" },
-  { value: "4:5", label: "4:5 portrait", dims: "1080×1350" },
+  { value: "16:9", label: "16:9 横屏", dims: "1920×1080" },
+  { value: "9:16", label: "9:16 竖屏", dims: "1080×1920" },
+  { value: "1:1", label: "1:1 方形", dims: "1080×1080" },
+  { value: "4:5", label: "4:5 竖幅", dims: "1080×1350" },
 ];
 const FPS_OPTIONS = [23.976, 24, 25, 29.97, 30, 50, 59.94, 60];
 const fpsLabel = (fps: number) => `${Number(fps.toFixed(3))} fps`;
@@ -50,14 +51,14 @@ export function ProjectSettingsDrawer({ onDeleted }: { onDeleted: () => void }) 
   const renderAffecting = fps !== settings.fps || aspect !== settings.aspect;
   const dimensions = `${settings.width}×${settings.height}`;
   const aspectOptions = ASPECTS.map(a => ({ value: a.value, label: `${a.label} · ${settings.aspect === a.value ? dimensions : a.dims}` }));
-  if (settings.aspect === "custom") aspectOptions.push({ value: "custom", label: `Custom · ${dimensions}` });
+  if (settings.aspect === "custom") aspectOptions.push({ value: "custom", label: `自定义 · ${dimensions}` });
 
   // The drawer stays until its save settles, as Cancel does: closed while it runs, a failure would have nowhere to show,
   // and the name in the header would go back to the old one without a word.
   const close = () => { if (!busy) setOpen(false); };
 
   return (
-    <Drawer open={open} onClose={close} title="Project settings">
+    <Drawer open={open} onClose={close} title={shellZh.settings.project}>
       <form
         onSubmit={async (e) => {
           e.preventDefault();
@@ -74,45 +75,45 @@ export function ProjectSettingsDrawer({ onDeleted }: { onDeleted: () => void }) 
           }
         }}
       >
-        <Field label="Name" htmlFor="ps-name">
+        <Field label={shellZh.settings.name} htmlFor="ps-name">
           <input id="ps-name" className="field" value={name} onChange={(e) => setName(e.target.value)} />
         </Field>
-        <Field label="Frame rate" htmlFor="ps-fps">
+        <Field label={shellZh.settings.frameRate} htmlFor="ps-fps">
           {/* A project matched to footage keeps the footage's exact rate (30000/1001 for 29.97), which stands in for the
               preset that reads the same: two "29.97 fps" rows would move the project off its footage's rate. */}
           <PreferenceSelect id="ps-fps" value={fps} onChange={setFps}
             options={[...FPS_OPTIONS.filter(v => fpsLabel(v) !== fpsLabel(settings.fps)), settings.fps].sort((a, b) => a - b)
               .map(value => ({ value, label: fpsLabel(value) }))} />
         </Field>
-        <Field label="Aspect" htmlFor="ps-aspect">
+        <Field label={shellZh.settings.aspect} htmlFor="ps-aspect">
           <PreferenceSelect id="ps-aspect" value={aspect} onChange={setAspect} options={aspectOptions} />
         </Field>
         {renderAffecting && (
-          <div className="rounded-md border border-warn/40 bg-warn/5 text-warn text-[12px] p-2 mb-3">Changing frame rate or aspect invalidates existing renders. Previews will re-render on next use.</div>
+          <div className="rounded-md border border-warn/40 bg-warn/5 text-warn text-[12px] p-2 mb-3">更改帧率或画幅会使现有渲染失效。下次使用预览时将重新渲染。</div>
         )}
         <InlineError>{err}</InlineError>
         <div className="flex justify-end gap-2 mt-2">
           <button type="button" className="btn-ghost" disabled={busy} onClick={close}>
-            Cancel
+            取消
           </button>
           <button type="submit" className="btn-primary" disabled={busy}>
-            {busy && <Spinner className="size-3" />}Save
+            {busy && <Spinner className="size-3" />}{shellZh.settings.save}
           </button>
         </div>
       </form>
       <div className="mt-8 pt-4 border-t border-line">
-        <div className="eyebrow mb-2">Danger zone</div>
-        <p className="text-muted mb-2">Moving to Trash hides the project for 30 days. Restore it from the Projects page with everything in it; after 30 days it is deleted for good.</p>
+        <div className="eyebrow mb-2">{shellZh.settings.danger}</div>
+        <p className="text-muted mb-2">项目会在废纸篓里保留 30 天。这期间可在项目页恢复全部内容，之后项目将被永久删除。</p>
         <button className="btn-danger" onClick={() => setConfirm(true)}>
-          Move to Trash
+          移到废纸篓
         </button>
       </div>
       <ConfirmDialog
         open={confirm}
         onClose={() => setConfirm(false)}
-        title={`Move “${project.name}” to Trash?`}
-        body="It stays in Trash for 30 days with all its versions, history and footage, and can be restored from the Projects page. After that it's deleted for good."
-        confirmLabel="Move to Trash"
+        title={`将“${project.name}”移到废纸篓？`}
+        body="项目及其版本、历史和素材会在废纸篓中保留 30 天。这期间可在项目页恢复，之后项目将被永久删除。"
+        confirmLabel="移到废纸篓"
         danger
         onConfirm={async () => {
           await deleteProject(project.id);

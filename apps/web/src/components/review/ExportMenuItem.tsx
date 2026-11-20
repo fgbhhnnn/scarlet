@@ -25,7 +25,7 @@ function useExportStatus(): { status?: string; file?: string; running?: boolean;
   // A percent only while it moves, as in the sheet.
   if (job && "cancel" in job) {
     const progress = exportCounting(job) ? job.progress : undefined;
-    return { status: progress === undefined ? zh.export.exporting : `正在${zh.export.exporting} ${pct(progress)}`, running: job.phase !== "choosing", progress };
+    return { status: progress === undefined ? zh.export.exporting : `${zh.export.exporting} ${pct(progress)}`, running: job.phase !== "choosing", progress };
   }
   return job?.phase === "done" && job.context === context ? { status: zh.export.exported, file: job.path.split(/[\\/]/).pop() } : {};
 }

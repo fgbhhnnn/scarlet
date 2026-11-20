@@ -11,8 +11,9 @@ import { useUiStore } from "../../stores/ui";
 import { AgentSignIn, canSignIn, useLocalHost } from "../shell/AgentSignIn";
 import { Icon } from "../ui/primitives";
 import { MENU_ITEM_CLASS } from "../shell/WorkspaceNavigation";
+import { zhAgent } from "../../lib/zh-agent";
 
-export const NO_AGENT_REASON = "Sign in with Claude, ChatGPT or Google to let Scarlet edit";
+export const NO_AGENT_REASON = "使用 Claude、ChatGPT 或 Google 登录后，Scarlet 才能剪辑";
 
 // A provider on two hosts can offer different settings for the same model.
 function supportedOptions(profiles: ModelOptions[], effort?: string, serviceTier?: string, preferSpeed = false) {
@@ -29,11 +30,12 @@ function pickerOptions(profiles: ModelOptions[], key: "efforts" | "speeds") {
 
 function defaultSpeedTitle(profiles: ModelOptions[]) {
   const value = profiles[0]?.defaultSpeed;
-  return value && profiles.every(p => p.defaultSpeed === value) ? `Provider default (${value})` : "Use provider default";
+  return value && profiles.every(p => p.defaultSpeed === value) ? `服务商默认（${optionLabel({ id: value })}）` : "使用服务商默认值";
 }
 
 function optionLabel(option: { id: string; label?: string }) {
-  return option.label ?? option.id.charAt(0).toUpperCase() + option.id.slice(1);
+  const labels: Record<string, string> = zhAgent.modelOptions;
+  return option.label ?? labels[option.id] ?? option.id.charAt(0).toUpperCase() + option.id.slice(1);
 }
 
 const effortRanks = ["none", "minimal", "low", "medium", "high", "xhigh", "extra", "max", "ultra"];
@@ -93,9 +95,9 @@ export function useAgentAvailability() {
   } : null;
   const hasConfiguredHost = hosts.some(h => h.agents.some(isConfiguredAgent));
   // Every model a signed-in agent offers is listed, so one that offers none is one whose list couldn't be read.
-  const unavailableReason = available.length ? "Show a model in Settings to start an edit"
-    : agents.length ? "Couldn’t read the model list. Refresh models to try again."
-    : hasConfiguredHost ? "The model is offline" : NO_AGENT_REASON;
+  const unavailableReason = available.length ? "在设置中显示一个模型后才能开始剪辑"
+    : agents.length ? "无法读取模型列表，请刷新模型后重试。"
+    : hasConfiguredHost ? "模型已离线" : NO_AGENT_REASON;
   return { agents, choices, selected, effective, none: !effective, unavailableReason, hasCatalog: available.length > 0, hasConfiguredHost };
 }
 
@@ -249,12 +251,12 @@ export function AgentChip({ direction = "up", threadInput, variant = "chip" }: {
     // that was signed in and is offline does: the row carries the menu's mark, and opens the sign-in, which says why.
     const connecting = stillConnecting(hostsReady, localHost);
     if (inMenu) return <button type="button" role="menuitem" className={`${MENU_ITEM_CLASS} text-fg`} onClick={() => setSetupOpen(true)}>
-      <EffortDial level={0} />Model<span className="menu-value">{connecting ? "Connecting…" : "Offline"}</span>{!connecting && <span className="menu-dot" aria-hidden />}</button>;
-    return threadInput ? <button type="button" className="btn-quiet" onClick={() => setSetupOpen("models")}>Models</button> : null;
+      <EffortDial level={0} />{zhAgent.model}<span className="menu-value">{connecting ? zhAgent.connecting : zhAgent.offline}</span>{!connecting && <span className="menu-dot" aria-hidden />}</button>;
+    return threadInput ? <button type="button" className="btn-quiet" onClick={() => setSetupOpen("models")}>模型</button> : null;
   }
 
   if (!open && !iconOnly && none && !emptyCatalog && inProject) {
-    const setUp = agents.length ? "Choose visible models" : "Set up a model";
+    const setUp = agents.length ? "选择可见模型" : "设置模型";
     return inMenu
       ? <button type="button" role="menuitem" className={`${MENU_ITEM_CLASS} text-fg`} onClick={() => setSetupOpen(agents.length ? "models" : true)}>
         <EffortDial level={0} />{setUp}<span className="menu-dot" aria-hidden /></button>
@@ -263,7 +265,7 @@ export function AgentChip({ direction = "up", threadInput, variant = "chip" }: {
   if (!open && !iconOnly && none && !emptyCatalog && (agents.length || !needsSignIn.length)) {
     return (
       <Link to={agents.length ? "/settings#models" : "/settings#hosts"} className="inline-flex items-center gap-1.5 rounded-full border border-warn/40 px-3 py-1.5 text-[12px] text-warn hover:bg-warn/10" title={unavailableReason}>
-        <span className="size-1.5 rounded-full bg-warn" /> {agents.length ? "Choose visible models" : isDesktop() ? "Set up a model" : "No model is ready"}
+        <span className="size-1.5 rounded-full bg-warn" /> {agents.length ? "选择可见模型" : isDesktop() ? "设置模型" : "没有可用模型"}
       </Link>
     );
   }
@@ -278,21 +280,21 @@ export function AgentChip({ direction = "up", threadInput, variant = "chip" }: {
   const speeds = pickerOptions(profiles, "speeds");
   const effort = efforts.find(o => o.id === effective?.effort);
   const dialEffort = effort ?? efforts.find(o => o.id === selected?.defaultEffort);
-  const effortLabel = dialEffort ? optionLabel(dialEffort) + (effort ? "" : " (provider default)") : "Provider default";
-  const effortTitle = `Thinking effort: ${effortLabel}`;
+  const effortLabel = dialEffort ? optionLabel(dialEffort) + (effort ? "" : "（服务商默认）") : "服务商默认";
+  const effortTitle = `推理强度：${effortLabel}`;
   const hasOptions = efforts.length > 0 || speeds.length > 0;
   const speed = speeds.find(o => o.id === effective?.serviceTier);
-  const label = selected?.name ?? (emptyCatalog ? "Refresh models" : "Sign in to start");
-  const details = effective ? `${agentShort(effective.agent)} · ${label}. ${effortTitle}${speed ? `, speed: ${optionLabel(speed)}` : ""}` : label;
+  const label = selected?.name ?? (emptyCatalog ? "刷新模型" : "登录后开始");
+  const details = effective ? `${agentShort(effective.agent)} · ${label}。${effortTitle}${speed ? `，速度：${optionLabel(speed)}` : ""}` : label;
 
   const query = search.trim().toLowerCase();
   const matches = choices.filter((m) => `${AGENT_LABEL[m.agent]} ${m.label} ${m.model ?? ""}`.toLowerCase().includes(query));
   const scoped = query ? matches : matches.filter(m => active === "favorites" ? favorites.includes(m.key) : m.agent === active);
   const groups = [
-    { name: "Favorites", favorite: true, rows: scoped.filter((m) => favorites.includes(m.key)) },
+    { name: "收藏", favorite: true, rows: scoped.filter((m) => favorites.includes(m.key)) },
     ...agents.map((a) => ({ name: AGENT_LABEL[a.id], favorite: false, rows: scoped.filter((m) => m.agent === a.id && !favorites.includes(m.key)) })),
   ];
-  const answerHint = threadInput === "answer" ? "This model is for your next edit. Your answer goes to the model that asked." : undefined;
+  const answerHint = threadInput === "answer" ? "此模型将用于下一次剪辑，你的回答会发送给提问的模型。" : undefined;
 
   return (
     <div ref={ref} className="relative">
@@ -301,9 +303,9 @@ export function AgentChip({ direction = "up", threadInput, variant = "chip" }: {
         ref={trigger}
         aria-haspopup="dialog"
         aria-expanded={open}
-        aria-label={iconOnly ? "Choose model" : emptyCatalog ? "Refresh models" : `Model: ${details}. Change model, effort or speed`}
+        aria-label={iconOnly ? "选择模型" : emptyCatalog ? "刷新模型" : `模型：${details}。更改模型、推理强度或速度`}
         aria-description={iconOnly && selected ? details : answerHint}
-        title={iconOnly ? (selected ? `Model: ${details}` : "Choose model") : answerHint ?? (emptyCatalog ? unavailableReason : selected ? effortTitle : undefined)}
+        title={iconOnly ? (selected ? `模型：${details}` : "选择模型") : answerHint ?? (emptyCatalog ? unavailableReason : selected ? effortTitle : undefined)}
         onClick={() => {
           if (!open) {
             setScope(selected?.agent);
@@ -320,7 +322,7 @@ export function AgentChip({ direction = "up", threadInput, variant = "chip" }: {
       >
         {iconOnly ? <EffortDial level={effortLevel(efforts, dialEffort?.id)} /> : inMenu ? <>
           <EffortDial level={selected ? effortLevel(efforts, dialEffort?.id) : 0} />
-          {emptyCatalog ? label : <>Model<span className="menu-value truncate">{label}</span></>}
+          {emptyCatalog ? label : <>{zhAgent.model}<span className="menu-value truncate">{label}</span></>}
           {none && <span className="menu-dot" aria-hidden />}
         </> : <>
           {none && <span className="size-1.5 rounded-full bg-warn" aria-hidden />}
@@ -329,16 +331,16 @@ export function AgentChip({ direction = "up", threadInput, variant = "chip" }: {
         </>}
       </button>
       {open && (
-        <div ref={panel} role="dialog" aria-label="Model selector" data-shortcut-overlay tabIndex={-1}
+        <div ref={panel} role="dialog" aria-label={zhAgent.selector} data-shortcut-overlay tabIndex={-1}
           onKeyDown={event => {
             const target = event.target as HTMLElement;
             if (target === searchField.current && event.key === "ArrowLeft" && !search) {
               event.preventDefault();
-              panel.current?.querySelector<HTMLButtonElement>('[aria-label="Providers"] [aria-pressed="true"]')?.focus();
+              panel.current?.querySelector<HTMLButtonElement>('[data-model-providers] [aria-pressed="true"]')?.focus();
               return;
             }
             if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
-            const group = target === searchField.current ? panel.current?.querySelector('[aria-label="Models"]') : target.closest('[role="radiogroup"], [aria-label="Providers"]');
+            const group = target === searchField.current ? panel.current?.querySelector("[data-model-list]") : target.closest('[role="radiogroup"], [data-model-providers]');
             const selector = group?.getAttribute("role") === "radiogroup" ? 'button[role="radio"]' : "button";
             const buttons = Array.from(group?.querySelectorAll<HTMLButtonElement>(selector) ?? []);
             if (!buttons.length) return;
@@ -355,9 +357,9 @@ export function AgentChip({ direction = "up", threadInput, variant = "chip" }: {
             <div className="min-w-0 flex-1">
               {choices.length > 0 && <label className="flex items-center gap-2 border-b border-line/60 px-3 py-2 text-muted">
                 <Icon name="search" />
-                <input type="search" ref={searchField} aria-label="Search models" placeholder="Search all models…" className="min-w-0 flex-1 bg-transparent text-[13px] text-fg outline-none" value={search} onChange={(e) => setSearch(e.target.value)} />
+                <input type="search" ref={searchField} aria-label={zhAgent.searchModels} placeholder={zhAgent.searchModels} className="min-w-0 flex-1 bg-transparent text-[13px] text-fg outline-none" value={search} onChange={(e) => setSearch(e.target.value)} />
               </label>}
-              <div role="radiogroup" aria-label="Models" className="min-h-28 max-h-[min(40vh,19rem)] overflow-y-auto">
+              <div role="radiogroup" data-model-list aria-label={zhAgent.models} className="min-h-28 max-h-[min(40vh,19rem)] overflow-y-auto">
                 {groups.filter((group) => group.rows.length > 0).map((group) => (
                   <div key={group.name} className="py-1">
                     <div className="px-3 py-1 eyebrow">{group.name}</div>
@@ -376,7 +378,7 @@ export function AgentChip({ direction = "up", threadInput, variant = "chip" }: {
                     ))}
                   </div>
                 ))}
-                {choices.length > 0 && !scoped.length && <p className="px-3 py-3 text-[13px] text-muted">{!query && active === "favorites" ? "Star a model to find it here." : "No matching models."}</p>}
+                {choices.length > 0 && !scoped.length && <p className="px-3 py-3 text-[13px] text-muted">{!query && active === "favorites" ? "先收藏模型，它会显示在这里。" : "没有匹配的模型。"}</p>}
               </div>
             </div>
             {effective && hasOptions && (
@@ -384,7 +386,7 @@ export function AgentChip({ direction = "up", threadInput, variant = "chip" }: {
                 <div className="truncate border-b border-line/60 px-3 py-2 text-xs font-medium" title={selected?.label}>{selected?.label}</div>
                 {efforts.length > 0 && (
                   <OptionList
-                    label="Effort"
+                    label={zhAgent.effort}
                     value={effective.effort ?? ""}
                     onChange={(effort) => choose({ effort })}
                     options={efforts.map(e => ({ id: e.id, label: optionLabel(e), title: e.description }))}
@@ -392,11 +394,11 @@ export function AgentChip({ direction = "up", threadInput, variant = "chip" }: {
                 )}
                 {speeds.length > 0 && (
                   <OptionList
-                    label="Speed"
+                    label={zhAgent.speed}
                     value={effective.serviceTier ?? ""}
                     onChange={(v) => choose({ serviceTier: v || undefined })}
                     options={[
-                      { id: "", label: "Standard", title: defaultSpeedTitle(profiles) },
+                      { id: "", label: "标准", title: defaultSpeedTitle(profiles) },
                       ...speeds.map(o => ({ id: o.id, label: optionLabel(o), title: o.description })),
                     ]}
                   />
@@ -415,11 +417,11 @@ export function AgentChip({ direction = "up", threadInput, variant = "chip" }: {
             <div className="flex flex-wrap items-center justify-between gap-x-3">
               <ModelRefreshButton action={modelRefresh} />
               {inProject ? <>
-                <button type="button" className="text-[12px] text-muted hover:text-fg" onClick={() => { setOpen(false); setSetupOpen("models"); }}>Manage models…</button>
-                <button type="button" className="text-[12px] text-dim hover:text-muted" onClick={() => { setOpen(false); setSetupOpen(true); }}>Manage sign-in…</button>
+                <button type="button" className="text-[12px] text-muted hover:text-fg" onClick={() => { setOpen(false); setSetupOpen("models"); }}>{zhAgent.manageModels}</button>
+                <button type="button" className="text-[12px] text-dim hover:text-muted" onClick={() => { setOpen(false); setSetupOpen(true); }}>{zhAgent.manageSignIn}</button>
               </> : <>
-                <Link to="/settings#models" className="text-[12px] text-muted hover:text-fg" onClick={() => setOpen(false)}>Manage models…</Link>
-                <Link to="/settings#hosts" className="text-[12px] text-dim hover:text-muted" onClick={() => setOpen(false)}>Manage sign-in…</Link>
+                <Link to="/settings#models" className="text-[12px] text-muted hover:text-fg" onClick={() => setOpen(false)}>{zhAgent.manageModels}</Link>
+                <Link to="/settings#hosts" className="text-[12px] text-dim hover:text-muted" onClick={() => setOpen(false)}>{zhAgent.manageSignIn}</Link>
               </>}
             </div>
             <ModelRefreshFeedback action={modelRefresh} />

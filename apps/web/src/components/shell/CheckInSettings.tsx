@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
-import { CHECK_IN_SHARE, type CheckIn } from "@scarlet/shared";
+import type { CheckIn } from "@scarlet/shared";
 import { api, errorMessage } from "../../lib/client";
 import { PreferenceSelect } from "../ui/PreferenceSelect";
 import { Icon, InlineError } from "../ui/primitives";
 
+const reviewShare: Record<CheckIn, string> = { less: "约十分之一", balanced: "约四分之一", more: "约一半" };
+
 const steps: { value: CheckIn; label: string }[] = [
-  { value: "less", label: "Less" },
-  { value: "balanced", label: "Balanced" },
-  { value: "more", label: "More" },
+  { value: "less", label: "较少" },
+  { value: "balanced", label: "适中" },
+  { value: "more", label: "较多" },
 ];
 
 /**
@@ -44,16 +46,16 @@ export function CheckInSettings() {
         <div className="transcription-heading">
           <span className="transcription-glyph"><Icon name="review" size={22} /></span>
           <div>
-            <h2 id="check-in-heading">Checking with you</h2>
-            <p>How many of a pass’s cuts Scarlet asks you to check.</p>
+            <h2 id="check-in-heading">剪点确认</h2>
+            <p>设置每轮剪辑中 Scarlet 请你确认的剪点数量。</p>
           </div>
         </div>
         <div className="min-w-0">
-          <label className="label" htmlFor="check-in">Ask me to check</label>
+          <label className="label" htmlFor="check-in">请我确认</label>
           <PreferenceSelect id="check-in" value={value} disabled={busy} options={steps} onChange={next => void choose(next)} />
         </div>
       </div>
-      <p className="transcription-status text-muted">{CHECK_IN_SHARE[value].replace(/^a/, "A")} of the cuts that take words out: the ones Scarlet thinks most likely to be wrong. They go into the video either way and wait in For you until you keep them.</p>
+      <p className="transcription-status text-muted">Scarlet 会从删去台词的剪点中，挑出{reviewShare[value]}最可能需要调整的剪点请你确认。这些剪辑会先应用到视频，并保留在待审阅列表中，直到你确认保留。</p>
       {error && <InlineError>{error}</InlineError>}
     </section>
   );

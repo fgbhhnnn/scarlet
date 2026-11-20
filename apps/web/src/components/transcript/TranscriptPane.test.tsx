@@ -121,7 +121,7 @@ it("keeps word activation, range selection and timestamp buttons working with de
   // Where the selection, a word and a turn are reads on the clock, as a position does everywhere: no frames after a dot.
   expect(container.querySelector(".transcript-chosen span")?.textContent).toBe("0:04 – 0:06");
   const turn = container.querySelector<HTMLButtonElement>(".reading-time")!;
-  expect([turn.textContent, turn.getAttribute("aria-label")]).toEqual(["0:00", "Seek to 0:00"]);
+  expect([turn.textContent, turn.getAttribute("aria-label")]).toEqual(["0:00", "定位到 0:00"]);
   await act(async () => at(8).dispatchEvent(new MouseEvent("dblclick", {bubbles:true})));
   expect(at(8).classList.contains("bg-hi-dim")).toBe(true);
   expect(at(4).classList.contains("bg-hi-dim")).toBe(false);
@@ -138,7 +138,7 @@ it("places the playhead on a clicked word without playing, and says so on hover 
   // Neither the words nor the list say a click plays: it doesn't.
   expect(at(7).title).toBe("0:07");
   const list = container.querySelector<HTMLElement>(".reading-scroll")!;
-  expect(list.title).toMatch(/^Click a word to place the playhead there/);
+  expect(list.title).toMatch(/^点击文字定位播放头/);
   expect([at(7).title, list.title].join(" ")).not.toMatch(/\bplay\b|play from/i);
 });
 
@@ -149,7 +149,7 @@ it("underlines only the searched words when the search holds a mark that is no w
   await search("word4 -");
   expect(at(4).hasAttribute("data-match")).toBe(true);
   expect(at(5).hasAttribute("data-match")).toBe(false);
-  expect(container.querySelector(".transcript-search-count")?.textContent).toBe("1 of 11");
+  expect(container.querySelector(".transcript-search-count")?.textContent).toBe("1 / 11");
   // Two words are each underlined, the match being the pair.
   await search("word4 word5");
   expect([at(4), at(5), at(6)].map(w => w.hasAttribute("data-match"))).toEqual([true, true, false]);
@@ -181,19 +181,19 @@ it("says how a recording without words stands after the words, plainly, instead 
   // Still being added.
   const checking = { ...silent, hasAudio: true, status: "ingesting" as const };
   await act(async () => root.render(<MemoryRouter><TranscriptPane key="sound" source={checking} onAsk={() => {}} /></MemoryRouter>));
-  expect(line()).toBe(`${source.name}Adding`);
+  expect(line()).toBe(`${source.name}正在添加`);
   // Added with no transcript: the column says so after the words, with nothing to press for it.
   const added = { ...silent, hasAudio: true };
   await act(async () => root.render(<MemoryRouter><TranscriptPane key="sound" source={added} onAsk={() => {}} /></MemoryRouter>));
-  expect(line()).toBe(`${source.name}No transcript`);
+  expect(line()).toBe(`${source.name}暂无转写`);
   expect(container.querySelector(".reading-scroll .transcript-missing")).not.toBeNull();
   expect(container.querySelector(".transcript-missing button, .transcript-missing a")).toBeNull();
-  expect(container.textContent).not.toContain("No spoken words here.");
+  expect(container.textContent).not.toContain("这里没有识别到对白。");
   // Being transcribed: how far along it is.
   const running: Task = { ...db.tasks[0]!, id: "transcribing", projectId: PRJ, kind: "transcribe", agent: "api", context: { mediaId: added.id },
     state: "running", instruction: `Transcribe ${added.name}`, progress: { stage: "transcribing", fraction: 0.4 } };
   await act(async () => useProjectStore.setState({ current: { ...useProjectStore.getState().current!, media: [added], tasks: [running] } }));
-  expect(line()).toBe(`${source.name}Transcribing 40%`);
+  expect(line()).toBe(`${source.name}正在转写 40%`);
 });
 
 it("aims the message box at the words selected in a clip, by the clip and their time, and lets go of the selection", async () => {
@@ -202,25 +202,25 @@ it("aims the message box at the words selected in a clip, by the clip and their 
   const onAsk = vi.fn();
   await act(async () => root.render(<MemoryRouter><TranscriptPane source={source} onAsk={onAsk} /></MemoryRouter>));
   // Nothing is selected, so there is nothing to ask about.
-  expect(button("Ask about this")).toBeUndefined();
+  expect(button("询问这段话")).toBeUndefined();
   await act(async () => at(4).dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "ArrowRight", shiftKey: true })));
   // The column offers no note: the chat holds those.
   expect(button("Note")).toBeUndefined();
-  await act(async () => button("Ask about this")!.click());
+  await act(async () => button("询问这段话")!.click());
   expect(onAsk).toHaveBeenCalledTimes(1);
   expect(useUiStore.getState().agentContext).toEqual({ version: project.head, time: 4, end: 6, clipIds: [], mediaId: source.id, label: "“word4 word5”" });
   expect(useUiStore.getState().composerFocus).toBe(1);
-  expect(button("Ask about this")).toBeUndefined();
+  expect(button("询问这段话")).toBeUndefined();
   expect(at(4).classList.contains("bg-hi-dim")).toBe(false);
   // A long passage is named by how it starts.
   await act(async () => at(10).dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "End", shiftKey: true })));
-  await act(async () => button("Ask about this")!.click());
+  await act(async () => button("询问这段话")!.click());
   const asked = useUiStore.getState().agentContext;
   expect(asked).toMatchObject({ time: 10, end: 60, label: "“word10 word11 word12 word13 word14 wo…”" });
   // Clear puts a selection away without asking anything.
   await act(async () => at(2).dispatchEvent(new MouseEvent("dblclick", { bubbles: true })));
-  await act(async () => button("Clear")!.click());
-  expect(button("Ask about this")).toBeUndefined();
+  await act(async () => button("清除")!.click());
+  expect(button("询问这段话")).toBeUndefined();
   expect(useUiStore.getState().agentContext).toBe(asked);
   expect(onAsk).toHaveBeenCalledTimes(2);
   useUiStore.setState(ui, true);
@@ -237,7 +237,7 @@ it("asks about words in the edit by the clips they play from", async () => {
   expect(at(0).textContent).toBe("word10");
   await act(async () => at(0).dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "ArrowRight", shiftKey: true })));
   expect(button("Note")).toBeUndefined();
-  await act(async () => button("Ask about this")!.click());
+  await act(async () => button("询问这段话")!.click());
   const clip = edited.tracks.flatMap(t => t.clips)[0]!;
   expect(useUiStore.getState().agentContext).toEqual({ version: "after", time: 0, end: 2, clipIds: [clip.id], label: "“word10 word11”" });
   expect(onAsk).toHaveBeenCalledTimes(1);
@@ -293,5 +293,5 @@ it("ignores right-click when starting drag selection on words", async () => {
     at(2).dispatchEvent(new MouseEvent("mousedown", { bubbles: true, button: 2 }));
     at(5).dispatchEvent(new MouseEvent("mouseover", { bubbles: true }));
   });
-  expect(button("Ask about this")).toBeUndefined();
+  expect(button("询问这段话")).toBeUndefined();
 });

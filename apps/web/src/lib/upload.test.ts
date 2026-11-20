@@ -92,7 +92,7 @@ it("fails with the status when the answer has no reason, no footage, or isn't re
     FakeRequest.last.answer(status, body);
     outcomes.push(await promise.then(() => "saved", (error: Error) => error.message));
   }
-  expect(outcomes).toEqual(["Upload failed (500)", "Upload failed (200)", "Upload failed (502)"]);
+  expect(outcomes).toEqual(["上传失败（500）", "上传失败（200）", "上传失败（502）"]);
   expect(lines).toEqual([
     "[api] failed method=POST path=/api/projects/prj_1/media status=500 ms=N",
     "[api] failed method=POST path=/api/projects/prj_1/media status=200 ms=N",
@@ -103,7 +103,7 @@ it("fails with the status when the answer has no reason, no footage, or isn't re
 it("fails as a network error when the engine can't be reached", async () => {
   const { promise } = uploadMedia("prj_1", file, () => {});
   FakeRequest.last.onerror!();
-  await expect(promise).rejects.toThrow("Network error during upload");
+  await expect(promise).rejects.toThrow("上传时发生网络错误");
   expect(lines).toEqual(["[api] unreachable method=POST path=/api/projects/prj_1/media ms=N"]);
   expect(levels).toEqual(["warn"]);
 });

@@ -10,12 +10,12 @@ export function runningTranscription(tasks: readonly Task[], mediaId: string): T
 }
 
 /**
- * "45%", or "waiting its turn" while other audio work runs first. The percent alone, everywhere it shows: Media, the
+ * "45%", or "排队中" while other audio work runs first. The percent alone, everywhere it shows: Media, the
  * transcript pane and a run waiting on its transcripts. None of them guesses how long is left.
  */
 export function transcriptionProgressLabel(progress: Progress | undefined): string | undefined {
   if (!progress) return;
-  if (progress.stage === "queued") return "waiting its turn";
+  if (progress.stage === "queued") return "排队中";
   // A job still running would round up to 100%: it says 99% until it is done.
   return pct(progress.fraction < 1 ? Math.min(progress.fraction, 0.99) : 1);
 }
@@ -88,8 +88,8 @@ export function mediaProblems(tasks: readonly Task[], media: readonly MediaAsset
 
 /** What the Media button says about those problems: the one problem with its file's name, or how many files have one. */
 export function mediaWarningLabel(problems: readonly MediaProblem[]): string | undefined {
-  if (problems.length > 1) return `${problems.length} files need attention`;
+  if (problems.length > 1) return `${problems.length} 个文件需要处理`;
   if (!problems[0]) return;
   const { asset, problem } = problems[0];
-  return problem === "unreadable" ? `Couldn’t read ${asset.name}` : `Transcription stopped for ${asset.name}`;
+  return problem === "unreadable" ? `无法读取 ${asset.name}` : `${asset.name} 的转写已停止`;
 }

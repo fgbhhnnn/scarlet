@@ -10,13 +10,14 @@ import { desktop, isDesktop, type AgentLoginStatus, type HostStatus } from "../.
 import { errorMessage, IS_MOCK } from "../../lib/client";
 import { AGENT_LABEL } from "../../stores/hosts";
 import { InlineError, Spinner } from "../ui/primitives";
+import { shellZh } from "../../lib/zh-shell";
 
 type SignInAgent = "claude" | "codex" | "gemini";
 
 const SIGN_IN: Record<SignInAgent, { button: string; plan: string }> = {
-  claude: { button: "Sign in with Claude", plan: "Claude Pro or Max" },
-  codex: { button: "Sign in with ChatGPT", plan: "ChatGPT" },
-  gemini: { button: "Sign in with Google", plan: "Google AI" },
+  claude: { button: "使用 Claude 登录", plan: "Claude Pro 或 Max" },
+  codex: { button: "使用 ChatGPT 登录", plan: "ChatGPT" },
+  gemini: { button: "使用 Google 登录", plan: "Google AI" },
 };
 
 export function canSignIn(id: string): id is SignInAgent {
@@ -25,11 +26,11 @@ export function canSignIn(id: string): id is SignInAgent {
 
 /** What the agent is signed in with, in words. */
 export function authLabel(a: AgentAvailability): string {
-  if (!a.installed) return "Not installed";
-  if (a.loggedIn === false) return "Not signed in";
-  if (a.auth === "subscription") return a.plan ? `${capitalize(a.plan)} subscription` : "Subscription";
-  if (a.auth === "api_key") return "API key (pay per use)";
-  return "Signed in";
+  if (!a.installed) return "未安装";
+  if (a.loggedIn === false) return "未登录";
+  if (a.auth === "subscription") return a.plan ? `${capitalize(a.plan)} 订阅` : "订阅";
+  if (a.auth === "api_key") return "API 密钥（按量付费）";
+  return "已登录";
 }
 
 function capitalize(s: string) {
@@ -65,7 +66,7 @@ function useAgentLogin(agent: SignInAgent) {
 
   return {
     status,
-    error: error ?? (status?.state === "failed" ? status.message ?? "Sign-in failed" : null),
+    error: error ?? (status?.state === "failed" ? status.message ?? "登录失败" : null),
     waiting: status?.state === "waiting",
     async start() {
       setError(null);
@@ -117,11 +118,11 @@ function InstallAgent({ agent }: { agent: SignInAgent }) {
 
   return (
     <div className="space-y-1 text-[12px]">
-      {needsNode && <p>Install Node.js LTS, then return here to finish.
-        {" "}<button type="button" className="underline" onClick={() => void desktop.openUrl("https://nodejs.org/en/download").catch(e => setError(errorMessage(e)))}>Get Node.js</button>
+      {needsNode && <p>{shellZh.desktop.installNode}
+        {" "}<button type="button" className="underline" onClick={() => void desktop.openUrl("https://nodejs.org/en/download").catch(e => setError(errorMessage(e)))}>{shellZh.desktop.getNode}</button>
       </p>}
       <button type="button" className="btn-ghost" disabled={busy} onClick={() => void install()}>
-        {busy ? <><Spinner className="size-3" /> Installing…</> : `Install ${AGENT_LABEL[agent]}`}
+        {busy ? <><Spinner className="size-3" /> {shellZh.desktop.installing}</> : `安装 ${AGENT_LABEL[agent]}`}
       </button>
       <InlineError>{error}</InlineError>
     </div>
@@ -146,7 +147,7 @@ export function AgentSignIn({ agent, compact = false }: { agent: AgentAvailabili
 
   if (!isDesktop()) {
     if (compact || (agent.loggedIn !== false && agent.auth !== "api_key")) return null;
-    return <span className="text-dim text-[11.5px]">Run <code className="font-mono">npx scarlet-agent auth {id}</code> on that machine</span>;
+    return <span className="text-dim text-[11.5px]">在该电脑上运行 <code className="font-mono">npx scarlet-agent auth {id}</code></span>;
   }
 
   const start = () => {
@@ -160,14 +161,14 @@ export function AgentSignIn({ agent, compact = false }: { agent: AgentAvailabili
       <div className="space-y-1.5">
         <div className="flex items-center gap-2 text-[12px]">
           <Spinner className="size-3" />
-          <span className="text-muted">Finish signing in in your browser…</span>
+          <span className="text-muted">{shellZh.desktop.finishBrowser}</span>
           {login.status?.url && !compact && (
             <button className="btn-quiet py-0.5" onClick={() => void desktop.openUrl(login.status!.url!).catch(() => undefined)}>
-              Open page again
+              {shellZh.desktop.openAgain}
             </button>
           )}
           <button className="btn-quiet py-0.5" onClick={() => void login.cancel()}>
-            Cancel
+            {shellZh.desktop.cancel}
           </button>
         </div>
         {(!compact || id === "gemini") && login.status?.acceptsCode && (
@@ -179,14 +180,14 @@ export function AgentSignIn({ agent, compact = false }: { agent: AgentAvailabili
                 if (code.trim()) void login.submitCode(code);
               }}
             >
-              <input className="field font-mono flex-1 py-1" placeholder="Paste the code from the browser" value={code} onChange={(e) => setCode(e.target.value)} autoFocus />
+              <input className="field font-mono flex-1 py-1" placeholder={shellZh.desktop.pasteCode} value={code} onChange={(e) => setCode(e.target.value)} autoFocus />
               <button className="btn-primary py-1" disabled={!code.trim()}>
-                Submit
+                {shellZh.desktop.submit}
               </button>
             </form>
           ) : (
             <button className="btn-quiet py-0.5 text-[11.5px]" onClick={() => setShowCode(true)}>
-              Browser showed a code instead?
+              {shellZh.desktop.browserCode}
             </button>
           )
         )}
@@ -200,8 +201,8 @@ export function AgentSignIn({ agent, compact = false }: { agent: AgentAvailabili
     if (compact) return null;
     return (
       <div>
-        <button className="btn-quiet py-0.5" title="Sign in with a different account" onClick={start}>
-          Switch account
+        <button className="btn-quiet py-0.5" title={shellZh.desktop.signInDifferent} onClick={start}>
+          {shellZh.desktop.switchAccount}
         </button>
         <InlineError>{login.error}</InlineError>
       </div>
@@ -210,8 +211,8 @@ export function AgentSignIn({ agent, compact = false }: { agent: AgentAvailabili
 
   const onApiKey = agent.loggedIn !== false && agent.auth === "api_key";
   const button = (
-    <button className={onApiKey ? "btn-quiet py-0.5" : "btn-primary py-1"} title={`Uses your ${SIGN_IN[id].plan} subscription; opens your browser`} onClick={start}>
-      {onApiKey && id !== "codex" ? "Use my subscription instead" : SIGN_IN[id].button}
+    <button className={onApiKey ? "btn-quiet py-0.5" : "btn-primary py-1"} title={`使用你的 ${SIGN_IN[id].plan} 订阅并打开浏览器`} onClick={start}>
+      {onApiKey && id !== "codex" ? shellZh.desktop.useSubscription : SIGN_IN[id].button}
     </button>
   );
   // In a menu the reason has the row's whole width and wraps anywhere. Beside the button it took the width from the

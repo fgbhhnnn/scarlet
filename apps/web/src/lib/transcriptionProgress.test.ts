@@ -11,7 +11,7 @@ const task = (mediaId: string, progress?: Task["progress"], state: Task["state"]
 describe("transcription progress", () => {
   it("labels a transcription waiting its turn, and one under way with its percent and no guess at the time left", () => {
     expect(transcriptionProgressLabel(undefined)).toBeUndefined();
-    expect(transcriptionProgressLabel({ stage: "queued", fraction: 0 })).toBe("waiting its turn");
+    expect(transcriptionProgressLabel({ stage: "queued", fraction: 0 })).toBe("排队中");
     expect(transcriptionProgressLabel({ stage: "transcribing", fraction: 0.2 })).toBe("20%");
     expect(transcriptionProgressLabel({ stage: "aligning", fraction: 0.45, remainingSeconds: 185 })).toBe("45%");
     // A job still running never reads 100%.
@@ -104,8 +104,8 @@ describe("media problems", () => {
     const unreadable = { asset: { id: "broken", name: "broken.mov", kind: "video", status: "failed" } as MediaAsset, problem: "unreadable" as const };
     const stopped = { asset: { id: "cam", name: "cam.mov", kind: "video" } as MediaAsset, problem: "transcription" as const };
     expect(mediaWarningLabel([])).toBeUndefined();
-    expect(mediaWarningLabel([unreadable])).toBe("Couldn’t read broken.mov");
-    expect(mediaWarningLabel([stopped])).toBe("Transcription stopped for cam.mov");
-    expect(mediaWarningLabel([stopped, unreadable])).toBe("2 files need attention");
+    expect(mediaWarningLabel([unreadable])).toBe("无法读取 broken.mov");
+    expect(mediaWarningLabel([stopped])).toBe("cam.mov 的转写已停止");
+    expect(mediaWarningLabel([stopped, unreadable])).toBe("2 个文件需要处理");
   });
 });

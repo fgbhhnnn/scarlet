@@ -248,7 +248,7 @@ export function SkillEditorPage({ onReturnToEdit }: { onReturnToEdit?: () => voi
       value: v.version,
       label: v.from === "request" ? `“${v.note}”` : v.note ?? `v${v.version}`,
       detail: [savedBy(v, me), v.createdAt && clockTime(v.createdAt), `v${v.version}`].filter(Boolean).join(" · "),
-      tag: v.version === newest ? "Now" : undefined,
+      tag: v.version === newest ? "当前" : undefined,
       group: v.createdAt ? dayName(v.createdAt) : undefined,
     }));
   }, [loaded, me]);
@@ -335,7 +335,7 @@ export function SkillEditorPage({ onReturnToEdit }: { onReturnToEdit?: () => voi
       // Any name will do: it is saved as a slug. Only one with no letter or digit in it leaves nothing to save.
       // The name is what is wrong with this save, so why an earlier one failed leaves the page.
       setErr(null);
-      setNameErr(name.trim() ? "Use letters a–z or digits in the name" : "Name the skill");
+      setNameErr(name.trim() ? "名称须包含 a–z 字母或数字" : "请输入技能名称");
       nameField.current?.focus();
       return false;
     }
@@ -407,10 +407,10 @@ export function SkillEditorPage({ onReturnToEdit }: { onReturnToEdit?: () => voi
 
   // A skill that can't be read still has the way back to the library, and Retry reads it again without reloading the window.
   if (!isNew && loadError) return <div className="flex-1 min-h-0 flex flex-col">
-    <div className="skill-editor-toolbar"><button className="btn-quiet" aria-keyshortcuts="Escape" title="Skill library (Esc)" onClick={() => navigate("/settings/skills")}>← Skill library</button></div>
-    <ErrorState title="Couldn’t load skill" body={loadError} onRetry={() => setLoadAttempt(n => n + 1)} />
+    <div className="skill-editor-toolbar"><button className="btn-quiet" aria-keyshortcuts="Escape" title="技能库（Esc）" onClick={() => navigate("/settings/skills")}>← 技能库</button></div>
+    <ErrorState title="无法加载技能" body={loadError} onRetry={() => setLoadAttempt(n => n + 1)} />
   </div>;
-  if (!isNew && !loaded) return <Loading label="Loading skill…" />;
+  if (!isNew && !loaded) return <Loading label="正在加载技能…" />;
 
   const mark = <T,>(set: (v: T) => void) => (v: T) => {
     set(v);
@@ -422,29 +422,29 @@ export function SkillEditorPage({ onReturnToEdit }: { onReturnToEdit?: () => voi
       {/* Marked while something is unsaved, as the Settings form is: Save then shows when Esc has put the keyboard on it. */}
       <div className="skill-editor-toolbar" data-unsaved={unsaved || undefined}>
         <button className="btn-quiet" data-close={onReturnToEdit ? "" : undefined} aria-keyshortcuts="Escape"
-          title={onReturnToEdit ? "Back to edit (Esc)" : "Skill library (Esc)"} onClick={onReturnToEdit ?? (() => navigate("/settings/skills"))}>
-          {onReturnToEdit ? "← Back to edit" : "← Skill library"}
+          title={onReturnToEdit ? "返回剪辑（Esc）" : "技能库（Esc）"} onClick={onReturnToEdit ?? (() => navigate("/settings/skills"))}>
+          {onReturnToEdit ? "← 返回剪辑" : "← 技能库"}
         </button>
         {/* The name is edited where it reads. It is saved as a slug ("My Skill" as my-skill). */}
-        <input id="sk-name" ref={nameField} className="skill-name" aria-label="Name" aria-invalid={nameErr ? true : undefined} value={name} disabled={working || creating} placeholder="new-skill" spellCheck={false}
+        <input id="sk-name" ref={nameField} className="skill-name" aria-label="名称" aria-invalid={nameErr ? true : undefined} value={name} disabled={working || creating} placeholder="new-skill" spellCheck={false}
           style={{ width: `calc(${Math.max(name.length, 9) + 1}ch + 18px)` }} onChange={(e) => { setNameErr(null); mark(setName)(e.target.value); }} />
         {nameErr && <span role="alert" className="text-bad text-[12px]">{nameErr}</span>}
-        {unsaved && <span className="chip bg-warn/15 text-warn">Unsaved</span>}
+        {unsaved && <span className="chip bg-warn/15 text-warn">未保存</span>}
         <div className="flex-1" />
         <AgentChip direction="down" variant="icon" />
         {versionChoices.length > 1 && (
-          <PreferenceSelect compact label="Version history" value={viewVersion} onChange={setViewVersion} options={shownChoices} valueLabel="History"
-            more={older > 0 ? { label: `Show ${older} older ${older === 1 ? "version" : "versions"}`, onPick: () => setAllVersions(true) } : undefined} />
+          <PreferenceSelect compact label="版本历史" value={viewVersion} onChange={setViewVersion} options={shownChoices} valueLabel="历史"
+            more={older > 0 ? { label: `显示更早的 ${older} 个版本`, onPick: () => setAllVersions(true) } : undefined} />
         )}
         {/* Delete is plain beside Save, and red only under the pointer: the dialog it opens is where the red is. */}
         {!isNew && (
           <button className="btn-quiet hover:text-bad" onClick={() => setConfirmDelete(true)} disabled={working}
-            title={working ? "Wait for Scarlet to finish revising this skill." : undefined}>
-            Delete
+            title={working ? "请等待 Scarlet 完成对该技能的修改。" : undefined}>
+            删除
           </button>
         )}
         <button ref={saveButton} className="btn-primary" onClick={() => void save()} disabled={busy || working || (!isNew && !unsaved)}>
-          {busy && <Spinner className="size-3" />} {isNew ? "Create skill" : "Save"}
+          {busy && <Spinner className="size-3" />} {isNew ? "创建技能" : "保存"}
         </button>
         {/* The window's own status ends the row, as on the other pages. */}
         {!onReturnToEdit && <WindowActions inSettings />}
@@ -452,28 +452,28 @@ export function SkillEditorPage({ onReturnToEdit }: { onReturnToEdit?: () => voi
 
       <div className="skill-editor-body">
         {!isNew && (
-          <aside className="skill-chat" aria-label="Ask Scarlet to change this skill">
+          <aside className="skill-chat" aria-label="请 Scarlet 修改此技能">
             {/* Each request reads as one does in a project's chat, from the same pieces: the editor's words in a band
                 with where the request stands at its right, then Scarlet's lines under the band. */}
             <div className="simple-chat" ref={thread}>
               {edits.map(e => {
                 const asking = e.state === "waiting_for_user", active = !FINISHED.includes(e.state);
                 // A dot while Scarlet asks, a word once it stopped early, nothing once it's done. Stop follows while Scarlet has the request.
-                const standing = asking ? <span className="unit-dot" aria-hidden /> : e.state === "cancelled" ? <span className="unit-word">Stopped</span>
-                  : e.state === "failed" ? <span className="unit-word">Couldn’t finish</span> : null;
+                const standing = asking ? <span className="unit-dot" aria-hidden /> : e.state === "cancelled" ? <span className="unit-word">已停止</span>
+                  : e.state === "failed" ? <span className="unit-word">未能完成</span> : null;
                 return <div key={e.id} className="unit">
                   <div className="unit-msg">
-                    <span className="simple-who">You</span>
+                    <span className="simple-who">你</span>
                     <Said text={e.instruction}><MarkedKeywords text={e.instruction} /></Said>
                     <span className="unit-state">{standing}</span>
                     {active && <button type="button" className="simple-link unit-stop"
-                      onClick={() => void api.cancelTask(e.id).then(({ task }) => showFinished(task)).catch(err => setAskErr(errorMessage(err)))}>Stop</button>}
+                      onClick={() => void api.cancelTask(e.id).then(({ task }) => showFinished(task)).catch(err => setAskErr(errorMessage(err)))}>停止</button>}
                   </div>
                   {asking ? <div className="req" data-state="asking"><div className="req-said">
-                      <p className="req-say">{e.question}<button type="button" className="simple-link is-warn" onClick={() => box.current?.focus()}>Answer</button></p>
+                      <p className="req-say">{e.question}<button type="button" className="simple-link is-warn" onClick={() => box.current?.focus()}>回答</button></p>
                     </div></div>
-                    : active ? <div className="req" data-state="working" aria-busy><div className="req-row req-status"><span role="status" className="working-text">Revising the skill…</span></div></div>
-                    : e.state === "done" ? <div className="req" data-state="done"><div className="req-said"><Said className="req-say" text={e.summary?.trim() || "Done."}><MarkedKeywords text={e.summary?.trim() || "Done."} /></Said></div></div>
+                    : active ? <div className="req" data-state="working" aria-busy><div className="req-row req-status"><span role="status" className="working-text">正在修改技能…</span></div></div>
+                    : e.state === "done" ? <div className="req" data-state="done"><div className="req-said"><Said className="req-say" text={e.summary?.trim() || "已完成。"}><MarkedKeywords text={e.summary?.trim() || "已完成。"} /></Said></div></div>
                     : e.state === "failed" && e.error ? <div className="req" data-state="failed"><div className="req-said"><p className="req-say is-note is-bad">{e.error}</p></div></div>
                     : null}
                 </div>;
@@ -485,11 +485,11 @@ export function SkillEditorPage({ onReturnToEdit }: { onReturnToEdit?: () => voi
                 <div className="composer-box">
                   <div className="composer-row">
                     <SkillCommandInput inputRef={box} value={ask} skills={[]} plain id={askId} disabled={boxOff}
-                      ariaLabel={question ? "Answer Scarlet" : "Tell Scarlet what to change in this skill"}
-                      placeholder={question ? "Answer Scarlet…" : "Tell Scarlet what to change…"}
+                      ariaLabel={question ? "回答 Scarlet" : "告诉 Scarlet 如何修改此技能"}
+                      placeholder={question ? "回答 Scarlet…" : "告诉 Scarlet 要修改什么…"}
                       onChange={text => { setAsk(text); setAskErr(null); }} onSubmit={() => void send()} />
                     {sending && <Spinner className="size-3.5 shrink-0" />}
-                    {typed && <button ref={sendButton} type="button" className="btn-primary composer-send shrink-0" aria-label="Send" title="Send"
+                    {typed && <button ref={sendButton} type="button" className="btn-primary composer-send shrink-0" aria-label="发送" title="发送"
                       disabled={sending || (working && !question)} onClick={() => void send()}>
                       <Icon name="arrow" size={15} />
                     </button>}
@@ -502,12 +502,12 @@ export function SkillEditorPage({ onReturnToEdit }: { onReturnToEdit?: () => voi
         <div ref={instructionsPane} className="flex-1 min-w-0 min-h-0 flex flex-col">
           <div className="skill-details">
             {/* One line says what the field is and what it's for. It grows with what's written in it. */}
-            <label className="eyebrow" htmlFor="sk-desc">When to use it</label>
+            <label className="eyebrow" htmlFor="sk-desc">何时使用</label>
             <div className="skill-enabled">
-              <span>Enabled</span>
-              <Toggle checked={enabled} onChange={mark(setEnabled)} label="Enabled" disabled={working || creating} />
+              <span>启用</span>
+              <Toggle checked={enabled} onChange={mark(setEnabled)} label="启用" disabled={working || creating} />
             </div>
-            {shownVersion ? <div className="field skill-version-text" aria-label="When to use it, in this version"><ChangedText lines={shownVersion.description} /></div>
+            {shownVersion ? <div className="field skill-version-text" aria-label="此版本的使用场景"><ChangedText lines={shownVersion.description} /></div>
               : <div className="skill-when">
                 <span className="field" aria-hidden="true">{description}{"\u200b"}</span>
                 <textarea id="sk-desc" className="field" rows={1} value={description} disabled={working || creating} onChange={(e) => mark(setDescription)(e.target.value)} />
@@ -515,27 +515,27 @@ export function SkillEditorPage({ onReturnToEdit }: { onReturnToEdit?: () => voi
             <InlineError>{err}</InlineError>
           </div>
           <div className="skill-instructions-head">
-            <span className="eyebrow">Instructions</span>
+            <span className="eyebrow">说明</span>
             {picked ? <>
               <span className="skill-version-said">{changedIn(picked, me)}</span>
               <span className="flex-1" />
               {picked.version === loaded?.skill.version
-                ? pickedBefore && <button type="button" className="simple-link" disabled={working} onClick={() => restore(pickedBefore)}>Undo this change</button>
-                : <button type="button" className="simple-link" disabled={working} onClick={() => restore(picked)}>Restore v{picked.version}</button>}
-              <button type="button" className="simple-link" onClick={() => setViewVersion("current")}>Done</button>
+                ? pickedBefore && <button type="button" className="simple-link" disabled={working} onClick={() => restore(pickedBefore)}>撤销这次更改</button>
+                : <button type="button" className="simple-link" disabled={working} onClick={() => restore(picked)}>恢复 v{picked.version}</button>}
+              <button type="button" className="simple-link" onClick={() => setViewVersion("current")}>完成</button>
             </> : kept[0] && loaded && <span className="skill-kept" role="status">
               {/* Edits set aside when others were brought back were made on the version that is saved now. */}
-              {kept[0].version === loaded.skill.version ? "You have unsaved changes set aside." : `You have unsaved changes from before v${loaded.skill.version}.`}
-              <button type="button" className="simple-link" disabled={working} onClick={bringBack}>Bring them back</button>
-              <button type="button" className="simple-link" onClick={discardKept}>Discard</button>
+              {kept[0].version === loaded.skill.version ? "有暂存的未保存更改。" : `v${loaded.skill.version} 之前还有未保存的更改。`}
+              <button type="button" className="simple-link" disabled={working} onClick={bringBack}>恢复暂存更改</button>
+              <button type="button" className="simple-link" onClick={discardKept}>放弃</button>
             </span>}
             {find.controls}
           </div>
           {isNew && <p id="skill-style-help" className="px-4 pt-3 text-[13px] leading-5 text-muted">
-            A skill tells Scarlet how you like to edit your videos. Describe what to keep, cut, or change in your own words.
+            技能告诉 Scarlet 你的剪辑偏好。用自己的话描述要保留、删减或修改的内容。
           </p>}
           {shownVersion ? <div ref={changesPane} className="flex-1 min-h-0 w-full overflow-y-auto bg-bg p-3 font-mono text-[12.5px] leading-5 skill-version-text max-md:min-h-[250px]"
-            aria-label={`Skill markdown, v${picked!.version}`}>
+            aria-label={`技能 Markdown，v${picked!.version}`}>
             <ChangedText lines={shownVersion.body} find={find} />
           </div> : <SkillInstructions
             className="flex-1 w-full bg-bg p-3 font-mono text-[12.5px] leading-5 resize-none max-md:min-h-[250px]"
@@ -543,7 +543,7 @@ export function SkillEditorPage({ onReturnToEdit }: { onReturnToEdit?: () => voi
             box={editor}
             find={find}
             describedBy={isNew ? "skill-style-help" : undefined}
-            placeholder={isNew ? "For interviews, leave a beat after a difficult question." : undefined}
+            placeholder={isNew ? "例如：剪辑访谈时，在难以回答的问题后留一小段停顿。" : undefined}
             readOnly={working || creating}
             onChange={mark(setBody)}
           />}
@@ -551,20 +551,20 @@ export function SkillEditorPage({ onReturnToEdit }: { onReturnToEdit?: () => voi
         </div>
       </div>
 
-      <Modal open={blocker.state === "blocked"} onClose={() => { if (!busy) blocker.reset?.(); }} title="Save your skill changes?" footer={<>
-        <button className="btn-ghost" disabled={busy} onClick={() => blocker.reset?.()}>Stay</button>
-        <button className="btn-ghost" disabled={busy} onClick={() => { settle(); blocker.proceed?.(); }}>Discard changes</button>
-        <button className="btn-primary" disabled={busy} onClick={() => void save(true)}>Save and leave</button>
+      <Modal open={blocker.state === "blocked"} onClose={() => { if (!busy) blocker.reset?.(); }} title="保存对技能的更改？" footer={<>
+        <button className="btn-ghost" disabled={busy} onClick={() => blocker.reset?.()}>留在此页</button>
+        <button className="btn-ghost" disabled={busy} onClick={() => { settle(); blocker.proceed?.(); }}>放弃更改</button>
+        <button className="btn-primary" disabled={busy} onClick={() => void save(true)}>保存并离开</button>
       </>}>
-        <p>Your skill has unsaved changes.</p>
+        <p>此技能有未保存的更改。</p>
         <InlineError>{nameErr ?? err}</InlineError>
       </Modal>
       <ConfirmDialog
         open={confirmDelete}
         onClose={() => setConfirmDelete(false)}
-        title={`Delete skill “${loaded?.skill.name}”?`}
-        body="Scarlet stops using it immediately. Version history is removed."
-        confirmLabel="Delete"
+        title={`删除技能“${loaded?.skill.name}”？`}
+        body="Scarlet 将立即停用此技能，并删除它的版本历史。"
+        confirmLabel="删除"
         danger
         onConfirm={async () => {
           if (!skillId) return;
@@ -585,17 +585,16 @@ const LATEST_VERSIONS = 8;
 /** Who saved a version: "You", a teammate by name, or Scarlet, with what asked it to when Scarlet wrote it. */
 function savedBy(v: SkillVersion, me?: string): string {
   if (!v.author) return "";
-  if (v.author.type === "human") return v.author.id === me ? "You" : v.author.name;
-  return v.from === "request" ? "Scarlet, from your request" : v.from === "learning" ? "Scarlet, from Learnings" : "Scarlet";
+  if (v.author.type === "human") return v.author.id === me ? "你" : v.author.name;
+  return v.from === "request" ? "Scarlet（根据你的请求）" : v.from === "learning" ? "Scarlet（根据学习内容）" : "Scarlet";
 }
 
 /** The line over a picked version: whose change it is, and when. */
 function changedIn(v: SkillVersion, me?: string): string {
   const who = savedBy(v, me);
-  const [name, from] = who.startsWith("Scarlet, ") ? ["Scarlet", who.slice("Scarlet, ".length)] : [who === "You" ? "you" : who, ""];
-  const when = v.createdAt ? ` · ${dayName(v.createdAt)}, ${clockTime(v.createdAt)}` : "";
-  if (v.version === 1) return `v1, the first version${when}`;
-  return `What ${name || "was"} changed in v${v.version}${from ? `, ${from}` : ""}${when}`;
+  const when = v.createdAt ? ` · ${dayName(v.createdAt)} ${clockTime(v.createdAt)}` : "";
+  if (v.version === 1) return `v1，初始版本${when}`;
+  return `${who ? `${who}在 ` : ""}v${v.version} 的更改${when}`;
 }
 
 /** Text with what changed marked in it: a bar beside each changed line, taken-out words struck, added ones tinted. */

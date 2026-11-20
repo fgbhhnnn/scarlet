@@ -135,8 +135,8 @@ it.each([
 it("names Scarlet, not a browser, where the window can’t record", async () => {
   // This test window has no recorder, as a webview without one.
   await show();
-  const micButton = container.querySelector<HTMLButtonElement>('button[aria-label="Talk to Scarlet"]')!;
-  expect([micButton.disabled, micButton.title]).toEqual([true, "Scarlet can’t record audio on this computer"]);
+  const micButton = container.querySelector<HTMLButtonElement>('button[aria-label="对 Scarlet 说"]')!;
+  expect([micButton.disabled, micButton.title]).toEqual([true, "Scarlet 无法在此电脑上录音"]);
 });
 
 it("allows Shift+Enter for a new line and sends the multiline request with Enter", async () => {
@@ -173,7 +173,7 @@ it("opens the skill library with / and sends the chosen skill for the whole vide
   expect(container.querySelector('[role="listbox"]')).toBeNull();
   expect(document.activeElement).toBe(field);
   await type("/unmatched");
-  expect(container.textContent).toContain("No matching skills");
+  expect(container.textContent).toContain("没有匹配的技能");
   await type("/");
   await key("ArrowDown");
   await key("Enter");
@@ -257,40 +257,40 @@ it.each(["click", "keyboard"])("creates a skill from the picker by %s and return
       expect(field.getAttribute("aria-activedescendant")).toBe(action.id);
       await key("Enter");
     } else {
-      expect(container.textContent).toContain("No matching skills.");
+      expect(container.textContent).toContain("没有匹配的技能。");
       await act(() => action.click());
     }
     await act(async () => { await import("../../pages/SkillEditorPage"); });
-    const editor = container.querySelector<HTMLDialogElement>('dialog[aria-label="Create a skill"]')!;
+    const editor = container.querySelector<HTMLDialogElement>('dialog[aria-label="创建技能"]')!;
     const name = editor.querySelector<HTMLInputElement>("#sk-name")!;
-    const instructions = editor.querySelector<HTMLTextAreaElement>('[aria-label="Skill markdown"]')!;
-    expect(editor.textContent).toContain("how you like to edit your videos");
+    const instructions = editor.querySelector<HTMLTextAreaElement>('[aria-label="技能 Markdown"]')!;
+    expect(editor.textContent).toContain("你的剪辑偏好");
     expect(instructions.value).toBe("");
-    expect(instructions.placeholder).toContain("leave a beat");
+    expect(instructions.placeholder).toContain("留一小段停顿");
     await act(() => {
       Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(name, "Interview pacing");
       name.dispatchEvent(new Event("input", { bubbles: true }));
       Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")!.set!.call(instructions, "Keep the quiet after a difficult question.");
       instructions.dispatchEvent(new Event("input", { bubbles: true }));
     });
-    const modelPicker = editor.querySelector<HTMLButtonElement>('.skill-editor-toolbar button[aria-label="Choose model"]')!;
+    const modelPicker = editor.querySelector<HTMLButtonElement>('.skill-editor-toolbar button[aria-label="选择模型"]')!;
     await act(() => modelPicker.click());
-    expect(editor.querySelector('[aria-label="Model selector"]')).not.toBeNull();
+    expect(editor.querySelector('[role="dialog"][aria-label="选择模型"]')).not.toBeNull();
     const esc = new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true });
     await act(() => document.activeElement!.dispatchEvent(esc));
     expect(esc.defaultPrevented).toBe(true);
     expect(editor.open).toBe(true);
-    expect(editor.querySelector('[aria-label="Model selector"]')).toBeNull();
+    expect(editor.querySelector('[role="dialog"][aria-label="选择模型"]')).toBeNull();
     if (method === "click") {
       await act(() => editor.querySelector<HTMLButtonElement>("[data-close]")!.click());
-      expect(container.textContent).toContain("Save your skill changes?");
-      await act(() => [...editor.querySelectorAll("button")].find(b => b.textContent === "Stay")!.click());
+      expect(container.textContent).toContain("保存对技能的更改？");
+      await act(() => [...editor.querySelectorAll("button")].find(b => b.textContent === "留在此页")!.click());
     }
-    await act(async () => [...editor.querySelectorAll("button")].find(b => b.textContent?.trim() === "Create skill")!.click());
+    await act(async () => [...editor.querySelectorAll("button")].find(b => b.textContent?.trim() === "创建技能")!.click());
     expect(create).toHaveBeenCalledOnce();
     expect(create.mock.calls[0]![0].content).toContain("Keep the quiet after a difficult question.");
     expect(create.mock.calls[0]![0].content).not.toContain(instructions.placeholder);
-    expect(container.querySelector('dialog[aria-label="Create a skill"]')).toBeNull();
+    expect(container.querySelector('dialog[aria-label="创建技能"]')).toBeNull();
     expect(router.state.location.search).toBe("?t=3.5");
     expect(container.querySelector(".composer-input textarea")).toBe(field);
     expect(field.value).toBe(draft);
@@ -372,7 +372,7 @@ it("only ever sends: stopping a running edit is on its card, not in the message 
   expect(action()).toBeNull();
   await act(() => useUiStore.getState().setAgent({ agent: "claude", model: "haiku" }));
   await type("Keep the first take");
-  expect(action()!.getAttribute("aria-label")).toBe("Send reply");
+  expect(action()!.getAttribute("aria-label")).toBe("发送回复");
   await submit();
   expect(useProjectStore.getState().createTask).toHaveBeenCalledWith(PRJ, expect.objectContaining({
     instruction: "Keep the first take", agent: "claude", model: "haiku", context: expect.objectContaining({ threadId: thread.id }),
@@ -454,10 +454,10 @@ it("sends raw-media time in source coordinates and lets the next edit start with
   }));
   await selectPoint({ time: 10, mediaId: source.id, clipIds: [] });
   await act(async () => {
-    container.querySelector<HTMLButtonElement>('[aria-label="Remove timestamp"]')!.click();
+    container.querySelector<HTMLButtonElement>('[aria-label="清除时间标记"]')!.click();
   });
   await type("Make it shorter");
-  expect(container.querySelector('[aria-label="Remove timestamp"]')).toBeNull();
+  expect(container.querySelector('[aria-label="清除时间标记"]')).toBeNull();
   await submit();
   expect(useProjectStore.getState().createTask).toHaveBeenLastCalledWith(PRJ, expect.objectContaining({
     instruction: "Make it shorter", context: { version: project.head },
@@ -500,7 +500,7 @@ it("prompts for a fix and sends feedback on the failed attempt", async () => {
   const ready = buildThreads(current).find(t => t.needs === "decision")!;
   const failed = { ...ready.latest!, state: "failed" as const };
   await show({ thread: { ...ready, latest: failed } });
-  expect(container.querySelector<HTMLTextAreaElement>(".composer-input textarea")?.placeholder).toBe("Write a follow-up…");
+  expect(container.querySelector<HTMLTextAreaElement>(".composer-input textarea")?.placeholder).toBe("写一条回复…");
   await type("Use the original audio");
   await submit();
   expect(useProjectStore.getState().revise).toHaveBeenCalledWith(failed.id, expect.objectContaining({ text: "Use the original audio" }));
@@ -512,11 +512,11 @@ it("names the selected model once in an assigned note", async () => {
   const dialog = container.querySelector("dialog")!;
   const toggle = dialog.querySelector<HTMLButtonElement>('[role="switch"]')!;
   if (toggle.getAttribute("aria-checked") === "false") await act(async () => toggle.click());
-  expect(dialog.querySelector('[aria-label^="Model:"]')).toBeTruthy();
-  expect(toggle.closest("label")?.textContent?.trim()).toBe("Send to");
+  expect(dialog.querySelector('[aria-label^="模型："]')).toBeTruthy();
+  expect(toggle.closest("label")?.textContent?.trim()).toBe("发送给");
   await act(async () => toggle.click());
-  expect(toggle.closest("label")?.textContent?.trim()).toBe("Just a note");
-  expect(dialog.querySelector('[aria-label^="Model:"]')).toBeNull();
+  expect(toggle.closest("label")?.textContent?.trim()).toBe("仅保存备注");
+  expect(dialog.querySelector('[aria-label^="模型："]')).toBeNull();
 });
 
 it("submits a timestamped note once when Enter repeats while saving", async () => {
@@ -554,7 +554,7 @@ it("holds a note open while it saves, so a failure is said and a typed note keep
     field.dispatchEvent(new Event("input", { bubbles: true }));
   });
   const dismissBoth = async () => {
-    await act(async () => dialog()!.querySelector<HTMLButtonElement>('[aria-label="Close"]')!.click());
+    await act(async () => dialog()!.querySelector<HTMLButtonElement>('[aria-label="关闭"]')!.click());
     expect(dialog()).not.toBeNull();
     await act(async () => { dialog()!.dispatchEvent(new Event("cancel", { cancelable: true })); });
     expect(dialog()).not.toBeNull();
@@ -574,7 +574,7 @@ it("holds a note open while it saves, so a failure is said and a typed note keep
   await act(async () => fail(new Error("No speech was heard.")));
   expect(dialog()?.querySelector('[role="alert"]')?.textContent).toBe("No speech was heard.");
   // Settled, × closes and forgets the draft.
-  await act(async () => dialog()!.querySelector<HTMLButtonElement>('[aria-label="Close"]')!.click());
+  await act(async () => dialog()!.querySelector<HTMLButtonElement>('[aria-label="关闭"]')!.click());
   expect(dialog()).toBeNull();
   expect(localStorage.getItem(`scarlet.noteDraft.v1/${PRJ}`)).toBeNull();
 });
@@ -704,7 +704,7 @@ it("pins a reply to the selected individual edit while typing and sends it in th
   const target = { changeId: change.id, editIndex: 1, version: project.head!, time: 1, end: 3, clipIds: [], label: "Opening caption" };
   await show({ thread, selectedEdit: target });
   const header = container.querySelector(".composer-context-row")!;
-  expect(header.querySelector(".composer-target-name")?.textContent).toBe("Edit 2");
+  expect(header.querySelector(".composer-target-name")?.textContent).toBe("剪辑 2");
   expect(header.contains(container.querySelector(".composer-model"))).toBe(true);
   expect(container.querySelector(".composer-box")?.contains(header)).toBe(false);
   await type("Hold this caption for another second");
@@ -752,10 +752,10 @@ it("says where a call's cut is and where the playhead is after its numbered tag"
   await show({ thread: ready, targetTag: "Cut 3", aimTime: 167.2, pausedAt: { time: 177.4, version: "ver_before" } });
   // The tag keeps the call's number, paused or not: the playhead's time is beside it.
   expect(aimName()?.textContent).toBe("Cut 3");
-  expect(container.querySelector(".composer-aim-when")?.textContent).toBe("at 2:47 · Playhead 2:57");
+  expect(container.querySelector(".composer-aim-when")?.textContent).toBe("2:47 · 播放头 2:57");
   // The playhead's clock follows the player, a second at a time.
   await act(async () => usePlayerStore.setState({ time: 181.9 }));
-  expect(container.querySelector(".composer-aim-when")?.textContent).toBe("at 2:47 · Playhead 3:01");
+  expect(container.querySelector(".composer-aim-when")?.textContent).toBe("2:47 · 播放头 3:01");
   usePlayerStore.setState({ time: 0 });
 });
 
@@ -765,7 +765,7 @@ it("shows where the editor paused in an open cut's tag, and sends the message to
   await show({ thread: ready, targetTag: "Cut at 0:02", pausedAt: { time: 37.12, version: "ver_before" } });
   // One time in the box: where the video stopped. The tag's full name still says which cut the message goes to.
   expect(aimName()?.textContent).toBe("0:37");
-  expect(aimName()?.title).toBe("About Cut at 0:02, stopped at 0:37");
+  expect(aimName()?.title).toBe("关于 Cut at 0:02，暂停于 0:37");
   expect(container.querySelector("textarea")!.value).toBe("");
   await type("trim more here");
   await submit();
@@ -1046,8 +1046,8 @@ const aimRowLabel = (name: string) => aimCard()?.querySelector(`.composer-aim-ro
 const aimField = () => container.querySelector<HTMLTextAreaElement>(".composer-message textarea")!;
 const clickAim = () => act(async () => aimButton()!.click());
 const aimClear = (label: string) => container.querySelector<HTMLButtonElement>(`.composer-aim-clear[aria-label="${label}"]`);
-const clearCut = "Start a new edit instead of revising cut at 2:05";
-const clearRange = "Take the marked range 0:42 – 0:51 off the message";
+const clearCut = "开始新的剪辑，取消修改 cut at 2:05";
+const clearRange = "从消息中清除标记范围 0:42 – 0:51";
 
 it("names and clears the cut beside the draft", async () => {
   await show();
@@ -1058,7 +1058,7 @@ it("names and clears the cut beside the draft", async () => {
   expect(container.querySelector(".composer-aim-line")?.nextElementSibling?.classList.contains("composer-box")).toBe(true);
   expect(container.querySelector(".composer-row .composer-aim")).toBeNull();
   expect(aimName()?.textContent).toBe("2:05");
-  expect(aimName()?.title).toBe("About Cut at 2:05");
+  expect(aimName()?.title).toBe("关于 Cut at 2:05");
   expect(aimButton()).toBeNull();
   expect(aimCard()).toBeNull();
   await type("Keep the laugh");
@@ -1068,7 +1068,7 @@ it("names and clears the cut beside the draft", async () => {
   expect(document.activeElement).toBe(aimField());
   expect(aimCard()).toBeNull();
   await show({ targetTag: "Reply", thread: buildThreads(current)[0] });
-  expect([aimName(), container.querySelector(".composer-tag-name")?.textContent]).toEqual([null, "Reply"]);
+  expect([aimName(), container.querySelector(".composer-tag-name")?.textContent]).toEqual([null, "回复"]);
 });
 
 it("clears a marked stretch independently of the cut the message is about", async () => {
@@ -1077,10 +1077,10 @@ it("clears a marked stretch independently of the cut the message is about", asyn
   await show({ targetTag: "Cut at 2:05" });
   expect(aimName()?.textContent).toBe("2:05");
   expect(aimButton()?.textContent).toContain("+1");
-  expect(aimButton()?.getAttribute("aria-label")).toBe("Show Range 0:42 – 0:51");
+  expect(aimButton()?.getAttribute("aria-label")).toBe("显示 范围 0:42 – 0:51");
   await clickAim();
-  expect(aimRowLabel("Range 0:42 – 0:51")?.textContent).toBe("0:42–0:51");
-  expect(aimRowLabel("Range 0:42 – 0:51")?.getAttribute("title")).toBe("Range 0:42 – 0:51");
+  expect(aimRowLabel("范围 0:42 – 0:51")?.textContent).toBe("0:42–0:51");
+  expect(aimRowLabel("范围 0:42 – 0:51")?.getAttribute("title")).toBe("范围 0:42 – 0:51");
   expect(aimRowLabel("Cut at 2:05")).toBeNull();
   expect(aimClear(clearCut)).not.toBeNull();
   expect(aimClear(clearCut)?.closest(".composer-aim-card")).toBeNull();
@@ -1088,7 +1088,7 @@ it("clears a marked stretch independently of the cut the message is about", asyn
   await act(async () => aimClear(clearRange)!.click());
   expect(useUiStore.getState().agentContext).toEqual(cut);
   expect(aimName()?.textContent).toBe("2:05");
-  expect(aimName()?.title).toBe("About Cut at 2:05");
+  expect(aimName()?.title).toBe("关于 Cut at 2:05");
   expect(aimButton()).toBeNull();
   expect(aimCard()).toBeNull();
   expect(document.activeElement).toBe(aimField());
@@ -1096,7 +1096,7 @@ it("clears a marked stretch independently of the cut the message is about", asyn
   await act(async () => useUiStore.getState().setAgentContext({ time: 42, end: 51.5, clipIds: [], markedRange: { start: 42, end: 51.5 } }));
   await show();
   expect(aimName()?.textContent).toBe("0:42–0:51");
-  expect(aimName()?.title).toBe("About Range 0:42 – 0:51");
+  expect(aimName()?.title).toBe("关于 范围 0:42 – 0:51");
   expect(aimButton()).toBeNull();
   await act(async () => aimClear(clearRange)!.click());
   expect(useUiStore.getState().agentContext).toBeNull();
@@ -1109,8 +1109,8 @@ it.each([
 ])("labels %s beside the draft as %s", async (targetTag, displayName) => {
   await show({ targetTag });
   expect(aimName()?.textContent).toBe(displayName);
-  expect(aimName()?.title).toBe(`About ${targetTag}`);
-  expect(aimClear(`Start a new edit instead of revising ${targetTag.toLowerCase()}`)).not.toBeNull();
+  expect(aimName()?.title).toBe(`关于 ${targetTag}`);
+  expect(aimClear(`开始新的剪辑，取消修改 ${targetTag.charAt(0).toLowerCase()}${targetTag.slice(1)}`)).not.toBeNull();
   expect(aimButton()).toBeNull();
   expect(aimCard()).toBeNull();
 });
@@ -1179,7 +1179,7 @@ it("answers Scarlet's question with a stretch marked on the ruler beside it, sti
   const asking = buildThreads(current).find(t => t.question)!;
   await act(async () => useUiStore.getState().setAgentContext({ time: 42, end: 51.5, clipIds: [], markedRange: { start: 42, end: 51.5 } }));
   await show({ thread: asking, targetTag: "Answer" });
-  expect(container.querySelector(".composer-tag-name")?.textContent).toBe("Answer");
+  expect(container.querySelector(".composer-tag-name")?.textContent).toBe("回答");
   await type("Yes, this part");
   await submit();
   expect(useProjectStore.getState().answerTask).toHaveBeenCalledWith(asking.question!.id, expect.stringMatching(/^At 0:42.*0:51 — Yes, this part$/), undefined);
@@ -1199,7 +1199,7 @@ it("keeps the target's × from taking the box elsewhere while a spoken message i
   // While it records, and while what was said is written down and sent, the × waits.
   await act(async () => { micProps.onStart?.(); micProps.onRecording?.(true); });
   expect(clear().disabled).toBe(true);
-  expect(clear().getAttribute("aria-description")).toBe("Waits until what you’re saying is sent");
+  expect(clear().getAttribute("aria-description")).toBe("请先发送这条语音消息");
   await act(async () => clear().click());
   expect(onClearTarget).not.toHaveBeenCalled();
   await act(async () => { micProps.onRecording?.(false); micProps.onResult({ blob: new Blob(["voice"]), seconds: 1, mimeType: "audio/mp4" }); });
@@ -1226,14 +1226,14 @@ it("changes a queued request's words in the box, across its whole width, saving 
   // Nothing sits before them: the tray's row says which request they are, and the box's own tag waits with its message.
   expect(container.querySelector(".composer-tag")).toBeNull();
   expect(container.querySelector(".composer-row")?.firstElementChild?.classList.contains("composer-message")).toBe(true);
-  expect(container.querySelector(".composer-destination")?.textContent).toBe("Changing the words of a queued request");
+  expect(container.querySelector(".composer-destination")?.textContent).toBe("正在修改排队中的请求");
   // Typing changes them, not the message being written.
   await type("Keep the aside, trim the breath.");
   expect(rewording.onChange).toHaveBeenLastCalledWith("Keep the aside, trim the breath.");
   expect(useUiStore.getState().agentDraft).toBe("Tighten every pause");
   // Sending saves them. Nothing new is sent to Scarlet.
   const save = container.querySelector<HTMLButtonElement>(".composer-send")!;
-  expect(save.title).toBe("Save the new words");
+  expect(save.title).toBe("保存新措辞");
   await act(async () => input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true })));
   expect(rewording.onSave).toHaveBeenCalledWith("Keep the aside.", undefined);
   expect(useProjectStore.getState().createTask).not.toHaveBeenCalled();
@@ -1274,9 +1274,9 @@ it("names the moment beside the draft and clears it for a whole-video request", 
   const onClearTarget = vi.fn();
   await show({ targetTag: "At 18:28", targetIsPoint: true, onClearTarget });
   expect(aimName()?.textContent).toBe("18:28");
-  expect(aimName()?.title).toBe("About 18:28");
+  expect(aimName()?.title).toBe("关于 18:28");
   expect(aimButton()).toBeNull();
-  await act(async () => aimClear("Take “At 18:28” off: the message is about the whole video")!.click());
+  await act(async () => aimClear("清除“At 18:28”，改为针对整段视频")!.click());
   expect(onClearTarget).toHaveBeenCalledTimes(1);
 });
 
@@ -1583,8 +1583,8 @@ it("says what went wrong with the microphone on the line over the box, until the
 
 it("asks for a new edit, with the skills it takes, in an empty box", async () => {
   await show();
-  expect(container.querySelector("textarea")!.placeholder).toBe("Describe an edit, / skills");
-  expect(NEW_EDIT_HINT).toBe("Describe an edit, / skills");
+  expect(container.querySelector("textarea")!.placeholder).toBe("描述剪辑要求，输入 / 选择技能");
+  expect(NEW_EDIT_HINT).toBe("描述剪辑要求，输入 / 选择技能");
 });
 
 it("opens no list for $: the words are sent as written", async () => {
@@ -1618,7 +1618,7 @@ it("attaches files dropped or pasted on the box to the next message, in a line o
   // The line sits on top of the box.
   expect(container.querySelector(".composer-files")?.nextElementSibling?.classList.contains("composer-box")).toBe(true);
   const remove = container.querySelectorAll<HTMLButtonElement>(".composer-file button");
-  expect(remove[1]!.title).toBe("Remove");
+  expect(remove[1]!.title).toBe("移除");
   await act(async () => remove[1]!.click());
   expect(names()).toEqual(["Brand guide.pdf"]);
   await type("Use these colors for the lower thirds");
@@ -1647,8 +1647,8 @@ it("carries the frame the editor drew on with the next message: its picture as a
   await show();
   // The marked frame is a row of the line on top of the box, with its picture, and a × that takes it off.
   const row = container.querySelector(".composer-files .composer-file.is-marked-frame")!;
-  expect(row.querySelector(".composer-file-name")?.textContent).toBe("Marked frame 0:07");
-  expect(row.querySelector(".composer-file-state")?.textContent).toBe("2 marks");
+  expect(row.querySelector(".composer-file-name")?.textContent).toBe("标记画面 0:07");
+  expect(row.querySelector(".composer-file-state")?.textContent).toBe("2 个标记");
   expect(row.querySelector("img")?.getAttribute("src")).toBe("frame://7");
   await type("Blur 1 and swap 2 for the new logo");
   await submit();
@@ -1670,7 +1670,7 @@ it("takes the marked frame off the message with its ×", async () => {
   usePictureMarksStore.setState({ marking: null, byProject: { [PRJ]: { time: 7, version: project.head!, picture: "frame://7", marks: [{ kind: "box", box: { x: 0.1, y: 0.1, w: 0.2, h: 0.2 } }] } } });
   await show();
   const remove = container.querySelector<HTMLButtonElement>(".composer-file.is-marked-frame .composer-file-remove")!;
-  expect(remove.getAttribute("aria-label")).toBe("Remove Marked frame 0:07");
+  expect(remove.getAttribute("aria-label")).toBe("移除 标记画面 0:07");
   await act(async () => remove.click());
   expect(usePictureMarksStore.getState().byProject[PRJ]).toBeUndefined();
   expect(container.querySelector(".composer-files")).toBeNull();

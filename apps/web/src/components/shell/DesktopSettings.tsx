@@ -7,16 +7,16 @@
 import { useEffect, useRef, useState } from "react";
 import { desktop, isDesktop, type EngineStatus } from "../../lib/desktop";
 import { errorMessage, IS_MOCK } from "../../lib/client";
-import { plural } from "../../lib/format";
 import { AGENT_LABEL, isConfiguredAgent } from "../../stores/hosts";
 import { AgentSignIn, authLabel, canSignIn, useLocalHost } from "./AgentSignIn";
 import { InlineError, Loading, SectionTitle } from "../ui/primitives";
+import { shellZh } from "../../lib/zh-shell";
 
 const ENGINE_LABEL: Record<EngineStatus["state"], string> = {
-  starting: "starting…",
-  ready: "running",
-  error: "error",
-  stopped: "stopped",
+  starting: "正在启动…",
+  ready: "运行中",
+  error: "错误",
+  stopped: "已停止",
 };
 
 /** Live engine + agent-host status from the desktop shell. */
@@ -52,18 +52,18 @@ export function DesktopAgents({ onConnected }: { onConnected?: () => void }) {
     previouslyConnected.current = connected;
     if (justConnected) onConnected?.();
   }, [connected, onConnected]);
-  if (IS_MOCK) return <p className="text-muted">The sample project already has a model.</p>;
+  if (IS_MOCK) return <p className="text-muted">{shellZh.desktop.sampleHasModel}</p>;
 
   return (
     <div className={onConnected ? "" : "card p-5"} id="hosts">
-      {!onConnected && <SectionTitle>Sign in</SectionTitle>}
-      <p className="text-[13px] text-muted mb-4">Choose Claude Code, Codex or Gemini. Install it if needed, then sign in with your subscription.</p>
-      {engine?.state === "error" && <InlineError>Scarlet hit a problem starting up. Try quitting and reopening the app.</InlineError>}
+      {!onConnected && <SectionTitle>{shellZh.settings.signIn}</SectionTitle>}
+      <p className="text-[13px] text-muted mb-4">选择 Claude Code、Codex 或 Gemini。安装后使用你的订阅账号登录。</p>
+      {engine?.state === "error" && <InlineError>Scarlet 无法启动，请退出后重新打开应用。</InlineError>}
       {host?.error && <InlineError>{host.error}</InlineError>}
       {!host ? (
         <Loading />
       ) : agents.length === 0 ? (
-        <div className="text-muted text-[12.5px]">Looking for Claude Code, Codex and Gemini on this computer…</div>
+        <div className="text-muted text-[12.5px]">{shellZh.desktop.looking}</div>
       ) : (
         <ul className="divide-y divide-line/60">
           {agents.map((a) => (
@@ -71,7 +71,7 @@ export function DesktopAgents({ onConnected }: { onConnected?: () => void }) {
               <span className={`size-2 rounded-full shrink-0 ${isConfiguredAgent(a) ? "bg-ok" : "bg-dim"}`} />
               <div className="flex-1 min-w-0">
                 <div className="text-[13px]">{AGENT_LABEL[a.id]}</div>
-                <div className={`text-[12px] ${isConfiguredAgent(a) ? "text-muted" : "text-dim"}`}>{isConfiguredAgent(a) ? authLabel(a) : a.installed ? "Not signed in" : "Not installed on this computer"}</div>
+                <div className={`text-[12px] ${isConfiguredAgent(a) ? "text-muted" : "text-dim"}`}>{isConfiguredAgent(a) ? authLabel(a) : a.installed ? shellZh.desktop.notSignedIn : shellZh.desktop.notInstalled}</div>
               </div>
               <AgentSignIn agent={a} />
             </li>
@@ -97,25 +97,25 @@ export function DesktopDiagnostics() {
         right={
           engine && (
             <span className="text-dim text-[11.5px]">
-              Scarlet {engine.version} · {engine.engineKind === "sidecar" ? "bundled engine" : engine.engineKind === "dev" ? "dev engine (node)" : engine.engineKind ?? ""}
+              Scarlet {engine.version} · {engine.engineKind === "sidecar" ? "内置引擎" : engine.engineKind === "dev" ? "开发引擎（Node.js）" : engine.engineKind ?? ""}
             </span>
           )
         }
       >
-        Diagnostics
+        诊断
       </SectionTitle>
       {!engine ? (
         <Loading />
       ) : (
         <dl className="grid grid-cols-[140px_1fr] gap-x-4 gap-y-2 text-[12.5px]">
-          <dt className="text-muted">Engine</dt>
+          <dt className="text-muted">引擎</dt>
           <dd className="min-w-0">
             <div className="flex items-center gap-2">
               <span className={`size-2 rounded-full ${engine.state === "ready" ? "bg-ok" : engine.state === "error" ? "bg-bad" : "bg-dim"}`} />
               <span>{ENGINE_LABEL[engine.state]}</span>
               {engine.url && <code className="font-mono text-muted truncate">{engine.url}</code>}
-              {engine.pid !== null && <span className="text-dim">pid {engine.pid}</span>}
-              {engine.restarts > 0 && <span className="text-dim">{plural(engine.restarts, "restart")}</span>}
+              {engine.pid !== null && <span className="text-dim">进程 ID {engine.pid}</span>}
+              {engine.restarts > 0 && <span className="text-dim">已重启 {engine.restarts} 次</span>}
             </div>
             {engine.error && <InlineError>{engine.error}</InlineError>}
             {engine.engine && (
@@ -125,21 +125,21 @@ export function DesktopDiagnostics() {
             )}
           </dd>
 
-          <dt className="text-muted">Data folder</dt>
+          <dt className="text-muted">数据文件夹</dt>
           <dd className="flex items-center gap-2 min-w-0">
             <code className="font-mono truncate" title={engine.dataDir}>
               {engine.dataDir}
             </code>
             <button className="btn-quiet py-0.5" onClick={() => open(engine.dataDir)}>
-              Open
+              打开
             </button>
             <button className="btn-quiet py-0.5" onClick={() => open(engine.logDir)}>
-              Logs
+              日志
             </button>
           </dd>
 
           {openError && <dd className="col-span-2"><InlineError>{openError}</InlineError></dd>}
-          <dt className="text-muted">Agent host</dt>
+          <dt className="text-muted">代理主机</dt>
           <dd className="min-w-0">
             {!host ? (
               <Loading />
@@ -147,14 +147,14 @@ export function DesktopDiagnostics() {
               <>
                 <div className="flex items-center gap-2">
                   <span className={`size-2 rounded-full ${host.connected ? "bg-ok" : "bg-dim"}`} />
-                  <span>{host.connected ? "connected" : host.configured ? "connecting…" : "not configured"}</span>
+                  <span>{host.connected ? "已连接" : host.configured ? "正在连接…" : "未配置"}</span>
                   {host.hostId && <code className="font-mono text-dim">{host.hostId}</code>}
                   {host.name && <span className="text-dim truncate">{host.name}</span>}
                 </div>
                 {host.error && <InlineError>{host.error}</InlineError>}
-                <div className="text-dim">{host.running.length ? `Running ${plural(host.running.length, "task")}: ${host.running.join(", ")}` : "Idle"}</div>
+                <div className="text-dim">{host.running.length ? `正在运行 ${host.running.length} 个任务：${host.running.join("、")}` : "空闲"}</div>
                 <div className="text-dim">
-                  {host.agents.map((a) => `${AGENT_LABEL[a.id]}: ${a.installed ? `${a.version ? `v${a.version}` : "installed"}, ${authLabel(a)}` : "not installed"}`).join(" · ")}
+                  {host.agents.map((a) => `${AGENT_LABEL[a.id]}: ${a.installed ? `${a.version ? `v${a.version}` : "已安装"}, ${authLabel(a)}` : "未安装"}`).join(" · ")}
                 </div>
                 {host.mcpCommand && (
                   <div className="text-dim font-mono text-[11px] truncate" title={host.mcpCommand}>
@@ -170,7 +170,7 @@ export function DesktopDiagnostics() {
   );
 }
 
-/** Advanced → Share logs: one .zip a tester can send to whoever is helping them. */
+/** Advanced → 分享日志: one .zip a tester can send to whoever is helping them. */
 export function ExportLogs() {
   const [state, setState] = useState<{ phase: "idle" | "saving" } | { phase: "saved"; path: string } | { phase: "failed"; error: string }>({ phase: "idle" });
   if (!isDesktop() || IS_MOCK) return null;
@@ -182,14 +182,14 @@ export function ExportLogs() {
     );
   };
   return (
-    <section className="card p-5" aria-label="Share logs">
-      <SectionTitle>Share logs</SectionTitle>
-      <p className="text-[13px] text-muted mb-4">One .zip to send for support. No videos, projects or sign-ins.</p>
+    <section className="card p-5" aria-label={shellZh.desktop.shareLogs}>
+      <SectionTitle>{shellZh.desktop.shareLogs}</SectionTitle>
+      <p className="text-[13px] text-muted mb-4">将 .zip 文件发给支持人员。文件中不包含视频、项目或登录信息。</p>
       <div className="flex flex-wrap items-center gap-2">
-        <button className="btn-primary" disabled={state.phase === "saving"} onClick={save}>{state.phase === "saving" ? "Saving…" : "Export logs…"}</button>
+        <button className="btn-primary" disabled={state.phase === "saving"} onClick={save}>{state.phase === "saving" ? shellZh.desktop.saving : shellZh.desktop.exportLogs}</button>
         {state.phase === "saved" && <>
-          <span className="truncate text-[12.5px] text-muted" role="status" title={state.path}>Saved {state.path.split(/[\\/]/).pop()}</span>
-          <button className="btn-quiet" onClick={() => void desktop.revealPath(state.path).catch(e => setState({ phase: "failed", error: errorMessage(e) }))}>Show in folder</button>
+          <span className="truncate text-[12.5px] text-muted" role="status" title={state.path}>{shellZh.desktop.saved} {state.path.split(/[\\/]/).pop()}</span>
+          <button className="btn-quiet" onClick={() => void desktop.revealPath(state.path).catch(e => setState({ phase: "failed", error: errorMessage(e) }))}>{shellZh.desktop.showFolder}</button>
         </>}
       </div>
       {state.phase === "failed" && <InlineError><span data-log-private>{state.error}</span></InlineError>}

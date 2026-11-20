@@ -136,7 +136,7 @@ export function useRecorder(onResult: (r: RecorderResult) => void) {
         failed = true;
         appLog("error", "microphone", { when: "recording" }, { level: "warn" });
         cleanup();
-        setError("Recording failed.");
+        setError("录音失败。");
         setState("error");
       };
       rec.current = r;
@@ -156,13 +156,13 @@ export function useRecorder(onResult: (r: RecorderResult) => void) {
       const name = err instanceof DOMException ? err.name : "";
       appLog("error", "microphone", { when: "starting", name: name || (err instanceof Error ? err.name : "unknown") }, { level: "warn" });
       if (name === "NotAllowedError" || name === "SecurityError") {
-        setError("Microphone access was denied. Allow the microphone for Scarlet and try again.");
+        setError("麦克风访问被拒绝。请允许 Scarlet 访问麦克风后重试。");
         setState("denied");
       } else if (name === "NotFoundError") {
-        setError("No microphone found.");
+        setError("未检测到麦克风。");
         setState("error");
       } else {
-        setError(err instanceof Error ? err.message : "Couldn’t start recording.");
+        setError(err instanceof Error ? err.message : "无法开始录音。");
         setState("error");
       }
     }

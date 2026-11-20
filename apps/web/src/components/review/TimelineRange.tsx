@@ -4,6 +4,7 @@ import { clockRange, lengthLabel, playbackClock } from "../../lib/format";
 import type { ScrubRelease } from "../../lib/player";
 import { QueuedImg } from "./QueuedImg";
 import { useUiStore } from "../../stores/ui";
+import { zhReview } from "../../lib/zhReview";
 
 /** How near, in pixels, a dragged end comes to the edge of a cut or an edit before it lands on it. */
 const RANGE_SNAP_PX = 7;
@@ -272,8 +273,8 @@ export function useRangeSelect({ slider, drag, from, span, start, end, fps, edge
       const held = live?.moving === edge;
       return <button key={edge} type="button" className={`timeline-range-handle is-${edge}${held ? " is-held" : ""}${held && live.snapped ? " is-snapped" : ""}`}
         style={{ left: `${percent(time)}%` }}
-        aria-label={`${edge === "start" ? "Start" : "End"} of the marked range, ${playbackClock(time)}`}
-        title="Drag to adjust · hold for frame steps · ← → one frame"
+        aria-label={`${edge === "start" ? zhReview.timeline.rangeStart : zhReview.timeline.rangeEnd}，${playbackClock(time)}`}
+        title={zhReview.timeline.adjustRange}
         onPointerDown={e => { if (begin(e, edge)) { e.stopPropagation(); e.currentTarget.focus({ preventScroll: true }); } }}
         data-range-handle="" onKeyDown={e => nudge(edge, e)} />;
     };
@@ -325,11 +326,11 @@ function RangeLoupe({ time, at, fps, last, inside, snapped, edges, frameAt, shee
   }
   return <span className="timeline-range-loupe" role="status" data-inside={inside}
     style={{ left: `clamp(var(--loupe-half), ${at}%, calc(100% - var(--loupe-half)))` } as CSSProperties}>
-    <span className="timeline-range-loupe-head"><b>{playbackClock(time)}</b>{snapped && <small>On an edit’s edge</small>}</span>
+      <span className="timeline-range-loupe-head"><b>{playbackClock(time)}</b>{snapped && <small>{zhReview.timeline.atEditEdge}</small>}</span>
     <span className="timeline-range-loupe-row" style={{ "--picture-height": `${heldHeight}px`, "--held-picture": `${loupeWidth(0)}px` } as CSSProperties}>
       <span className="timeline-range-loupe-film">{pictures}</span>
       <i className="timeline-range-loupe-now" />
     </span>
-    <span className="timeline-range-loupe-hint">Drag to move a frame at a time · let go to set</span>
+    <span className="timeline-range-loupe-hint">{zhReview.timeline.preciseRange}</span>
   </span>;
 }

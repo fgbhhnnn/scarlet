@@ -22,7 +22,7 @@ type RailProps = {
   resizes?: string;
 };
 
-export function ChatRail({ compact, children, id = "edit-chat", className = "workspace-rail requests-panel", label = "Edits",
+export function ChatRail({ compact, children, id = "edit-chat", className = "workspace-rail requests-panel", label = "剪辑",
   storageKey = "scarlet.chatWidth", initialWidth = available => available * 0.4, minWidth = MIN_WIDTH, maxWidth, side = "left", resizes = "chat" }: RailProps) {
   // Dragging toward the player widens the rail, whichever side it is on.
   const toward = side === "left" ? 1 : -1;
@@ -52,7 +52,7 @@ export function ChatRail({ compact, children, id = "edit-chat", className = "wor
   return <aside ref={rail} id={id} className={className} aria-label={label} style={compact ? undefined : { width }}>
     {children}
     {!compact && <div role="separator" className={side === "left" ? "chat-divider" : "chat-divider is-left"} tabIndex={0}
-      aria-label={`Resize ${resizes}`} title={`Drag to resize ${resizes}`}
+      aria-label={`调整${label}栏宽度`} title={`拖动以调整${label}栏宽度`}
       aria-orientation="vertical" aria-controls={id} aria-valuemin={minWidth} aria-valuemax={max} aria-valuenow={width}
       onPointerDown={e => {
         if (e.button !== 0 || !e.isPrimary) return;

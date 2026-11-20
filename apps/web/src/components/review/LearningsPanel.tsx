@@ -6,6 +6,8 @@ import { useSkillsStore } from "../../stores/skills";
 import { useAgentAvailability } from "../agent/AgentChip";
 import { Icon } from "../ui/primitives";
 import { PreferenceSelect } from "../ui/PreferenceSelect";
+import { zh } from "../../lib/zh";
+import { zhReview } from "../../lib/zhReview";
 
 /** The learnings that still wait: on the editor's call, or on Scarlet while it saves one they approved. */
 function openLearnings(learnings: Learning[] | undefined): Learning[] {
@@ -20,7 +22,7 @@ export function learningsToReview(learnings: Learning[] | undefined): number {
 /** Quotes in a sentence: “a”, “b” and “c”. */
 function quoted(passages: string[]): string {
   const marked = passages.map(p => `“${p}”`);
-  return marked.length > 1 ? `${marked.slice(0, -1).join(", ")} and ${marked.at(-1)}` : marked[0] ?? "";
+  return marked.length > 1 ? `${marked.slice(0, -1).join("、")}和${marked.at(-1)}` : marked[0] ?? "";
 }
 
 /**
@@ -74,13 +76,13 @@ export function LearningsPanel({ onClose, focus }: { onClose(): void;
     };
   }, []);
 
-  return <div ref={panel} className="learn-panel" role="dialog" aria-label="Learnings" tabIndex={-1} data-shortcut-overlay>
-    <h2 className="learn-title">Learnings</h2>
-    {list.length > 0 && skillsError !== null && <p className="learn-problem" role="alert">Couldn’t load skills.{skillsError && ` ${skillsError}`}{" "}
-      <button type="button" className="simple-link" onClick={() => void loadSkills()}>Retry</button></p>}
+  return <div ref={panel} className="learn-panel" role="dialog" aria-label={zh.learning.title} tabIndex={-1} data-shortcut-overlay>
+    <h2 className="learn-title">{zh.learning.title}</h2>
+    {list.length > 0 && skillsError !== null && <p className="learn-problem" role="alert">{zh.learning.loadFailed}{skillsError && ` ${skillsError}`}{" "}
+      <button type="button" className="simple-link" onClick={() => void loadSkills()}>{zh.learning.retry}</button></p>}
     {list.length ? <ol className="learn-list">{list.map(l => <LearningRow key={l.id} learning={l} rewording={rewording} focused={l.id === focus} />)}</ol>
-      : <div className="learn-empty"><p>Nothing to learn yet.</p>
-        <p>When something you ask for reads like a rule, it waits here for you to approve.</p></div>}
+      : <div className="learn-empty"><p>{zh.learning.empty}</p>
+        <p>{zh.learning.waiting}</p></div>}
   </div>;
 }
 
@@ -172,7 +174,7 @@ function LearningRow({ learning, rewording, focused }: { learning: Learning; rew
   const skillName = options.find(o => o.value === chosen)?.label;
 
   return <li className="learn-item" data-learning={learning.id} aria-current={focused || undefined} aria-busy={saving || undefined}>
-    {editing ? <textarea ref={field} className="learn-rule learn-rule-edit" aria-label="Rule" rows={1} maxLength={280} spellCheck value={draft}
+    {editing ? <textarea ref={field} className="learn-rule learn-rule-edit" aria-label={zh.learning.rule} rows={1} maxLength={280} spellCheck value={draft}
       onChange={e => setDraft(e.target.value.replace(/[\r\n]+/g, " "))}
       onKeyDown={e => {
         if (e.key !== "Enter" || e.nativeEvent.isComposing) return;
@@ -182,26 +184,26 @@ function LearningRow({ learning, rewording, focused }: { learning: Learning; rew
       }}
       onBlur={() => finish(true)} />
       : <p className="learn-rule">{rewritten ?? learning.rule}</p>}
-    <p className="learn-said" title={learning.said}>You said: “{learning.said}”</p>
-    {replaces && <p className="learn-replaces" title={`Replaces ${replaces}`}><span className="learn-replaces-label">Replaces</span> {replaces}</p>}
-    {problem && !saving && <p className="learn-problem" role={error ? "alert" : undefined}>{error ? problem : `Not saved. ${problem}`}</p>}
+    <p className="learn-said" title={learning.said}>{zh.learning.said}：“{learning.said}”</p>
+    {replaces && <p className="learn-replaces" title={`${zh.learning.replaces} ${replaces}`}><span className="learn-replaces-label">{zh.learning.replaces}</span> {replaces}</p>}
+    {problem && !saving && <p className="learn-problem" role={error ? "alert" : undefined}>{error ? problem : `${zhReview.learning.notSaved} ${problem}`}</p>}
     <div className="learn-actions">
-      <span className="learn-to">Save to</span>
+      <span className="learn-to">{zh.learning.saveTo}</span>
       {/* A narrow panel cuts the skill's name short, so the whole name is on hover. */}
-      <PreferenceSelect compact label="Skill to save this to" options={options} value={chosen} valueLabel={skillName ?? "Choose a skill"} title={skillName}
+      <PreferenceSelect compact label={zh.learning.chooseSkill} options={options} value={chosen} valueLabel={skillName ?? zh.learning.chooseSkill} title={skillName}
         disabled={saving || busy} onChange={setSkillId} />
       {/* The decisions keep together at the right, on the name's line or, where it is too narrow for both, under it. */}
-      <span className="learn-decide">{saving ? <span className="learn-saving working-text" role="status">Saving…</span> : <>
+      <span className="learn-decide">{saving ? <span className="learn-saving working-text" role="status">{zh.learning.saving}</span> : <>
         {/* Pressed while the rule is being reworded, Revise keeps the new wording. It holds the focus on the line until then. */}
         <button ref={reviseButton} type="button" className="btn-quiet learn-revise" aria-pressed={editing} disabled={busy}
           onMouseDown={e => { if (now.current.editing) e.preventDefault(); }}
-          onClick={() => editing ? reviseButton.current?.focus() : startRewording()}>Revise</button>
+          onClick={() => editing ? reviseButton.current?.focus() : startRewording()}>{zh.learning.revise}</button>
         {/* A skill that was deleted since isn't on offer: the dropdown asks for one, and Approve waits for it. */}
         <button type="button" className="btn-primary" disabled={busy || !options.some(o => o.value === chosen)}
           onClick={() => void decide(async () => {
             if (await revised.current) await store().approveLearning(learning.id, chosen, effective ?? undefined);
-          })}>Approve</button>
-        <button type="button" className="edit-card-icon" aria-label="Decline" title="Decline" disabled={busy}
+          })}>{zh.learning.approve}</button>
+        <button type="button" className="edit-card-icon" aria-label={zh.learning.decline} title={zh.learning.decline} disabled={busy}
           onClick={() => void decide(async () => { await revised.current; await store().declineLearning(learning.id); })}><Icon name="x" size={12} /></button>
       </>}</span>
     </div>

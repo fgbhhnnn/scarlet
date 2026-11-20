@@ -10,6 +10,7 @@ import { useUiStore } from "../../stores/ui";
 import { DialogSurface, Icon, InlineError, Spinner, Toggle } from "../ui/primitives";
 import { AgentChip, useAgentAvailability } from "./AgentChip";
 import { MicButton } from "./MicButton";
+import { zhAgent } from "../../lib/zh-agent";
 
 /** Small popover for a note on a span picked in the transcript: text or voice, optional assignment. */
 export function NotePopover() {
@@ -81,22 +82,22 @@ export function NotePopover() {
   const submitVoice = (r: RecorderResult) => save(() => createVoiceNote(current.id, r.blob, fields));
 
   return (
-    <DialogSurface onDismiss={dismiss} className="fixed inset-x-0 top-auto bottom-24 mx-auto w-[460px] max-w-[calc(100%-1rem)] card text-fg shadow-2xl p-4 backdrop:bg-transparent" aria-label="New note">
+    <DialogSurface onDismiss={dismiss} className="fixed inset-x-0 top-auto bottom-24 mx-auto w-[460px] max-w-[calc(100%-1rem)] card text-fg shadow-2xl p-4 backdrop:bg-transparent" aria-label="新备注">
       <div className="flex items-center gap-2 mb-2">
         <Icon name="note" size={14} />
         <span className="font-medium">
-          Note at <span className="tnum">{clock(popover.time)}</span>
+          备注时间 <span className="tnum">{clock(popover.time)}</span>
           {popover.end !== undefined && popover.end > popover.time && <span className="tnum">–{clock(popover.end)}</span>}
         </span>
         <div className="flex-1" />
-        <button className="btn-icon" aria-label="Close" title="Close (Esc)" onClick={dismiss}>
+        <button className="btn-icon" aria-label={zhAgent.close} title="关闭（Esc）" onClick={dismiss}>
           <Icon name="x" size={12} />
         </button>
       </div>
       <textarea
         ref={input}
         className="field resize-none h-20"
-        placeholder="What's wrong here, or what should happen?"
+        placeholder="这里有什么问题，或者你希望发生什么？"
         value={text}
         disabled={busy}
         onChange={(e) => { setText(e.target.value); keepDraft(e.target.value); }}
@@ -106,19 +107,19 @@ export function NotePopover() {
             void submit();
           }
         }}
-        aria-label="Note text"
+        aria-label="备注内容"
       />
       <div className="flex items-center gap-2 mt-2">
         <MicButton onResult={submitVoice} disabled={busy} />
         {busy && <Spinner className="size-3" />}
         <div className="flex-1" />
         <label className="inline-flex items-center gap-2 text-[12px] text-muted" title={none ? unavailableReason : undefined}>
-          <Toggle checked={assign && !none} onChange={onAssign} label="Send to Scarlet" disabled={none} />
-          {assign && !none ? "Send to" : "Just a note"}
+          <Toggle checked={assign && !none} onChange={onAssign} label={zhAgent.sendToScarlet} disabled={none} />
+          {assign && !none ? "发送给" : "仅保存备注"}
         </label>
         {assign && !none && <AgentChip />}
         <button className="btn-primary" onClick={() => void submit()} disabled={busy || !text.trim()}>
-          {assign && !none ? "Send" : "Save"}
+          {assign && !none ? "发送" : "保存"}
         </button>
       </div>
       <InlineError>{err}</InlineError>

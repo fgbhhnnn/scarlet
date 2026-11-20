@@ -24,7 +24,7 @@ it("names Scarlet on the switch that sends the note", async () => {
   try {
     await act(async () => root.render(<NotePopover />));
     const toggle = container.querySelector('[role="switch"]')!;
-    expect(toggle.getAttribute("aria-label")).toBe("Send to Scarlet");
+    expect(toggle.getAttribute("aria-label")).toBe("发送给 Scarlet");
   } finally {
     await act(async () => root.unmount());
     container.remove();

@@ -37,14 +37,14 @@ it("renders each model on one line and places disabled models below active ones"
   const rows = () => [...container.querySelectorAll("li")];
   const labels = () => rows().map(li => li.querySelector("span")!.textContent);
   const toggle = (label: string) =>
-    container.querySelector<HTMLButtonElement>(`button[aria-label="Show Claude Code · ${label} in selector"]`)!;
+    container.querySelector<HTMLButtonElement>(`button[aria-label="在选择器中显示 Claude Code · ${label}"]`)!;
 
   try {
     await act(() => root.render(<MemoryRouter><ModelSettings /></MemoryRouter>));
 
     // Active models appear first in catalog order, disabled models below them in catalog order.
     expect(labels()).toEqual(["Fable 5.2", "Haiku 5.5", "Opus 5.5", "Sonnet 5.5"]);
-    expect([...container.querySelectorAll("h4")].map(h => h.textContent)).toEqual(["Models", "Hidden· 2"]);
+    expect([...container.querySelectorAll("h4")].map(h => h.textContent)).toEqual(["模型", "隐藏· 2"]);
 
     // Label and raw model id share a single flex row.
     const textRow = rows()[0]!.querySelector("div")!;
@@ -54,12 +54,12 @@ it("renders each model on one line and places disabled models below active ones"
     // Turning off an active model moves it below the remaining active models.
     await act(() => toggle("Fable 5.2").click());
     expect(labels()).toEqual(["Haiku 5.5", "Opus 5.5", "Fable 5.2", "Sonnet 5.5"]);
-    expect([...container.querySelectorAll("h4")].map(h => h.textContent)).toEqual(["Models", "Hidden· 3"]);
+    expect([...container.querySelectorAll("h4")].map(h => h.textContent)).toEqual(["模型", "隐藏· 3"]);
 
     // Turning a disabled model back on moves it back up with the active models.
     await act(() => toggle("Opus 5.5").click());
     expect(labels()).toEqual(["Opus 5.5", "Haiku 5.5", "Fable 5.2", "Sonnet 5.5"]);
-    expect([...container.querySelectorAll("h4")].map(h => h.textContent)).toEqual(["Models", "Hidden· 2"]);
+    expect([...container.querySelectorAll("h4")].map(h => h.textContent)).toEqual(["模型", "隐藏· 2"]);
   } finally {
     await act(() => root.unmount());
     useHostsStore.setState(oldHosts, true);
@@ -127,9 +127,9 @@ it("shows a scroll cue for hidden models below when the list overflows and lets 
     });
 
     const cueButton = () => [...container.querySelectorAll("button")].find(b =>
-      /below|Back to top/.test(b.textContent ?? ""),
+      /下方|返回顶部/.test(b.textContent ?? ""),
     );
-    expect(cueButton()?.textContent).toBe("2 more hidden models below");
+    expect(cueButton()?.textContent).toBe("下方还有 2 个已隐藏模型");
 
     // Clicking the cue scrolls down to the bottom and switches the button to Back to top.
     await act(() => {
@@ -137,7 +137,7 @@ it("shows a scroll cue for hidden models below when the list overflows and lets 
     });
     expect(scrollTo).toHaveBeenLastCalledWith({ top: 160, behavior: "smooth" });
     expect(list.scrollTop).toBe(160);
-    expect(cueButton()?.textContent).toBe("Back to top");
+    expect(cueButton()?.textContent).toBe("返回顶部");
 
     // Clicking Back to top scrolls back up and restores the below-the-fold cue.
     await act(() => {
@@ -145,7 +145,7 @@ it("shows a scroll cue for hidden models below when the list overflows and lets 
     });
     expect(scrollTo).toHaveBeenLastCalledWith({ top: 0, behavior: "smooth" });
     expect(list.scrollTop).toBe(0);
-    expect(cueButton()?.textContent).toBe("2 more hidden models below");
+    expect(cueButton()?.textContent).toBe("下方还有 2 个已隐藏模型");
 
     // When both active and hidden rows lie below the fold, the cue mentions both.
     clientHeight.mockReturnValue(110);
@@ -155,7 +155,7 @@ it("shows a scroll cue for hidden models below when the list overflows and lets 
     await act(() => {
       list.dispatchEvent(new Event("scroll"));
     });
-    expect(cueButton()?.textContent).toBe("4 more models below · 3 hidden");
+    expect(cueButton()?.textContent).toBe("下方还有 4 个模型 · 3 个已隐藏");
 
     // When the list no longer overflows, no scroll cue is rendered.
     scrollHeight.mockReturnValue(110);

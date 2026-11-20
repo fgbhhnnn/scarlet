@@ -133,14 +133,14 @@ export function AppShell() {
   // An engine that has given up won't come up by waiting, so the window says why at once rather than after the slow-start wait.
   if (status === "offline" && (connectedOnce || slowStart || failed)) return (
     <StartupRecovery
-      title={failed ? "Scarlet couldn’t start" : connectedOnce ? "Reconnecting to Scarlet…" : "Scarlet is taking longer than usual to start…"}
-      detail={error ?? "Waiting for the local engine."}
+      title={failed ? "Scarlet 无法启动" : connectedOnce ? "正在重新连接 Scarlet…" : "Scarlet 启动用时比平时长…"}
+      detail={error ?? "正在等待本地引擎。"}
       showLogs
     />
   );
   // On startup the engine is still booting, so "offline" is expected: the startup screen stays instead of an error.
   // An engine replaced later takes the window for a moment too, and the screen says what that is.
-  if (status !== "ready" || returning || (library && !startup.done)) return <BootSplash line={startup.done ? "Reconnecting to Scarlet…" : undefined} />;
+  if (status !== "ready" || returning || (library && !startup.done)) return <BootSplash line={startup.done ? "正在重新连接 Scarlet…" : undefined} />;
 
   return (
     <div className="h-full flex flex-col">

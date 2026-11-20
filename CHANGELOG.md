@@ -4,6 +4,10 @@ What changed in Scarlet, newest first, in the words an editor would use. Scarlet
 
 Add one line under today's date for each change an editor would notice. Leave out changes to tests, builds and tooling.
 
+## November 21, 2026
+
+- 项目库、剪辑工作区、设置和系统菜单现在都使用简体中文。
+
 ## November 20, 2026
 
 - Start a Chinese dialogue rough cut from the project toolbar and review the suggested cuts in the workspace.

@@ -6,6 +6,7 @@ import { isComposing } from "../../lib/hotkeys";
 import { skillCommands, useSkillsStore } from "../../stores/skills";
 import { Icon } from "../ui/primitives";
 import { useTokenList } from "./useTokenList";
+import { zhAgent } from "../../lib/zh-agent";
 
 interface Props {
   inputRef: RefObject<HTMLTextAreaElement | null>;
@@ -71,7 +72,7 @@ export function SkillCommandInput({ inputRef, value, skills, id, placeholder, ti
   let end = 0;
   for (const stamp of timestamps ?? []) {
     markedText.push(<span key={`before-${stamp.start}`} aria-hidden="true">{value.slice(end, stamp.start)}</span>, <button key={stamp.start} type="button" className="composer-timestamp"
-      aria-label={`Jump to ${stamp.text}`} title={`Jump to ${stamp.text}`}
+      aria-label={`跳转到 ${stamp.text}`} title={`跳转到 ${stamp.text}`}
       onMouseDown={e => e.preventDefault()} onClick={() => onTimestamp?.(stamp.time)}>{stamp.text}</button>);
     end = stamp.start + stamp.text.length;
   }
@@ -80,7 +81,7 @@ export function SkillCommandInput({ inputRef, value, skills, id, placeholder, ti
     <div className="composer-message">
       <span aria-hidden="true">{value || placeholder}{"​"}</span>
       <textarea id={id} ref={inputRef} rows={1} className="placeholder:text-dim" disabled={disabled} aria-label={ariaLabel}
-        placeholder={placeholder} aria-description={plain ? undefined : "Type / to choose an editing skill."}
+        placeholder={placeholder} aria-description={plain ? undefined : "输入 / 选择剪辑技能。"}
         aria-autocomplete="list" aria-haspopup="listbox" aria-controls={open ? listId : undefined}
         aria-activedescendant={activeId} value={value}
         onScroll={e => { if (overlay.current) overlay.current.scrollTop = e.currentTarget.scrollTop; }}
@@ -121,8 +122,8 @@ export function SkillCommandInput({ inputRef, value, skills, id, placeholder, ti
         {markedText}<span aria-hidden="true">{value.slice(end)}{"​"}</span>
       </div>}
     </div>
-    {open && <div className="composer-skills" role="listbox" id={listId} aria-label="Editing skills" data-shortcut-overlay>
-      <div className="eyebrow px-2 py-1">Skills</div>
+    {open && <div className="composer-skills" role="listbox" id={listId} aria-label="剪辑技能" data-shortcut-overlay>
+      <div className="eyebrow px-2 py-1">{zhAgent.skills}</div>
       <div className="composer-skill-list">
         {matches.map(skill => <button key={skill.name} type="button" role="option" tabIndex={-1}
           id={`${listId}-skill-${skill.name}`} aria-selected={skill === active} ref={skill === active ? activeRow : undefined}
@@ -132,13 +133,13 @@ export function SkillCommandInput({ inputRef, value, skills, id, placeholder, ti
         </button>)}
       </div>
       {!matches.length && <div role="status" className="px-2 py-1 text-muted text-[12px]">
-        {status === "error" ? <>Couldn’t load skills. <button type="button" className="underline" onMouseDown={e => e.preventDefault()} onClick={() => void load()} title="Press Enter to retry">Retry</button></>
-          : status !== "ready" ? "Loading skills…" : query ? "No matching skills." : "No enabled skills in this project."}
+        {status === "error" ? <>无法加载技能。 <button type="button" className="underline" onMouseDown={e => e.preventDefault()} onClick={() => void load()} title="按 Enter 重试">{zhAgent.retry}</button></>
+          : status !== "ready" ? "正在加载技能…" : query ? "没有匹配的技能。" : "此项目未启用任何技能。"}
       </div>}
       <div className="composer-skill-footer">
         <button type="button" role="option" tabIndex={-1} id={`${listId}-create-action`} aria-selected={index === "create"}
           onMouseDown={e => e.preventDefault()} onClick={createSkill}>
-          <Icon name="plus" size={14} /> Create a skill
+          <Icon name="plus" size={14} /> 创建技能
         </button>
       </div>
     </div>}

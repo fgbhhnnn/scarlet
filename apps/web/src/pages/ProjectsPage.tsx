@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
 import type { ProjectActivity, ProjectSummary } from "@scarlet/shared";
 import { api, errorMessage, IS_DESKTOP } from "../lib/client";
-import { absTime, clock, plural, relTime } from "../lib/format";
+import { absTime, clock, relTime } from "../lib/format";
 import { zh } from "../lib/zh";
 import { isEditableTarget } from "../lib/hotkeys";
 import { useProjectStore } from "../stores/project";
@@ -29,7 +29,7 @@ function projectFacts(p: ProjectSummary, shorts = 0): string[] {
   const { width, height } = p.settings;
   return [p.duration ? clock(p.duration) : "", width * 9 === height * 16 ? "" : `${width}×${height}`,
     // A short shares its video's footage, so where it came from says more than how many files it has.
-    p.source ? `From ${p.source.name}` : plural(p.mediaCount, "file"), shorts ? plural(shorts, "short") : ""].filter(Boolean);
+    p.source ? `来自 ${p.source.name}` : `${p.mediaCount} 个文件`, shorts ? `${shorts} 条短视频` : ""].filter(Boolean);
 }
 
 /**
@@ -118,7 +118,7 @@ function ProjectActions({ project }: { project: ProjectSummary }) {
 
   return <>
     <div className="project-actions">
-      <Dropdown label={`Actions for ${project.name}`} align="right" width={176}
+      <Dropdown label={`${project.name}的操作`} align="right" width={176}
         button={<span className="btn-icon" title={zh.project.actions}><Icon name="more" size={18} /></span>}>
         {close => <>
           <MenuItem onClick={() => { close(); setName(project.name); setError(""); setDialog("rename"); }}>{zh.project.rename}</MenuItem>
@@ -200,7 +200,7 @@ function ProjectCard({ p, notice, selected, selecting, onSelect, nested = false,
     <Dropzone onFiles={start} onPaths={startPaths} label={zh.project.addFiles(p.name)} notice={notice} className={`project-card${selected ? " is-selected" : ""}${nested ? " is-short" : ""}`}>
       <div className="project-entry" {...flip}>
         <label className="project-selector" title={`选择${p.name} · 按住 Shift 点击可选择范围`}>
-          <input ref={checkbox} id={checkboxId} type="checkbox" aria-label={`Select ${p.name}`} checked={selected}
+          <input ref={checkbox} id={checkboxId} type="checkbox" aria-label={zh.project.selectProject(p.name)} checked={selected}
             onChange={e => onSelect((e.nativeEvent as MouseEvent).shiftKey)} />
         </label>
         {selecting
@@ -320,7 +320,7 @@ function ProjectCollection({ projects, view, archived, notice, selectionSlot, se
   return <>
     {view === "grid" && selectionSlot && createPortal(selection, selectionSlot)}
     {view === "grid" && selectAllSlot && createPortal(selectAll("library-select-all"), selectAllSlot)}
-    <fieldset disabled={busy} className="min-w-0" aria-label="Project library">
+    <fieldset disabled={busy} className="min-w-0" aria-label="项目库">
       <span className="sr-only" role="status">{count ? zh.project.selected(count) : ""}</span>
       <InlineError>{error}</InlineError>
       <div className={`project-collection ${view}`}>
@@ -463,7 +463,7 @@ export function ProjectsPage() {
   const [selectionSlot, setSelectionSlot] = useState<HTMLElement | null>(null);
 
   /** A project is named for its first video until the editor names it. */
-  const nameFrom = (sources: ImportSource[]) => filename(sources[0]!).replace(/\.[^.]+$/, "") || "Untitled project";
+  const nameFrom = (sources: ImportSource[]) => filename(sources[0]!).replace(/\.[^.]+$/, "") || "未命名项目";
   // The name the first video last gave, so another selection renames a project the editor hasn't named themselves.
   const given = useRef("");
 
@@ -540,15 +540,15 @@ export function ProjectsPage() {
             <span ref={setSelectionSlot} className="contents" />
             <div className="flex-1" />
             {list.length > 0 && quickStart}
-            {(archived || list.some(p => p.archived)) && <div className="view-switch library-filter" role="group" aria-label="Project status">
+            {(archived || list.some(p => p.archived)) && <div className="view-switch library-filter" role="group" aria-label="项目状态">
               <button aria-pressed={!archived} onClick={() => setArchived(false)}>{zh.project.active}</button>
               <button aria-pressed={archived} onClick={() => setArchived(true)}>{zh.project.archived}</button>
             </div>}
             <TrashButton />
             <span ref={setSelectAllSlot} className="contents" />
-            {list.length > 0 && <div className="view-switch" role="group" aria-label="Project layout">
-              <button aria-label="List view" aria-pressed={view === "list"} title={zh.project.listView} onClick={() => chooseView("list")}><Icon name="diff" size={15} /></button>
-              <button aria-label="Grid view" aria-pressed={view === "grid"} title={zh.project.gridView} onClick={() => chooseView("grid")}><Icon name="library" size={14} /></button>
+            {list.length > 0 && <div className="view-switch" role="group" aria-label="项目视图">
+              <button aria-label={zh.project.listView} aria-pressed={view === "list"} title={zh.project.listView} onClick={() => chooseView("list")}><Icon name="diff" size={15} /></button>
+              <button aria-label={zh.project.gridView} aria-pressed={view === "grid"} title={zh.project.gridView} onClick={() => chooseView("grid")}><Icon name="library" size={14} /></button>
             </div>}
             {!empty && newProject}
             <WindowActions />
@@ -610,10 +610,10 @@ export function ProjectsPage() {
               <p id="np-file-types" className="sr-only">{MEDIA_FORMAT_HINT}</p>
             </fieldset>
             {files.length > 0 && <>
-              <ul aria-label="Selected files" className="new-project-files">
+              <ul aria-label={zh.create.selectedFiles} className="new-project-files">
                 {files.map((file, index) => <li key={sourceKey(file)}>
                   <span>{filename(file)}</span>
-                  <button type="button" className="new-project-file-remove" aria-label={`Remove ${filename(file)}`} title={zh.common.remove} disabled={busy}
+                  <button type="button" className="new-project-file-remove" aria-label={`移除 ${filename(file)}`} title={zh.common.remove} disabled={busy}
                     onClick={() => removeFootage(index)}><Icon name="x" size={11} /></button>
                 </li>)}
               </ul>

@@ -6,19 +6,20 @@ import { desktop } from "../../lib/desktop";
 import { Icon, InlineError, Loading, Toggle } from "../ui/primitives";
 import { Changelog } from "./Changelog";
 import { UpdateSettings } from "./UpdateSettings";
+import { shellZh } from "../../lib/zh-shell";
 
 export function AboutSettings() {
   return (
-    <section className="about-settings" aria-label="About Scarlet">
+    <section className="about-settings" aria-label={shellZh.settings.about}>
       <div className="card about-build">
         <div className="about-identity">
           <img src={appIcon} width={72} height={72} alt="" />
           <div>
             <h2>Scarlet</h2>
             <dl>
-              <div><dt>Version</dt><dd>{__SCARLET_VERSION__}</dd></div>
+              <div><dt>{shellZh.settings.version}</dt><dd>{__SCARLET_VERSION__}</dd></div>
               {__SCARLET_REVISION__ && (
-                <div><dt>Commit</dt><dd><code title={__SCARLET_REVISION__}>{__SCARLET_REVISION__.slice(0, 7)}</code></dd></div>
+                <div><dt>提交版本</dt><dd><code title={__SCARLET_REVISION__}>{__SCARLET_REVISION__.slice(0, 7)}</code></dd></div>
               )}
             </dl>
           </div>
@@ -29,24 +30,24 @@ export function AboutSettings() {
         <Changelog />
         <div>
           <section className="card about-telemetry" aria-labelledby="telemetry-heading">
-            <h2 id="telemetry-heading">Usage telemetry</h2>
+            <h2 id="telemetry-heading">{shellZh.about.telemetry}</h2>
             <TelemetrySwitch />
-            <p>Scarlet releases send usage reports to PostHog in the US by default. We use them to see how often installations edit, whether editors return or export, and how they review Scarlet’s changes.</p>
+            <p>Scarlet 正式版默认向美国的 PostHog 发送使用情况报告，用于了解剪辑频率、用户是否再次使用或导出，以及用户如何审阅 Scarlet 的修改。</p>
             <details className="about-disclosure">
-              <summary>What Scarlet sends<Icon name="chevron" size={12} /></summary>
+              <summary>Scarlet 会发送哪些信息<Icon name="chevron" size={12} /></summary>
               <div className="about-telemetry-details">
                 <ul className="list-disc space-y-1 pl-5">
-                  <li>At startup, Scarlet sends the number of projects in your library, excluding the trash.</li>
-                  <li>When a tracked feature succeeds, Scarlet sends its name. This includes actions an agent takes on your behalf.</li>
-                  <li>When a task is queued, Scarlet sends its type, selected agent and fast-mode setting. When it finishes, Scarlet sends the type, agent, outcome (done, failed or cancelled), interruption flag, duration when available, and number of recorded changes. This includes background transcriptions and resumed tasks.</li>
-                  <li>When an export finishes, Scarlet sends the render type, outcome and quality setting when available.</li>
-                  <li>When you explicitly keep an applied edit, send a revision about it or reject it, Scarlet sends the choice and an installation-specific code for that edit. The code links later choices about the same edit. A revision or a rejection counts when the request is accepted. Opening the card, dismissing it or leaving an edit untouched sends no review decision.</li>
+                  <li>启动时，Scarlet 会发送项目库中的项目数量，废纸篓中的项目除外。</li>
+                  <li>受统计的功能执行成功后，Scarlet 会发送功能名称，包括代表你执行的操作。</li>
+                  <li>任务排队时，Scarlet 会发送任务类型、选用的模型服务和快速模式设置。任务结束后，Scarlet 会发送任务类型、模型服务、结果（完成、失败或取消）、是否中断、可用的耗时和已记录的更改数。这些信息也涵盖后台转写和恢复的任务。</li>
+                  <li>导出结束时，Scarlet 会发送渲染类型、结果和可用的质量设置。</li>
+                  <li>当你明确保留、提出修改或拒绝一项已应用的剪辑时，Scarlet 会发送你的选择和该剪辑在此安装中的专用代码，用于关联后续选择。修改或拒绝会在请求获接受时计入。仅打开、关闭卡片或不处理剪辑时，不会发送审阅决定。</li>
                 </ul>
-                <p>Every event carries its time, a random event ID to prevent double counting, Scarlet version, operating system, processor architecture and an anonymous ID that links events from the same installation. PostHog sees the connection’s IP address. Scarlet disables location lookups and person profiles.</p>
-                <p>Reports exclude account details, footage, audio, transcripts, prompts, notes, edit titles, revision text, project names, file paths, model names, error messages and the IDs Scarlet uses in your library.</p>
-                <p>You can also turn reporting off by setting <code>SCARLET_TELEMETRY_ENABLED=false</code> before starting Scarlet.</p>
+                <p>每个事件附带时间、避免重复计数的随机事件 ID、Scarlet 版本、操作系统、处理器架构和用于关联同一安装事件的匿名 ID。PostHog 会看到连接的 IP 地址。Scarlet 会关闭位置查询和个人资料功能。</p>
+                <p>报告不含账号信息、素材、音频、转写、提示词、备注、剪辑标题、修改文字、项目名称、文件路径、模型名称、错误信息或项目库中的 ID。</p>
+                <p>你也可以在启动 Scarlet 前设置 <code>SCARLET_TELEMETRY_ENABLED=false</code> 关闭报告。</p>
                 <details>
-                  <summary className="cursor-pointer">All tracked feature names</summary>
+                  <summary className="cursor-pointer">{shellZh.about.tracked}</summary>
                   <ul className="mt-2 list-disc pl-5">{FEATURE_NAMES.map(name => <li key={name}><code>{name}</code></li>)}</ul>
                 </details>
               </div>
@@ -84,13 +85,13 @@ function TelemetrySwitch() {
   }
   return <>
     {state ? <div className="about-telemetry-toggle">
-      <span>Send usage reports</span>
-      <Toggle label="Send usage reports" checked={!state.unavailable && state.enabled} disabled={saving || !!state.unavailable} onChange={change} />
-    </div> : !error && <Loading label="Loading telemetry setting…" />}
-    {state?.unavailable === "environment" && <p>Usage reporting is turned off by the engine environment.</p>}
-    {state?.unavailable === "unconfigured" && <p>This build has no telemetry project configured.</p>}
+      <span>{shellZh.about.send}</span>
+      <Toggle label={shellZh.about.send} checked={!state.unavailable && state.enabled} disabled={saving || !!state.unavailable} onChange={change} />
+    </div> : !error && <Loading label={shellZh.about.loading} />}
+    {state?.unavailable === "environment" && <p>{shellZh.about.offEnv}</p>}
+    {state?.unavailable === "unconfigured" && <p>{shellZh.about.noProject}</p>}
     <InlineError>{error}</InlineError>
-    {error && !state && <button className="btn-quiet" onClick={() => void load()}>Retry</button>}
+    {error && !state && <button className="btn-quiet" onClick={() => void load()}>{shellZh.about.retry}</button>}
   </>;
 }
 
@@ -98,11 +99,11 @@ function ModelCredit() {
   const [error, setError] = useState("");
   const url = "https://desertant.com";
   return <div className="about-credit">
-    Filler-word detection uses <a className="underline" href={url} onClick={e => {
+    语气词检测使用 <a className="underline" href={url} onClick={e => {
       e.preventDefault();
       setError("");
       void desktop.openUrl(url).catch(e => setError(errorMessage(e)));
-    }}>Uhm by Desert Ant Labs</a>.
+    }}>Desert Ant Labs 的 Uhm</a>。
     <InlineError>{error}</InlineError>
   </div>;
 }

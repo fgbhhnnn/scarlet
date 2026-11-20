@@ -1,6 +1,7 @@
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
 import { isComposing } from "../../lib/hotkeys";
 import { Icon } from "../ui/primitives";
+import { zhAgent } from "../../lib/zh-agent";
 
 export interface SkillMatch { start: number; end: number }
 
@@ -169,47 +170,47 @@ export function useSkillFind({ text, readOnly, onChange, scope, editor }: {
     (replacementField.current ?? field.current ?? editor.current ?? openButton.current)?.focus();
   }
 
-  const controls = open ? <div className="skill-find" role="search" aria-label="Skill instructions">
+  const controls = open ? <div className="skill-find" role="search" aria-label="技能说明">
     <div className="skill-find-row">
-      {!readOnly && <button type="button" className="btn-icon" aria-label={replacing ? "Hide replace" : "Show replace"}
-        title={replacing ? "Hide replace" : "Show replace"} aria-expanded={replacing} aria-controls={replacementId}
+      {!readOnly && <button type="button" className="btn-icon" aria-label={replacing ? "隐藏替换" : "显示替换"}
+        title={replacing ? "隐藏替换" : "显示替换"} aria-expanded={replacing} aria-controls={replacementId}
         onClick={() => setReplaceOpen(!replaceOpen)}><Icon name={replacing ? "down" : "chevron"} size={14} /></button>}
-      <input ref={field} className="field" aria-label="Find in skill" placeholder="Find in skill…" value={query} spellCheck={false}
+      <input ref={field} className="field" aria-label={zhAgent.findSkill} placeholder={zhAgent.findSkill} value={query} spellCheck={false}
         onChange={e => { setQuery(e.target.value); setIndex(0); }}
         onKeyDown={e => {
           if (e.key !== "Enter" || isComposing(e)) return;
           e.preventDefault();
           step(e.shiftKey ? -1 : 1);
         }} />
-      <span className="skill-find-count" role="status">{query && (matches.length ? `${activeIndex + 1} of ${matches.length}` : "No matches")}</span>
-      <button type="button" className="btn-icon" aria-label="Previous match" title="Previous match (Shift+Enter)"
+      <span className="skill-find-count" role="status">{query && (matches.length ? `${activeIndex + 1} / ${matches.length}` : "没有匹配项")}</span>
+      <button type="button" className="btn-icon" aria-label="上一个匹配" title="上一个匹配（Shift+Enter）"
         disabled={matches.length < 2} onClick={() => step(-1)}><span className="rotate-180"><Icon name="down" size={14} /></span></button>
-      <button type="button" className="btn-icon" aria-label="Next match" title="Next match (Enter)"
+      <button type="button" className="btn-icon" aria-label="下一个匹配" title="下一个匹配（Enter）"
         disabled={matches.length < 2} onClick={() => step(1)}><Icon name="down" size={14} /></button>
-      <button type="button" className="btn-icon" aria-label="Close find" title="Close find (Esc)"
+      <button type="button" className="btn-icon" aria-label="关闭查找" title="关闭查找（Esc）"
         onClick={close}><Icon name="x" size={13} /></button>
     </div>
     {!readOnly && <div className="skill-find-replace" id={replacementId} hidden={!replacing}>
       {replacing &&
       <div className="skill-find-row">
-        <input ref={replacementField} className="field" aria-label="Replace with" placeholder="Replace with…" value={replacement}
+        <input ref={replacementField} className="field" aria-label={zhAgent.replaceWith} placeholder={zhAgent.replaceWith} value={replacement}
           spellCheck={false} onChange={e => setReplacement(e.target.value)} onKeyDown={e => {
             if (e.key !== "Enter" || isComposing(e)) return;
             e.preventDefault();
             apply(false);
           }} />
-        <button type="button" className="btn-ghost" title="Replace the highlighted match" disabled={!active} onClick={() => apply(false)}>Replace</button>
-        <button type="button" className="btn-ghost" disabled={!active} onClick={() => apply(true)}>Replace All</button>
+        <button type="button" className="btn-ghost" title="替换当前高亮项" disabled={!active} onClick={() => apply(false)}>{zhAgent.replace}</button>
+        <button type="button" className="btn-ghost" disabled={!active} onClick={() => apply(true)}>{zhAgent.replaceAll}</button>
       </div>}
     </div>}
-  </div> : <button ref={openButton} type="button" className="btn-quiet skill-find-trigger" aria-label="Find in skill"
-    title="Find in skill (⌘F / Ctrl+F)" aria-keyshortcuts="Meta+F Control+F" onClick={() => setOpen(true)}>
-    <Icon name="search" size={14} />Find
+  </div> : <button ref={openButton} type="button" className="btn-quiet skill-find-trigger" aria-label={zhAgent.findSkill}
+    title="在技能中查找（⌘F / Ctrl+F）" aria-keyshortcuts="Meta+F Control+F" onClick={() => setOpen(true)}>
+    <Icon name="search" size={14} />查找
   </button>;
 
   const feedback = last && <div className="skill-find-feedback">
-    <span role="status">Replaced {last.count} {last.count === 1 ? "match" : "matches"}</span>
-    <button type="button" className="simple-link" onClick={undo}>Undo</button>
+    <span role="status">已替换 {last.count} 项</span>
+    <button type="button" className="simple-link" onClick={undo}>{zhAgent.undo}</button>
   </div>;
   return { controls, feedback, matches, activeIndex };
 }

@@ -1,3 +1,4 @@
+import { zhReview } from "../../lib/zhReview";
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { clipEnd, timelineToSource, type MediaAsset, type Timeline } from "@scarlet/timeline";
 import type { WaveformResponse } from "@scarlet/shared";
@@ -232,7 +233,7 @@ export const TimelineWaveform = memo(function TimelineWaveform({ timeline, sourc
   const scale = duration > 0 ? visibleSpan / duration : 1;
   const x = duration > 0 ? (visibleStart - start) / duration * count : 0;
   return <div ref={lane} className={`timeline-waveform${waiting ? " is-loading" : ""}`}
-    role={waiting ? "img" : undefined} aria-label={waiting ? "Loading audio waveform" : undefined} aria-hidden={waiting ? undefined : true}>
+    role={waiting ? "img" : undefined} aria-label={waiting ? zhReview.timeline.loadingWaveform : undefined} aria-hidden={waiting ? undefined : true}>
     {waiting ? <div className="waveform-ripple" style={{ "--wave-phase": phase } as CSSProperties} /> :
       // After a wait the bars grow out of the line the ripple ran along.
       <svg className={arriving ? "is-arriving" : undefined} width="100%" height="100%" viewBox={`${x} 0 ${(count || 1) * scale} 100`} preserveAspectRatio="none">

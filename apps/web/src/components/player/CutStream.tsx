@@ -8,6 +8,7 @@ import { playbackLog } from "../../lib/playbackLog";
 import type { JoinClock } from "../../lib/joinClock";
 import { usePlayerStore } from "../../stores/player";
 import { Icon } from "../ui/primitives";
+import { zh } from "../../lib/zh";
 import { decoderLeadIn, parkVideo } from "./parkVideo";
 import { FramedVideo } from "./FramedVideo";
 
@@ -108,13 +109,13 @@ export function CutStream({ project, timeline, version, onStart, draft = false, 
   // A section on its way is marked on the video. The monitor's play button shows the wait, in place of its icon.
   const waiting = (status === "waiting" || !!preroll) && !error;
   return <>
-    <FramedVideo ref={video} aria-label={draft || proposed ? "Proposed draft" : "The current edit"}
+    <FramedVideo ref={video} aria-label={draft || proposed ? zh.ui.player.draft : zh.ui.player.current}
       poster={poster} playsInline preload="auto" data-waiting={waiting || undefined} onClick={() => player.toggle()} onPlaying={() => setStatus("ready")}
       onWaiting={() => setStatus("waiting")} onCanPlay={() => setStatus("ready")} onSeeked={e => { if (e.currentTarget.readyState >= 2) setStatus("ready"); }} onLoadedData={() => setStatus("ready")} />
     {plan.error && <p role="alert" className="absolute inset-0 grid place-items-center bg-black/75 p-6 text-center">{plan.error}</p>}
     {!plan.error && status !== "ready" && !waiting && (error || draft) && <div className="absolute inset-0 grid place-items-center bg-black/75 p-6 text-center">
       <div>{error && <p role="alert" className="mb-2 text-sm">{error}</p>}
-        <button className="btn-ghost" onClick={() => player.play()}><Icon name="play" /> {error ? "Retry playback" : "Play"}</button>
+        <button className="btn-ghost" onClick={() => player.play()}><Icon name="play" /> {error ? zh.ui.player.retryPlayback : zh.ui.player.play}</button>
       </div>
     </div>}
   </>;

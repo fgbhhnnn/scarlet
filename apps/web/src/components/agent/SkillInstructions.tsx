@@ -100,7 +100,7 @@ export function SkillInstructions({ value: body, onChange, readOnly, placeholder
   return <div className="skill-instructions">
     <div ref={backdrop} className={`${className} skill-instructions-text`} aria-hidden="true">{marked}{"​"}</div>
     <textarea ref={box} className={`${className} skill-instructions-field`} value={value} readOnly={readOnly} placeholder={placeholder}
-      aria-label="Skill markdown" aria-describedby={describedBy} spellCheck={false}
+      aria-label="技能 Markdown" aria-describedby={describedBy} spellCheck={false}
       onScroll={e => { if (backdrop.current) backdrop.current.scrollTop = e.currentTarget.scrollTop; setHover(null); }}
       onMouseMove={e => {
         // Another keyword, or the same one in another place or on another line of it, moves the note there.
@@ -111,7 +111,7 @@ export function SkillInstructions({ value: body, onChange, readOnly, placeholder
       onChange={e => onChange(e.target.value)} />
     {hover && <div className="skill-keyword-note" role="tooltip" style={{ left: hover.left - 6, top: hover.top - 6 }}>
       <span className="skill-keyword-words"><span>/{hover.name}</span>
-        <small>Skill{skills.find(s => s.name === hover.name)?.description ? ` · ${skills.find(s => s.name === hover.name)!.description}` : ""}</small></span>
+        <small>技能{skills.find(s => s.name === hover.name)?.description ? ` · ${skills.find(s => s.name === hover.name)!.description}` : ""}</small></span>
     </div>}
   </div>;
 }

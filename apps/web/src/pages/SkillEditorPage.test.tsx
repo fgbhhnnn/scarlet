@@ -28,7 +28,7 @@ it("shows the name as it was saved once a renamed skill is saved", async () => {
   try {
     await act(async () => root.render(<RouterProvider router={router} />));
     const name = el.querySelector<HTMLInputElement>("#sk-name")!;
-    const save = [...el.querySelectorAll("button")].find(b => b.textContent?.trim() === "Save")!;
+    const save = [...el.querySelectorAll("button")].find(b => b.textContent?.trim() === "保存")!;
     await act(async () => {
       Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(name, "My Skill");
       name.dispatchEvent(new Event("input", { bubbles: true }));
@@ -65,21 +65,21 @@ it.each(["\n", "\r\n"])("says unsaved only while the page differs from what was 
     Object.getOwnPropertyDescriptor(Object.getPrototypeOf(field), "value")!.set!.call(field, value);
     field.dispatchEvent(new Event("input", { bubbles: true }));
   });
-  const unsaved = () => [...el.querySelectorAll(".chip")].some(chip => chip.textContent === "Unsaved");
+  const unsaved = () => [...el.querySelectorAll(".chip")].some(chip => chip.textContent === "未保存");
   const draft = () => localStorage.getItem(`scarlet.skillDraft.v1/${skill.id}`);
   try {
     await act(async () => root.render(<RouterProvider router={router} />));
     const name = el.querySelector<HTMLInputElement>("#sk-name")!;
-    const body = el.querySelector<HTMLTextAreaElement>('[aria-label="Skill markdown"]')!;
-    const enabled = el.querySelector<HTMLButtonElement>('[role="switch"][aria-label="Enabled"]')!;
-    expect([unsaved(), button("Save").disabled, draft()]).toEqual([false, true, null]);
+    const body = el.querySelector<HTMLTextAreaElement>('[aria-label="技能 Markdown"]')!;
+    const enabled = el.querySelector<HTMLButtonElement>('[role="switch"][aria-label="启用"]')!;
+    expect([unsaved(), button("保存").disabled, draft()]).toEqual([false, true, null]);
     // A letter typed in the name is unsaved, and kept in case Scarlet quits.
     await type(name, `${skill.name}x`);
-    expect([unsaved(), button("Save").disabled]).toEqual([true, false]);
+    expect([unsaved(), button("保存").disabled]).toEqual([true, false]);
     expect(draft()).toContain(`${skill.name}x`);
     // Deleted again, the page is as it was loaded: no chip, nothing to save and no draft to restore.
     await type(name, skill.name);
-    expect([unsaved(), button("Save").disabled, draft()]).toEqual([false, true, null]);
+    expect([unsaved(), button("保存").disabled, draft()]).toEqual([false, true, null]);
     // The instructions and the switch the same.
     await type(body, `${body.value}\nNever cut laughter.`);
     await act(async () => enabled.click());
@@ -87,9 +87,9 @@ it.each(["\n", "\r\n"])("says unsaved only while the page differs from what was 
     await type(body, body.value.replace("\nNever cut laughter.", ""));
     expect(unsaved()).toBe(true);
     await act(async () => enabled.click());
-    expect([unsaved(), button("Save").disabled, draft()]).toEqual([false, true, null]);
+    expect([unsaved(), button("保存").disabled, draft()]).toEqual([false, true, null]);
     // Leaving doesn't ask about a change that isn't there.
-    await act(async () => button("← Skill library").click());
+    await act(async () => button("← 技能库").click());
     expect(el.querySelector("dialog")).toBeNull();
     expect(el.textContent).toBe("Skill library");
   } finally {
@@ -127,7 +127,7 @@ it("sends the editor's words to the chosen model and shows the revision it saved
   const router = createMemoryRouter([{ path: "/settings/skills/:skillId", element: <SkillEditorPage /> }], { initialEntries: [`/settings/skills/${skill.id}`] });
   try {
     await act(async () => root.render(<RouterProvider router={router} />));
-    const picker = el.querySelector<HTMLButtonElement>('.skill-editor-toolbar button[aria-label="Choose model"]')!;
+    const picker = el.querySelector<HTMLButtonElement>('.skill-editor-toolbar button[aria-label="选择模型"]')!;
     expect(picker.textContent?.trim()).toBe("");
     expect(picker.querySelector("svg")).not.toBeNull();
     expect(picker.title).toContain("gpt-6.1-sol");
@@ -143,8 +143,8 @@ it("sends the editor's words to the chosen model and shows the revision it saved
     expect(document.activeElement).toBe(picker);
 
     const box = el.querySelector<HTMLTextAreaElement>(".skill-chat textarea")!;
-    const body = el.querySelector<HTMLTextAreaElement>('[aria-label="Skill markdown"]')!;
-    expect(box.placeholder).toBe("Tell Scarlet what to change…");
+    const body = el.querySelector<HTMLTextAreaElement>('[aria-label="技能 Markdown"]')!;
+    expect(box.placeholder).toBe("告诉 Scarlet 要修改什么…");
     await act(async () => {
       Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")!.set!.call(box, "Never cut laughter.");
       box.dispatchEvent(new Event("input", { bubbles: true }));
@@ -156,11 +156,11 @@ it("sends the editor's words to the chosen model and shows the revision it saved
     expect(el.querySelector(".skill-chat")!.compareDocumentPosition(el.querySelector(".skill-details")!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     // The name is edited in the toolbar, and one line over its field says what the description is for.
     expect(el.querySelector(".skill-editor-toolbar #sk-name")).not.toBeNull();
-    expect(el.querySelector('.skill-details label[for="sk-desc"]')!.textContent).toBe("When to use it");
+    expect(el.querySelector('.skill-details label[for="sk-desc"]')!.textContent).toBe("何时使用");
     expect(el.querySelector<HTMLTextAreaElement>(".skill-details #sk-desc")!.value).toBe(skill.description);
     expect(el.querySelector(".skill-details")!.textContent).not.toContain("Agents use it");
     expect([...el.querySelectorAll(".skill-chat .unit-msg p")].map(p => p.textContent)).toEqual(["Keep the cold open.", "Never cut laughter."]);
-    expect(el.querySelector('.skill-chat [role="status"]')!.textContent).toBe("Revising the skill…");
+    expect(el.querySelector('.skill-chat [role="status"]')!.textContent).toBe("正在修改技能…");
     expect(box.value).toBe("");
     expect(box.disabled).toBe(true);
     expect(body.readOnly).toBe(true);
@@ -174,19 +174,19 @@ it("sends the editor's words to the chosen model and shows the revision it saved
     expect(el.querySelector('.skill-chat [role="status"]')).toBeNull();
     // The version Scarlet saved opens as the history shows it, with what it changed marked, and the message box
     // still takes the next request.
-    const changes = el.querySelector(`[aria-label="Skill markdown, v${skill.version}"]`)!;
+    const changes = el.querySelector(`[aria-label="技能 Markdown，v${skill.version}"]`)!;
     expect([...changes.querySelectorAll("ins")].map(i => i.textContent).filter(Boolean)).toEqual(["Never cut laughter."]);
     expect(el.querySelector(".skill-instructions-head")!.textContent).toContain(`v${skill.version}`);
     expect(box.disabled).toBe(false);
     // Done goes back to the skill to edit, as it does from the history.
-    await act(async () => [...el.querySelectorAll("button")].find(b => b.textContent === "Done")!.click());
-    const edited = el.querySelector<HTMLTextAreaElement>('[aria-label="Skill markdown"]')!;
+    await act(async () => [...el.querySelectorAll("button")].find(b => b.textContent === "完成")!.click());
+    const edited = el.querySelector<HTMLTextAreaElement>('[aria-label="技能 Markdown"]')!;
     expect(edited.value).toContain("Never cut laughter.");
     expect(edited.readOnly).toBe(false);
     expect(box.disabled).toBe(false);
     // The history leads with the version Scarlet saved, as the skill stands now.
-    await act(async () => el.querySelector<HTMLButtonElement>('[aria-label="Version history"]')!.click());
-    expect(document.querySelector('[role="option"]')!.textContent).toMatch(new RegExp(`v${skill.version}Now$`));
+    await act(async () => el.querySelector<HTMLButtonElement>('[aria-label="版本历史"]')!.click());
+    expect(document.querySelector('[role="option"]')!.textContent).toMatch(new RegExp(`v${skill.version}当前$`));
   } finally {
     await act(async () => root.unmount());
     el.remove();
@@ -217,13 +217,13 @@ it("gives a skill that can't be read the way back to the library, and reads it a
   try {
     await act(async () => root.render(<RouterProvider router={router} />));
     expect(el.querySelector('[role="alert"]')?.textContent).toContain("Engine unreachable");
-    expect(button("← Skill library")).toBeTruthy();
+    expect(button("← 技能库")).toBeTruthy();
     // Retry reads the skill again in place and the failure leaves the page.
-    await act(async () => button("Retry").click());
+    await act(async () => button("重试").click());
     expect(read).toHaveBeenCalledTimes(2);
     expect(el.querySelector('[role="alert"]')).toBeNull();
     expect(el.querySelector<HTMLInputElement>("#sk-name")!.value).toBe(skill.name);
-    await act(async () => button("← Skill library").click());
+    await act(async () => button("← 技能库").click());
     expect(el.textContent).toBe("Skill library");
   } finally {
     await act(async () => root.unmount());
@@ -268,7 +268,7 @@ const write = async (field: HTMLInputElement | HTMLTextAreaElement, text: string
   field.dispatchEvent(new Event("input", { bubbles: true }));
 });
 const named = (el: Element, text: string) => [...el.querySelectorAll("button")].find(b => b.textContent?.trim() === text);
-const markdown = (el: Element) => el.querySelector<HTMLTextAreaElement>('[aria-label="Skill markdown"]')!;
+const markdown = (el: Element) => el.querySelector<HTMLTextAreaElement>('[aria-label="技能 Markdown"]')!;
 
 it("replaces the active match or every match in the draft", async () => {
   let skill = {
@@ -287,46 +287,46 @@ it("replaces the active match or every match in the draft", async () => {
   const { el } = view;
   const button = (label: string) => el.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`) ?? named(el, label)!;
   const click = (label: string) => act(() => button(label).click());
-  const replacement = () => el.querySelector<HTMLInputElement>('input[aria-label="Replace with"]');
+  const replacement = () => el.querySelector<HTMLInputElement>('input[aria-label="替换为"]');
   const replacementIsHidden = () => !replacement() || !!replacement()?.closest("[hidden]");
-  const search = () => el.querySelector<HTMLInputElement>('input[aria-label="Find in skill"]')!;
+  const search = () => el.querySelector<HTMLInputElement>('input[aria-label="在技能中查找"]')!;
   try {
     const editor = markdown(el);
-    expect(button("Save").disabled).toBe(true);
+    expect(button("保存").disabled).toBe(true);
     await act(() => editor.dispatchEvent(new KeyboardEvent("keydown", { key: "f", metaKey: true, bubbles: true, cancelable: true })));
     expect(document.activeElement).toBe(search());
-    expect(button("Show replace").getAttribute("aria-expanded")).toBe("false");
+    expect(button("显示替换").getAttribute("aria-expanded")).toBe("false");
     expect(replacementIsHidden()).toBe(true);
-    await click("Show replace");
+    await click("显示替换");
     expect(replacementIsHidden()).toBe(false);
     await write(search(), "cut [here]");
     await write(replacement()!, "$& beat");
-    await click("Next match");
-    await click("Replace");
+    await click("下一个匹配");
+    await click("替换");
     const oneChanged = "First CUT [HERE].\nThen $& beat.\nLast Cut [here].\nLeave the cut here.";
     expect(editor.value).toBe(oneChanged);
     expect(el.querySelector("mark[data-active]")?.textContent).toBe("Cut [here]");
-    await click("Replace All");
+    await click("全部替换");
     const final = "First $& beat.\nThen $& beat.\nLast $& beat.\nLeave the cut here.";
     expect(editor.value).toBe(final);
-    expect(button("Replace All").disabled).toBe(true);
-    await click("Undo");
+    expect(button("全部替换").disabled).toBe(true);
+    await click("撤销");
     expect(editor.value).toBe(oneChanged);
-    await click("Replace All");
+    await click("全部替换");
     expect(editor.value).toBe(final);
-    expect(button("Save").disabled).toBe(false);
+    expect(button("保存").disabled).toBe(false);
     expect(update).not.toHaveBeenCalled();
     await act(() => search().dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true })));
     expect(view.router.state.location.pathname).toBe(`/settings/skills/${skill.id}`);
-    await click("Find in skill");
-    expect(button("Show replace").getAttribute("aria-expanded")).toBe("false");
+    await click("在技能中查找");
+    expect(button("显示替换").getAttribute("aria-expanded")).toBe("false");
     expect(replacementIsHidden()).toBe(true);
-    await click("Save");
+    await click("保存");
     expect(update).toHaveBeenCalledExactlyOnceWith(skill.id, expect.objectContaining({
       content: expect.stringContaining(final.replace(/\n/g, "\r\n")),
       description: "cut [here]",
     }));
-    expect(button("Save").disabled).toBe(true);
+    expect(button("保存").disabled).toBe(true);
   } finally { await view.close(); }
 });
 
@@ -337,16 +337,16 @@ it("lists what each version changed, newest first, and shows a picked one with i
   vi.spyOn(api, "skill").mockImplementation(async () => ({ skill, versions }));
   const view = await open(`/settings/skills/${skill.id}`);
   const { el } = view;
-  const picker = () => el.querySelector<HTMLButtonElement>('[aria-label="Version history"]')!;
+  const picker = () => el.querySelector<HTMLButtonElement>('[aria-label="版本历史"]')!;
   const choices = () => [...document.querySelectorAll<HTMLElement>('[role="option"]')];
   const pick = async (i: number) => { await act(async () => picker().click()); await act(async () => choices()[i]!.click()); };
   const said = () => el.querySelector(".skill-version-said")?.textContent;
   try {
     // Closed, the picker is the history. Open, each version says what it changed, who saved it and when, by day.
-    expect(picker().textContent).toBe("History");
+    expect(picker().textContent).toBe("历史");
     await act(async () => picker().click());
     expect(choices()).toHaveLength(2);
-    expect(choices()[0]!.textContent).toMatch(/^Changed the openingScarlet · .+ · v2Now$/);
+    expect(choices()[0]!.textContent).toMatch(/^Changed the openingScarlet · .+ · v2当前$/);
     expect(choices()[1]!.textContent).toMatch(/^First versionDemo Editor · .+ · v1$/);
     expect(document.querySelectorAll(".preference-group").length).toBeGreaterThan(0);
     // While the skill is being edited, no version is picked.
@@ -355,22 +355,22 @@ it("lists what each version changed, newest first, and shows a picked one with i
     // An older one reads as it was, with the way to put it back, and can't be edited.
     await pick(1);
     expect(markdown(el)).toBeNull();
-    expect(el.querySelector('[aria-label="Skill markdown, v1"]')!.textContent).toContain("(v1)");
-    expect(said()).toMatch(/^v1, the first version/);
-    expect(named(el, "Restore v1")).toBeDefined();
-    await act(() => el.querySelector<HTMLButtonElement>('button[aria-label="Find in skill"]')!.click());
-    const find = el.querySelector<HTMLInputElement>('input[aria-label="Find in skill"]')!;
+    expect(el.querySelector('[aria-label="技能 Markdown，v1"]')!.textContent).toContain("(v1)");
+    expect(said()).toMatch(/^v1，初始版本/);
+    expect(named(el, "恢复 v1")).toBeDefined();
+    await act(() => el.querySelector<HTMLButtonElement>('button[aria-label="在技能中查找"]')!.click());
+    const find = el.querySelector<HTMLInputElement>('input[aria-label="在技能中查找"]')!;
     await write(find, "(v1)");
-    expect(find.closest('[role="search"]')?.querySelector('[role="status"]')?.textContent).toBe("1 of 1");
-    expect(el.querySelector('button[aria-label="Show replace"], button[aria-label="Hide replace"]')).toBeNull();
+    expect(find.closest('[role="search"]')?.querySelector('[role="status"]')?.textContent).toBe("1 / 1");
+    expect(el.querySelector('button[aria-label="显示替换"], button[aria-label="隐藏替换"]')).toBeNull();
     // The newest shows what it changed from the one before, with the way to undo it.
     await pick(0);
-    expect(said()).toMatch(/^What Scarlet changed in v2/);
-    expect(el.querySelector('[aria-label="Skill markdown, v2"] [data-changed] del')!.textContent).toContain("(v1)");
-    expect(named(el, "Undo this change")).toBeDefined();
-    expect(named(el, "Restore v2")).toBeUndefined();
+    expect(said()).toMatch(/^Scarlet在 v2 的更改/);
+    expect(el.querySelector('[aria-label="技能 Markdown，v2"] [data-changed] del')!.textContent).toContain("(v1)");
+    expect(named(el, "撤销这次更改")).toBeDefined();
+    expect(named(el, "恢复 v2")).toBeUndefined();
     // Done goes back to editing the skill as it stands.
-    await act(async () => named(el, "Done")!.click());
+    await act(async () => named(el, "完成")!.click());
     expect(markdown(el).readOnly).toBe(false);
     expect(said()).toBeUndefined();
   } finally {
@@ -392,12 +392,12 @@ it.each(["", 'description: ""\n'])("restores a version with a blank description 
   const { el } = view;
   try {
     expect(el.querySelector<HTMLTextAreaElement>("#sk-desc")!.value).toBe(description);
-    await act(async () => el.querySelector<HTMLButtonElement>('[aria-label="Version history"]')!.click());
+    await act(async () => el.querySelector<HTMLButtonElement>('[aria-label="版本历史"]')!.click());
     await act(async () => [...document.querySelectorAll<HTMLElement>('[role="option"]')][1]!.click());
-    await act(async () => named(el, "Restore v1")!.click());
+    await act(async () => named(el, "恢复 v1")!.click());
     expect(markdown(el).value).toContain("Original instructions.");
     expect(el.querySelector<HTMLTextAreaElement>("#sk-desc")!.value).toBe("");
-    await act(async () => named(el, "Save")!.click());
+    await act(async () => named(el, "保存")!.click());
     expect(update).toHaveBeenCalledExactlyOnceWith(skill.id, expect.objectContaining({
       description: "", content: expect.stringContaining("Original instructions."),
     }));
@@ -416,9 +416,9 @@ it("lists the latest eight versions until the older ones are asked for", async (
   const view = await open(`/settings/skills/${skill.id}`);
   const choices = () => [...document.querySelectorAll<HTMLElement>('[role="option"]')];
   try {
-    await act(async () => view.el.querySelector<HTMLButtonElement>('[aria-label="Version history"]')!.click());
+    await act(async () => view.el.querySelector<HTMLButtonElement>('[aria-label="版本历史"]')!.click());
     expect(choices()).toHaveLength(9);
-    expect(choices().at(-1)!.textContent).toBe("Show 4 older versions");
+    expect(choices().at(-1)!.textContent).toBe("显示更早的 4 个版本");
     await act(async () => choices().at(-1)!.click());
     // The rest join the list, which stays open.
     expect(choices()).toHaveLength(12);
@@ -435,7 +435,7 @@ it("has no version history on a skill with one version", async () => {
   const view = await open(`/settings/skills/${skill.id}`);
   try {
     expect(view.el.querySelector<HTMLInputElement>("#sk-name")!.value).toBe(skill.name);
-    expect(view.el.querySelector('[aria-label="Version history"]')).toBeNull();
+    expect(view.el.querySelector('[aria-label="版本历史"]')).toBeNull();
   } finally {
     await view.close();
   }
@@ -464,9 +464,9 @@ it("puts unsaved edits back on the page when the skill is still the version they
   const view = await open(left.path);
   try {
     expect(markdown(view.el).value).toContain("My unsaved line.");
-    expect(view.el.querySelector(".skill-editor-toolbar .chip")?.textContent?.toLowerCase()).toBe("unsaved");
+    expect(view.el.querySelector(".skill-editor-toolbar .chip")?.textContent?.toLowerCase()).toBe("未保存");
     expect(view.el.querySelector(".skill-kept")).toBeNull();
-    expect(named(view.el, "Save")!.disabled).toBe(false);
+    expect(named(view.el, "保存")!.disabled).toBe(false);
   } finally {
     await view.close();
   }
@@ -483,18 +483,18 @@ it("shows the skill as saved when it has moved past unsaved edits, and brings th
     expect(markdown(el).value).toContain("Keep a laugh in.");
     expect(markdown(el).value).not.toContain("My unsaved line.");
     expect(el.querySelector(".skill-editor-toolbar .chip")).toBeNull();
-    expect(named(el, "Save")!.disabled).toBe(true);
+    expect(named(el, "保存")!.disabled).toBe(true);
     // One line over the instructions says the edits are from before that version, with its two actions.
     const line = el.querySelector(".skill-kept")!;
-    expect(line.textContent).toBe("You have unsaved changes from before v3.Bring them backDiscard");
+    expect(line.textContent).toBe("v3 之前还有未保存的更改。恢复暂存更改放弃");
     expect([...line.querySelectorAll("button")].map(b => b.className)).toEqual(["simple-link", "simple-link"]);
     // Asked for, they are on the page again as unsaved changes, and saving them is the editor's own doing.
-    await act(async () => named(el, "Bring them back")!.click());
+    await act(async () => named(el, "恢复暂存更改")!.click());
     expect(markdown(el).value).toContain("My unsaved line.");
     expect(markdown(el).value).not.toContain("Keep a laugh in.");
     expect(el.querySelector(".skill-kept")).toBeNull();
     expect(el.querySelector(".skill-editor-toolbar .chip")).not.toBeNull();
-    await act(async () => named(el, "Save")!.click());
+    await act(async () => named(el, "保存")!.click());
     expect(update).toHaveBeenCalledWith(left.id, expect.objectContaining({ content: expect.stringContaining("My unsaved line.") }));
   } finally {
     await view.close();
@@ -512,25 +512,25 @@ it("sets aside what is unsaved on the page when earlier edits are brought back, 
     const was = name().value;
     await write(markdown(view.el), `${markdown(view.el).value}\nA newer line.\n`);
     await write(name(), "renamed-skill");
-    await act(async () => named(view.el, "Bring them back")!.click());
+    await act(async () => named(view.el, "恢复暂存更改")!.click());
     // The earlier edits are on the page. What was there waits in their place, and the line says so.
     expect(markdown(view.el).value).toContain("My unsaved line.");
     expect(markdown(view.el).value).not.toContain("A newer line.");
     expect(name().value).toBe(was);
-    expect(line()).toBe("You have unsaved changes set aside.Bring them backDiscard");
+    expect(line()).toBe("有暂存的未保存更改。恢复暂存更改放弃");
     // Both are there on the next visit, and the same link brings back what was set aside.
     await view.quit();
     view = await open(left.path);
     expect(markdown(view.el).value).toContain("My unsaved line.");
-    expect(line()).toBe("You have unsaved changes set aside.Bring them backDiscard");
-    await act(async () => named(view.el, "Bring them back")!.click());
+    expect(line()).toBe("有暂存的未保存更改。恢复暂存更改放弃");
+    await act(async () => named(view.el, "恢复暂存更改")!.click());
     expect(markdown(view.el).value).toContain("A newer line.");
     expect(markdown(view.el).value).toContain("Keep a laugh in.");
     expect(markdown(view.el).value).not.toContain("My unsaved line.");
     expect(name().value).toBe("renamed-skill");
     // Only Discard lets a set go.
-    expect(line()).toBe("You have unsaved changes set aside.Bring them backDiscard");
-    await act(async () => named(view.el, "Discard")!.click());
+    expect(line()).toBe("有暂存的未保存更改。恢复暂存更改放弃");
+    await act(async () => named(view.el, "放弃")!.click());
     expect(line()).toBeUndefined();
     expect(markdown(view.el).value).toContain("A newer line.");
   } finally {
@@ -551,14 +551,14 @@ it("keeps each set of unsaved edits the skill moves past, and offers the latest 
     view = await open(left.path);
     expect(markdown(view.el).value).not.toContain("A newer line.");
     expect(view.el.querySelector(".skill-editor-toolbar .chip")).toBeNull();
-    expect(line()).toBe("You have unsaved changes from before v4.Bring them backDiscard");
+    expect(line()).toBe("v4 之前还有未保存的更改。恢复暂存更改放弃");
     // The latest set comes back first, and the line then offers the one before it.
-    await act(async () => named(view.el, "Bring them back")!.click());
+    await act(async () => named(view.el, "恢复暂存更改")!.click());
     expect(markdown(view.el).value).toContain("A newer line.");
-    expect(line()).toBe("You have unsaved changes from before v4.Bring them backDiscard");
+    expect(line()).toBe("v4 之前还有未保存的更改。恢复暂存更改放弃");
     await view.quit();
     view = await open(left.path);
-    await act(async () => named(view.el, "Discard")!.click());
+    await act(async () => named(view.el, "放弃")!.click());
     expect(line()).toBeUndefined();
     expect(markdown(view.el).value).toContain("A newer line.");
     expect(markdown(view.el).value).not.toContain("My unsaved line.");
@@ -582,9 +582,9 @@ it("keeps edits from before the saved version until they are discarded, whatever
     view = await open(left.path);
     expect(markdown(view.el).value).toContain("A newer line.");
     expect(markdown(view.el).value).toContain("Keep a laugh in.");
-    expect(view.el.querySelector(".skill-kept")?.textContent).toContain("from before v3");
+    expect(view.el.querySelector(".skill-kept")?.textContent).toContain("v3 之前");
     // Discard lets them go and leaves the page as it is.
-    await act(async () => named(view.el, "Discard")!.click());
+    await act(async () => named(view.el, "放弃")!.click());
     expect(view.el.querySelector(".skill-kept")).toBeNull();
     expect(markdown(view.el).value).toContain("A newer line.");
     await view.quit();
@@ -607,9 +607,9 @@ it("takes an answer to Scarlet's question whichever version is showing, and a ne
   const answer = vi.spyOn(api, "answerTask").mockImplementation(async () => ({ task: { ...asked, state: "running", question: null } as never }));
   const box = () => view.el.querySelector<HTMLTextAreaElement>(".skill-chat textarea")!;
   const showOlder = async () => {
-    await act(async () => view.el.querySelector<HTMLElement>('[aria-label="Version history"]')!.click());
+    await act(async () => view.el.querySelector<HTMLElement>('[aria-label="版本历史"]')!.click());
     await act(async () => [...document.querySelectorAll<HTMLElement>('[role="option"]')][1]!.click());
-    expect(view.el.querySelector('[aria-label="Skill markdown, v1"]')!.textContent).toContain("(v1)");
+    expect(view.el.querySelector('[aria-label="技能 Markdown，v1"]')!.textContent).toContain("(v1)");
   };
   let view = await open(`/settings/skills/${skill.id}`);
   try {
@@ -622,12 +622,12 @@ it("takes an answer to Scarlet's question whichever version is showing, and a ne
     view = await open(`/settings/skills/${skill.id}`);
     await showOlder();
     expect(box().disabled).toBe(false);
-    await act(async () => named(view.el, "Answer")!.click());
+    await act(async () => named(view.el, "回答")!.click());
     expect(document.activeElement).toBe(box());
     await write(box(), "A quarter.");
     await act(async () => box().dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })));
     expect(answer).toHaveBeenCalledWith("task_q", "A quarter.");
-    expect(view.el.querySelector('[aria-label="Skill markdown, v1"]')!.textContent).toContain("(v1)");
+    expect(view.el.querySelector('[aria-label="技能 Markdown，v1"]')!.textContent).toContain("(v1)");
     // With the answer sent, Scarlet has the request again and the box waits.
     expect(box().disabled).toBe(true);
   } finally {
@@ -656,7 +656,7 @@ it("draws each request as a project's chat does: its words in a band with where 
     expect(units().map(u => [...u.querySelector(".unit-msg")!.children].map(c => c.className))).toEqual([
       ["simple-who", "said", "unit-state"], ["simple-who", "said", "unit-state"], ["simple-who", "said", "unit-state"], ["simple-who", "said", "unit-state", "simple-link unit-stop"]]);
     expect(units().map(u => u.querySelector(".unit-msg p")!.textContent)).toEqual(["Keep the cold open.", "Cut every breath.", "Be stricter about filler.", "Tighten the pauses."]);
-    expect(units().map(u => u.querySelector(".unit-state")!.textContent)).toEqual(["", "Stopped", "Couldn’t finish", ""]);
+    expect(units().map(u => u.querySelector(".unit-state")!.textContent)).toEqual(["", "已停止", "未能完成", ""]);
     // Words longer than two lines open in full on a click and fold on the next, as a reply does (2026-11-15: a long request
     // couldn't be read once sent). There's no button, only the pointer.
     await view.quit();
@@ -670,13 +670,13 @@ it("draws each request as a project's chat does: its words in a band with where 
     expect(words().className).toBe("said is-clipped");
     tooLong.mockRestore();
     // Under the heading: Scarlet's reply, nothing for a request that was stopped, why one couldn't finish, what Scarlet is doing.
-    expect(units().map(u => u.querySelector(".req")?.textContent)).toEqual(["Added a rule for the cold open.", undefined, "stalled: no output for 10 minutes", "Revising the skill…"]);
+    expect(units().map(u => u.querySelector(".req")?.textContent)).toEqual(["Added a rule for the cold open.", undefined, "stalled: no output for 10 minutes", "正在修改技能…"]);
     expect(units()[2]!.querySelector(".req-say")!.className).toBe("req-say is-note is-bad");
     // Stop is in the heading of the request Scarlet has, and no row under it has another.
-    expect([...view.el.querySelectorAll(".skill-chat button")].filter(b => b.textContent === "Stop")).toHaveLength(1);
+    expect([...view.el.querySelectorAll(".skill-chat button")].filter(b => b.textContent === "停止")).toHaveLength(1);
     await act(async () => units()[3]!.querySelector<HTMLElement>(".unit-msg > .unit-stop")!.click());
     expect(cancel).toHaveBeenCalledWith("task_4");
-    expect(units()[3]!.querySelector(".unit-state")!.textContent).toBe("Stopped");
+    expect(units()[3]!.querySelector(".unit-state")!.textContent).toBe("已停止");
     expect(units()[3]!.querySelector(".unit-stop")).toBeNull();
     // A question is the heading's amber dot with Stop after it, the question under it and Answer, which goes to the message box.
     await view.quit();
@@ -684,11 +684,11 @@ it("draws each request as a project's chat does: its words in a band with where 
     view = await open(`/settings/skills/${skill.id}`);
     const asking = units()[3]!;
     expect(asking.querySelector(".unit-state > .unit-dot")).not.toBeNull();
-    expect(asking.querySelector(".unit-msg > .unit-stop")!.textContent).toBe("Stop");
-    expect(asking.querySelector(".req-say")!.textContent).toBe("A quarter of a second, or a third?Answer");
+    expect(asking.querySelector(".unit-msg > .unit-stop")!.textContent).toBe("停止");
+    expect(asking.querySelector(".req-say")!.textContent).toBe("A quarter of a second, or a third?回答");
     expect(view.el.textContent).not.toContain("Needs your answer");
     const box = view.el.querySelector<HTMLTextAreaElement>(".skill-chat textarea")!;
-    expect(box.placeholder).toBe("Answer Scarlet…");
+    expect(box.placeholder).toBe("回答 Scarlet…");
     await act(async () => asking.querySelector<HTMLElement>(".req-say > .simple-link.is-warn")!.click());
     expect(document.activeElement).toBe(box);
   } finally {
@@ -706,20 +706,20 @@ it("keeps the toolbar quiet: Delete is plain beside Save, the chip says Unsaved,
   const toolbar = view.el.querySelector(".skill-editor-toolbar")!;
   try {
     // Nothing in the row is red until Delete is pointed at; its dialog still confirms in red.
-    const remove = named(toolbar, "Delete")!;
+    const remove = named(toolbar, "删除")!;
     expect(remove.className).toBe("btn-quiet hover:text-bad");
     expect(toolbar.querySelector(".btn-danger")).toBeNull();
     await act(async () => remove.click());
-    expect(named(document.body, "Cancel")).toBeTruthy();
-    expect([...document.querySelectorAll("dialog button")].find(b => b.textContent?.trim() === "Delete")!.className).toBe("btn-danger");
-    await act(async () => named(document.body, "Cancel")!.click());
+    expect(named(document.body, "取消")).toBeTruthy();
+    expect([...document.querySelectorAll("dialog button")].find(b => b.textContent?.trim() === "删除")!.className).toBe("btn-danger");
+    await act(async () => named(document.body, "取消")!.click());
     await write(markdown(view.el), `${markdown(view.el).value}\nOne more line.\n`);
-    expect(toolbar.querySelector(".chip")!.textContent).toBe("Unsaved");
+    expect(toolbar.querySelector(".chip")!.textContent).toBe("未保存");
     // Once the connection has been down a while the window says so, after Save, where the other pages have it.
     await act(async () => { await vi.advanceTimersByTimeAsync(2600); });
     const status = toolbar.querySelector('[role="status"]')!;
-    expect(status.textContent).toBe("Reconnecting to Scarlet…");
-    expect(named(toolbar, "Save")!.compareDocumentPosition(status) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(status.textContent).toBe("正在重新连接 Scarlet…");
+    expect(named(toolbar, "保存")!.compareDocumentPosition(status) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(toolbar.lastElementChild!.contains(status)).toBe(true);
   } finally {
     await view.close();
@@ -740,12 +740,12 @@ it("leaves only the name's line once a skill whose save failed is saved with no 
   try {
     // Why a save failed is under the skill's details.
     await write(name, "taken-name");
-    await act(async () => named(el, "Save")!.click());
+    await act(async () => named(el, "保存")!.click());
     expect(el.querySelector('.skill-details [role="alert"]')!.textContent).toBe("A skill named taken-name already exists");
     // Saved again with the name emptied, the page says the one thing wrong now, beside the name.
     await write(name, "");
-    await act(async () => named(el, "Save")!.click());
-    expect(said()).toEqual(["Name the skill"]);
+    await act(async () => named(el, "保存")!.click());
+    expect(said()).toEqual(["请输入技能名称"]);
   } finally {
     await view.close();
   }
@@ -758,9 +758,9 @@ it("says what the name needs beside the name field when a skill is created witho
   const name = el.querySelector<HTMLInputElement>("#sk-name")!;
   const said = () => [...el.querySelectorAll('[role="alert"]')].map(a => a.textContent);
   try {
-    await act(async () => named(el, "Create skill")!.click());
+    await act(async () => named(el, "创建技能")!.click());
     // One line, right after the name in the toolbar, and the cursor is in the field it is about.
-    expect(said()).toEqual(["Name the skill"]);
+    expect(said()).toEqual(["请输入技能名称"]);
     expect(name.nextElementSibling!.getAttribute("role")).toBe("alert");
     expect(el.querySelector('.skill-details [role="alert"]')).toBeNull();
     expect(document.activeElement).toBe(name);
@@ -768,8 +768,8 @@ it("says what the name needs beside the name field when a skill is created witho
     // It goes as soon as a name is typed. Any name is taken; one with nothing to make a name from says so.
     await write(name, "!!!");
     expect(said()).toEqual([]);
-    await act(async () => named(el, "Create skill")!.click());
-    expect(said()).toEqual(["Use letters a–z or digits in the name"]);
+    await act(async () => named(el, "创建技能")!.click());
+    expect(said()).toEqual(["名称须包含 a–z 字母或数字"]);
     await write(name, "My Skill");
     expect(said()).toEqual([]);
   } finally {
@@ -789,10 +789,10 @@ it("goes back to the library on Esc when nothing is unsaved, and to Save while s
   let view = await open(`/settings/skills/${skill.id}`);
   try {
     // The back link names the key on hover, as the one out of Settings does.
-    expect(named(view.el, "← Skill library")!.title).toBe("Skill library (Esc)");
+    expect(named(view.el, "← 技能库")!.title).toBe("技能库（Esc）");
     expect(view.el.querySelector(".skill-editor-toolbar[data-unsaved]")).toBeNull();
     // An open version list takes the first Esc for itself.
-    await act(async () => view.el.querySelector<HTMLElement>('[aria-label="Version history"]')!.click());
+    await act(async () => view.el.querySelector<HTMLElement>('[aria-label="版本历史"]')!.click());
     expect(document.querySelector('[role="listbox"]')).not.toBeNull();
     await esc();
     expect(document.querySelector('[role="listbox"]')).toBeNull();
@@ -808,16 +808,16 @@ it("goes back to the library on Esc when nothing is unsaved, and to Save while s
     expect(document.activeElement).toBe(document.body);
     await esc();
     expect(view.el.querySelector("#sk-name")).not.toBeNull();
-    expect(document.activeElement).toBe(named(view.el, "Save"));
+    expect(document.activeElement).toBe(named(view.el, "保存"));
     // Save shows that the keyboard is on it, as Settings' does: the stylesheet outlines the button Esc landed on in a toolbar marked unsaved.
-    expect(named(view.el, "Save")!.matches(".skill-editor-toolbar[data-unsaved] > .btn-primary[data-esc-focus]")).toBe(true);
+    expect(named(view.el, "保存")!.matches(".skill-editor-toolbar[data-unsaved] > .btn-primary[data-esc-focus]")).toBe(true);
     // The mark goes with the focus, so a click on Save shows no outline.
-    await act(async () => named(view.el, "Save")!.blur());
-    expect(named(view.el, "Save")!.matches("[data-esc-focus]")).toBe(false);
-    await act(async () => named(view.el, "Save")!.focus());
-    expect(named(view.el, "Save")!.matches("[data-esc-focus]")).toBe(false);
+    await act(async () => named(view.el, "保存")!.blur());
+    expect(named(view.el, "保存")!.matches("[data-esc-focus]")).toBe(false);
+    await act(async () => named(view.el, "保存")!.focus());
+    expect(named(view.el, "保存")!.matches("[data-esc-focus]")).toBe(false);
     await esc();
-    expect(named(view.el, "Save")!.matches("[data-esc-focus]")).toBe(true);
+    expect(named(view.el, "保存")!.matches("[data-esc-focus]")).toBe(true);
     await esc();
     expect(view.el.querySelector("#sk-name")).not.toBeNull();
   } finally {
@@ -839,7 +839,7 @@ it("stays on the skill on Esc while a request is typed and not sent, and moves t
     expect(document.activeElement).toBe(document.body);
     await esc();
     expect(view.el.querySelector("#sk-name")).not.toBeNull();
-    expect(document.activeElement).toBe(view.el.querySelector('.skill-chat [aria-label="Send"]'));
+    expect(document.activeElement).toBe(view.el.querySelector('.skill-chat [aria-label="发送"]'));
     // Send shows that the keyboard is on it: the stylesheet outlines the skill chat's Send as it does Save.
     expect(document.activeElement!.matches(".skill-chat .composer-send[data-esc-focus]")).toBe(true);
     await esc();
@@ -870,18 +870,18 @@ it("keeps what was typed while a save was on its way as unsaved", async () => {
     Object.getOwnPropertyDescriptor(Object.getPrototypeOf(field), "value")!.set!.call(field, value);
     field.dispatchEvent(new Event("input", { bubbles: true }));
   });
-  const unsaved = () => [...el.querySelectorAll(".chip")].some(chip => chip.textContent === "Unsaved");
+  const unsaved = () => [...el.querySelectorAll(".chip")].some(chip => chip.textContent === "未保存");
   try {
     await act(async () => root.render(<RouterProvider router={router} />));
-    const body = el.querySelector<HTMLTextAreaElement>('[aria-label="Skill markdown"]')!;
+    const body = el.querySelector<HTMLTextAreaElement>('[aria-label="技能 Markdown"]')!;
     await type(body, `${body.value}\nNever cut laughter.`);
-    await act(async () => button("Save").click());
+    await act(async () => button("保存").click());
     expect(update).toHaveBeenCalledTimes(1);
     // The save is still out when another line is typed. It isn't in what was sent.
     await type(body, `${body.value}\nKeep the pauses.`);
     await act(async () => finish());
     expect(unsaved()).toBe(true);
-    expect(button("Save").disabled).toBe(false);
+    expect(button("保存").disabled).toBe(false);
     expect(localStorage.getItem(`scarlet.skillDraft.v1/${skill.id}`)).toContain("Keep the pauses.");
   } finally {
     await act(async () => root.unmount());
@@ -903,11 +903,11 @@ it("keeps a new skill's fields read-only while Create is saving and restores the
   const { el } = view;
   const name = el.querySelector<HTMLInputElement>("#sk-name")!;
   const description = el.querySelector<HTMLTextAreaElement>("#sk-desc")!;
-  const enabled = el.querySelector<HTMLButtonElement>('[aria-label="Enabled"]')!;
+  const enabled = el.querySelector<HTMLButtonElement>('[aria-label="启用"]')!;
   try {
     await write(name, "My new skill");
     await write(markdown(el), "Never cut laughter.");
-    await act(async () => named(el, "Create skill")!.click());
+    await act(async () => named(el, "创建技能")!.click());
     expect([name.disabled, description.disabled, enabled.disabled, markdown(el).readOnly]).toEqual([true, true, true, true]);
     await act(async () => fail());
     expect([name.disabled, description.disabled, enabled.disabled, markdown(el).readOnly]).toEqual([false, false, false, false]);
@@ -931,12 +931,12 @@ it("holds Restore while a skill revision runs and shows its saved words when it 
   });
   const view = await open(`/settings/skills/${skill.id}`);
   try {
-    await act(async () => view.el.querySelector<HTMLButtonElement>('[aria-label="Version history"]')!.click());
+    await act(async () => view.el.querySelector<HTMLButtonElement>('[aria-label="版本历史"]')!.click());
     await act(async () => [...document.querySelectorAll<HTMLElement>('[role="option"]')].at(-1)!.click());
-    expect(named(view.el, `Restore v${versions[0]!.version}`)!.disabled).toBe(true);
-    await act(async () => named(view.el, "Stop")!.click());
+    expect(named(view.el, `恢复 v${versions[0]!.version}`)!.disabled).toBe(true);
+    await act(async () => named(view.el, "停止")!.click());
     expect(markdown(view.el).value).toContain("Keep the laugh.");
-    expect(view.el.querySelector(".unit-state")?.textContent).toBe("Stopped");
+    expect(view.el.querySelector(".unit-state")?.textContent).toBe("已停止");
   } finally { await view.close(); }
 });
 
@@ -966,7 +966,7 @@ it("marks each /skill of the editor's in a skill's instructions, leaves $ as pla
     expect(marked()).toEqual(["/dialogue-pass"]);
     expect(el.querySelector(".skill-instructions-text")!.textContent).toBe(`${body.value}​`);
     // The skill's own message box has no list for / or $.
-    const ask = el.querySelector<HTMLTextAreaElement>('[aria-label="Tell Scarlet what to change in this skill"]')!;
+    const ask = el.querySelector<HTMLTextAreaElement>('[aria-label="告诉 Scarlet 如何修改此技能"]')!;
     await act(async () => ask.focus());
     await type(ask, "/dial");
     expect(el.querySelector(".skill-chat [role='listbox']")).toBeNull();

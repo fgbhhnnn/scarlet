@@ -5,6 +5,7 @@ import { recordEditReview, requestPosition } from "../../lib/editReviews";
 import { errorMessage } from "../../lib/client";
 import { requestThreadEdits, useThreadEditKey } from "./threadEditRequest";
 import { removedSeconds } from "../../lib/format";
+import { zhReview } from "../../lib/zhReview";
 import { editRowWord } from "../../lib/editKind";
 import { editKey, keepEdits, reviewKey, useKeptEdits } from "../../lib/keptEdits";
 import { useProjectStore } from "../../stores/project";
@@ -75,8 +76,8 @@ export function RejectEdit({ projectId, thread, target, edits, editsOn, onEngine
   }
   return <>
     {error && <span className="simple-error" role="alert">{error}</span>}
-    <button type="button" className="edit-card-icon edit-card-reject" data-log-control="reject-edit" aria-label="Reject edit" aria-busy={busy || undefined}
-      title={busy ? "Rejecting…" : "Reject edit"} disabled={busy} onClick={e => { if (e.detail) e.currentTarget.blur(); void reject(); }}><Icon name="x" size={12} /></button>
+    <button type="button" className="edit-card-icon edit-card-reject" data-log-control="reject-edit" aria-label={zhReview.thread.reject} aria-busy={busy || undefined}
+      title={busy ? zhReview.thread.rejecting : zhReview.thread.reject} disabled={busy} onClick={e => { if (e.detail) e.currentTarget.blur(); void reject(); }}><Icon name="x" size={12} /></button>
   </>;
 }
 
@@ -168,7 +169,7 @@ export function useRejecting(thread: Thread | undefined) {
 
 /** The × a rejected edit's row leads with, where a kept one has its tick. */
 export function RejectedMark() {
-  return <span className="simple-pass-tick is-rejected" role="img" aria-label="Rejected"><Icon name="x" size={10} /></span>;
+  return <span className="simple-pass-tick is-rejected" role="img" aria-label={zhReview.thread.rejected}><Icon name="x" size={10} /></span>;
 }
 
 /** Whether the editor has reviewed an edit: kept here, or decided cut by cut when the pass was applied. */
@@ -270,14 +271,14 @@ export function ThreadEdits({ projectId, thread, edits, rejected = noEdits, show
     // Lit for the edit it was, too, while that one is still on its card, leaving.
     const on = !!showing && (matchesEdit(showing, e) || matchesEdit(e as ThreadEdit, showing));
     return <li key={editKey(e)}><button type="button" className={on ? "simple-edit is-rejected is-on" : "simple-edit is-rejected"} aria-current={on || undefined}
-      data-log-control="open-edit" data-log-label="Rejected edit" aria-label={`${e.label}, rejected`}
+      data-log-control="open-edit" data-log-label="Rejected edit" aria-label={`${e.label}，${zhReview.thread.rejected}`}
       onClick={event => { if (event.detail) event.currentTarget.blur(); onPlay(e); }}>
       <span className="edit-badge is-rejected" aria-hidden="true"><Icon name="x" size={9} /></span>
       <span className="simple-edit-title">{e.label}</span>
-      <span className="simple-edit-value">Rejected</span>
+      <span className="simple-edit-value">{zhReview.thread.rejected}</span>
     </button></li>;
   });
-  return <ol className="simple-edits" aria-label={only ? "Edits that need you" : "Edits in this thread"}>
+  return <ol className="simple-edits" aria-label={only ? zhReview.thread.needsReview : zhReview.thread.edits}>
     {goneAfter(-Infinity, rows[0]?.edit.range.start ?? Infinity)}
     {rows.map(({ edit, i, n, places, needs, allKept, nested, took }, at) => {
       const on = i === open;
@@ -289,7 +290,7 @@ export function ThreadEdits({ projectId, thread, edits, rejected = noEdits, show
       const busy = revisingNow === "claimed" || revisingNow === "running";
       const version = edit.previous.length ? edit.previous.length + 1 : 0;
       // A cut says how much came out; any other edit says what it did, or in how many places.
-      const value = places > 1 ? `${places} places` : removedLabel(edit) ?? editRowWord(edit);
+      const value = places > 1 ? zhReview.history.places(places) : removedLabel(edit) ?? editRowWord(edit);
       const check = places > 1 ? needs > 0 : !!edit.check && !isRevising;
       const title = (edit.reason && edit.summary) || edit.label;
       // One that came back revised with no reason from Scarlet says so on its row until it is kept: its card has no
@@ -303,13 +304,17 @@ export function ThreadEdits({ projectId, thread, edits, rejected = noEdits, show
         // Why an edit asks for a look is on its card, in Scarlet's sentence. Its row keeps to the amber number and says
         // the reason on hover, as a pass's row does.
         title={revised || edit.reason ? undefined : edit.check}
-        aria-label={`Edit ${n}: ${title}${places > 1 ? `, ${places} places` : ""}${isRevising ? ", revising" : isKept ? ", kept" : check ? ", check" : ""}`}>
+        aria-label={[
+          zhReview.thread.numberedEdit(n, title),
+          places > 1 && zhReview.history.places(places),
+          isRevising ? zhReview.thread.revising : isKept ? zhReview.thread.kept : check ? zhReview.thread.needsCheck : undefined,
+        ].filter(Boolean).join("，")}>
         <EditBadge n={n} kept={isKept} check={check} />
         <span className="simple-edit-title">{title}{version > 0 && places === 1 && <EditVersion n={version} hover={took} />}</span>
         {/* What the row ends on says on hover what the requests about this edit took: their time and tokens, nothing else. */}
         {value && <span className="simple-edit-value" title={took}>{value}</span>}
-        {isRevising ? <span className={busy ? "simple-edit-check is-kept working-text" : "simple-edit-check is-kept"} title={took}>{rejecting(edit) ? "Rejecting…" : "Revising…"}</span>
-          : revised && <span className="simple-edit-check" title={took}>{edit.check}</span>}
+        {isRevising ? <span className={busy ? "simple-edit-check is-kept working-text" : "simple-edit-check is-kept"} title={took}>{rejecting(edit) ? zhReview.thread.rejecting : zhReview.thread.revising}</span>
+          : revised && <span className="simple-edit-check" title={took}>{zhReview.thread.revised}</span>}
       </button>{nested}</li>{goneAfter(edit.range.start, rows[at + 1]?.edit.range.start ?? Infinity)}</Fragment>;
     })}
   </ol>;
@@ -357,7 +362,7 @@ export function ThreadAction({ projectId, thread, edits, onPlay, menuOnly, menu 
   const undoable = lineage ? applied.filter(v => lineage.lineage.has(v) && !lineage.undone.has(v)).reverse() : [];
   const undone = !!lineage && applied.length > 0 && applied.every(v => lineage.undone.has(v));
   if ((!edits.length && !undoable.length && !undone) || thread.status === "working" || thread.active || thread.question) return null;
-  if (isThreadDone(thread, completed)) return <div className="simple-action is-done">{menuOnly ? "Filed" : "Filed."}</div>;
+  if (isThreadDone(thread, completed)) return <div className="simple-action is-done">{menuOnly ? zhReview.thread.filed : `${zhReview.thread.filed}。`}</div>;
   if (!menu && !undoing && !undone && !error) return null;
   const left = edits.filter(e => e.check && !reviewed(e) && !revising(e));
   async function run(task: () => Promise<void>) {
@@ -372,16 +377,16 @@ export function ThreadAction({ projectId, thread, edits, onPlay, menuOnly, menu 
   });
   return <div className={menuOnly ? "simple-action is-menu" : "simple-action"}>
     {!menuOnly && left.length > 0 && <button type="button" className="simple-action-main" disabled={busy} onClick={() => onPlay(left[0]!)}>
-      <Icon name="play" size={11} />{`Review ${left.length} flagged`}</button>}
-    {menu && <Dropdown label="More for this thread" above width={210}
-      button={<span className="simple-action-more" title="More"><Icon name="more" size={14} /></span>}>
+      <Icon name="play" size={11} />{zhReview.thread.review(left.length)}</button>}
+    {menu && <Dropdown label={zhReview.thread.actions} above width={210}
+      button={<span className="simple-action-more" title={zhReview.thread.more}><Icon name="more" size={14} /></span>}>
       {close => <>
-        {undoable.length > 0 && <MenuItem disabled={busy} onClick={() => { close(); void undoAll(); }}>Undo these edits</MenuItem>}
-        <MenuItem onClick={() => { close(); if (left.length) keepEdits(projectId, thread.id, left); void done(); }}>File this thread</MenuItem>
+        {undoable.length > 0 && <MenuItem disabled={busy} onClick={() => { close(); void undoAll(); }}>{zhReview.thread.undo}</MenuItem>}
+        <MenuItem onClick={() => { close(); if (left.length) keepEdits(projectId, thread.id, left); void done(); }}>{zhReview.thread.file}</MenuItem>
       </>}
     </Dropdown>}
-    {undoing && <span className="simple-link-quiet" role="status">Working…</span>}
-    {undone && <span className="simple-link-quiet">Undone</span>}
+    {undoing && <span className="simple-link-quiet" role="status">{zhReview.thread.working}</span>}
+    {undone && <span className="simple-link-quiet">{zhReview.history.undone}</span>}
     {error && <span className="simple-error" role="alert">{error}</span>}
   </div>;
 }

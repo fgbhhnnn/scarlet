@@ -79,20 +79,20 @@ async function reopened() {
 }
 
 /** Any of the startup screen's own lines. */
-const starting = /^(Warming up the engine|Scanning frames|Listening to the audio|Finding the best takes|Lining up the timeline)…$/;
+const starting = /^(正在启动引擎|正在扫描画面|正在识别音频|正在挑选最佳片段|正在准备时间线)…$/;
 
 it("plays the editing animation under one line read out, and carries it on when a later wait draws it again", async () => {
   vi.useFakeTimers();
   const { BootSplash } = await import("./BootSplash");
   root = createRoot(host);
   await act(async () => root!.render(<BootSplash />));
-  expect(startupLine()).toBe("Warming up the engine…");
+  expect(startupLine()).toBe("正在启动引擎…");
   // The line is the only thing read out: the wordmark and the timeline are decoration.
   const stage = host.querySelector(".boot-stage")!;
   expect([...stage.children].map(child => child.getAttribute("aria-hidden") ?? child.getAttribute("role"))).toEqual(["true", "true", "status"]);
   expect(host.querySelectorAll(".boot-clip.is-cut")).toHaveLength(2);
   await act(async () => { vi.advanceTimersByTime(1800); });
-  expect(startupLine()).toBe("Scanning frames…");
+  expect(startupLine()).toBe("正在扫描画面…");
   // The next part of the window that waits draws the screen again: it picks up where it was, with no fade-in.
   await act(async () => root!.render(<p />));
   await act(async () => { vi.advanceTimersByTime(2000); });
@@ -100,7 +100,7 @@ it("plays the editing animation under one line read out, and carries it on when 
   const screen = host.querySelector<HTMLElement>(".boot-splash")!;
   expect(screen.classList.contains("is-continued")).toBe(true);
   expect(screen.style.getPropertyValue("--since")).toBe("-3.800s");
-  expect(startupLine()).toBe("Listening to the audio…");
+  expect(startupLine()).toBe("正在识别音频…");
   expect(host.querySelector(".boot-line-text.is-held")).not.toBeNull();
 });
 
@@ -108,10 +108,10 @@ it("says a line it is given instead, and keeps it", async () => {
   vi.useFakeTimers();
   const { BootSplash } = await import("./BootSplash");
   root = createRoot(host);
-  await act(async () => root!.render(<BootSplash line="Reconnecting to Scarlet…" />));
+  await act(async () => root!.render(<BootSplash line="正在重新连接 Scarlet…" />));
   expect(vi.getTimerCount()).toBe(0);
   await act(async () => { vi.advanceTimersByTime(60_000); });
-  expect(startupLine()).toBe("Reconnecting to Scarlet…");
+  expect(startupLine()).toBe("正在重新连接 Scarlet…");
 });
 
 it("is what the window shows while its first page's code loads", async () => {
@@ -135,7 +135,7 @@ it("stays as it is while the engine starts and the library's projects load, and 
   expect(host.textContent).toBe("Project library");
   // An engine replaced later takes the window for a moment. Scarlet isn't starting then.
   await becomes("loading");
-  expect(startupLine()).toBe("Reconnecting to Scarlet…");
+  expect(startupLine()).toBe("正在重新连接 Scarlet…");
   await becomes("ready");
   expect(host.textContent).toBe("Project library");
 });
@@ -150,9 +150,9 @@ it("gives way at once to what went wrong when the engine can't start, and goes o
   // The engine has given up. The window says why straight away, not after the slow-start wait.
   await act(async () => useAuthStore.setState({ status: "offline", error: "Error: scarlet-engine sidecar not found", failed: true }));
   expect(host.querySelector('main[aria-busy="true"]')).toBeNull();
-  expect(host.querySelector("h1")?.textContent).toBe("Scarlet couldn’t start");
+  expect(host.querySelector("h1")?.textContent).toBe("Scarlet 无法启动");
   expect(host.textContent).toContain("Error: scarlet-engine sidecar not found");
-  expect([...host.querySelectorAll("button")].map(b => b.textContent)).toEqual(["Open logs", "Copy diagnostics"]);
+  expect([...host.querySelectorAll("button")].map(b => b.textContent)).toEqual(["打开日志", "复制诊断信息"]);
   // An engine started again later, by a rebuild or a fix, still brings the window up.
   await becomes("ready");
   await answer();
@@ -182,12 +182,12 @@ it("says Scarlet lost its engine when it crashes, that it couldn't start when it
 
   // The engine crashes. The window says Scarlet is reconnecting, and why, rather than failing each action without a word.
   await engine({ state: "starting", url: null, token: undefined, restarts: 1, error: "Scarlet’s engine stopped unexpectedly (exit code 1). Starting it again…" });
-  await vi.waitFor(() => expect(host.querySelector("h1")?.textContent).toBe("Reconnecting to Scarlet…"));
+  await vi.waitFor(() => expect(host.querySelector("h1")?.textContent).toBe("正在重新连接 Scarlet…"));
   expect(host.textContent).toContain("Scarlet’s engine stopped unexpectedly (exit code 1). Starting it again…");
-  expect([...host.querySelectorAll("button")].map(b => b.textContent)).toEqual(["Open logs", "Copy diagnostics"]);
+  expect([...host.querySelectorAll("button")].map(b => b.textContent)).toEqual(["打开日志", "复制诊断信息"]);
   // It fails to start again and again: Scarlet couldn't start, and why.
   await engine({ state: "error", url: null, token: undefined, restarts: 4, error: "engine exited before reporting ready (see log for its output)" });
-  await vi.waitFor(() => expect(host.querySelector("h1")?.textContent).toBe("Scarlet couldn’t start"));
+  await vi.waitFor(() => expect(host.querySelector("h1")?.textContent).toBe("Scarlet 无法启动"));
   expect(host.textContent).toContain("engine exited before reporting ready (see log for its output)");
   // A start gets through, and the window is back where it was.
   await engine({ restarts: 4 });
@@ -230,7 +230,7 @@ it("stays as it is while the project Scarlet reopens is opening, and leaves a pr
   await project.opening();
   await act(async () => { await router.navigate(`/p/${project.id}`); });
   expect(host.querySelector('main[aria-busy="true"]')).toBeNull();
-  expect(host.textContent).toContain("Opening project…");
+  expect(host.textContent).toContain("正在打开项目…");
 });
 
 it("gives way to the project's own word when the project Scarlet reopens can't open", async () => {
@@ -240,11 +240,11 @@ it("gives way to the project's own word when the project Scarlet reopens can't o
   expect(startupLine()).toMatch(starting);
   await project.fails();
   expect(host.querySelector('main[aria-busy="true"]')).toBeNull();
-  expect(host.textContent).toContain("Couldn’t open the project");
+  expect(host.textContent).toContain("无法打开项目");
   // Asked again, it waits under its own line: Scarlet isn't starting any more.
   await project.opening();
   expect(host.querySelector('main[aria-busy="true"]')).toBeNull();
-  expect(host.textContent).toContain("Opening project…");
+  expect(host.textContent).toContain("正在打开项目…");
 });
 
 it("opens a project's page again where the editor was when the engine went away under the window", async () => {

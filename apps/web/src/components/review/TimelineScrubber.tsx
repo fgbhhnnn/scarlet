@@ -1,3 +1,4 @@
+import { zhReview } from "../../lib/zhReview";
 import { createContext, memo, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type ComponentProps, type CSSProperties, type PointerEvent, type ReactNode, type RefObject } from "react";
 import { createStore, useStore } from "zustand";
 import { filmstripBatches, type TimeRange } from "@scarlet/timeline";
@@ -509,7 +510,7 @@ function TimelineSlider({ playhead, start, end, from, span, width, zoomSpace, se
 /** Where the playhead is, out of the video's length. Only this re-renders on a playback tick. */
 function TimelineClock({ playhead, start, end, total }: { playhead?: number; start: number; end: number; total: number }) {
   const position = usePlayerStore(s => timelinePosition(playhead ?? s.time, start, end));
-  return <span className="timeline-clock" aria-label="Playhead time">{clock(Math.floor(position - start))} <span>/ {clock(Math.floor(total))}</span></span>;
+  return <span className="timeline-clock" aria-label={zhReview.timeline.playhead}>{clock(Math.floor(position - start))} <span>/ {clock(Math.floor(total))}</span></span>;
 }
 
 export function PlayerTimeline(props: Omit<TimelineScrubberProps, "playhead">) {
@@ -799,19 +800,19 @@ function Scrubber({ duration, start = 0, playhead, waveform, activeShortcuts, su
   const zoomFoot = <div className="timeline-foot">
     <TimelineClock playhead={playhead} start={start} end={end} total={total} />
     {foot}
-    <div className="timeline-zoom-row" role="group" aria-label="Timeline zoom" title="Scroll or pinch over the timeline to zoom">
-      <button type="button" className="timeline-zoom-step" aria-label="Zoom out" aria-keyshortcuts="-" title="Zoom out (−)"
+    <div className="timeline-zoom-row" role="group" aria-label={zhReview.timeline.zoomControls} title={zhReview.timeline.zoomHint}>
+      <button type="button" className="timeline-zoom-step" aria-label={zhReview.timeline.zoomOut} aria-keyshortcuts="-" title={`${zhReview.timeline.zoomOut} (−)`}
         disabled={intendedSpan >= total} onClick={() => zoomBy(.5)}>−</button>
-      <input type="range" className="timeline-zoom-slider" aria-label="Zoom" aria-keyshortcuts="0" title="Zoom (0 to fit)"
+      <input type="range" className="timeline-zoom-slider" aria-label={zhReview.timeline.zoom} aria-keyshortcuts="0" title={zhReview.timeline.fit}
         min={0} max={ZOOM_STEPS} step={1} value={zoomValue} disabled={!zoomRange} aria-valuetext={`${zoomPercent}%`}
         style={{ "--zoom-at": `${zoomValue / ZOOM_STEPS * 100}%` } as CSSProperties}
         onChange={e => {
           const next = total / Math.exp(Number(e.currentTarget.value) / ZOOM_STEPS * zoomRange);
           if (next > 0 && span > 0) zoomBy(span / next, undefined, true);
         }} />
-      <button type="button" className="timeline-zoom-step" aria-label="Zoom in" aria-keyshortcuts="plus =" title="Zoom in (+)"
+      <button type="button" className="timeline-zoom-step" aria-label={zhReview.timeline.zoomIn} aria-keyshortcuts="plus =" title={`${zhReview.timeline.zoomIn} (+)`}
         disabled={intendedSpan <= minSpan} onClick={() => zoomBy(2)}>+</button>
-      <output className="timeline-zoom-level" aria-label={`${zoomPercent}% zoom`}>{zoomPercent}%</output>
+      <output className="timeline-zoom-level" aria-label={zhReview.timeline.zoomPercent(zoomPercent)}>{zoomPercent}%</output>
     </div>
   </div>;
 
@@ -819,7 +820,7 @@ function Scrubber({ duration, start = 0, playhead, waveform, activeShortcuts, su
     <div ref={track} className={marking.marking ? "timeline-track is-marking" : "timeline-track"}><ScrubPreview suspended={!!lens} start={from} duration={span} pictureAspect={pictureAspect} frameAt={frameAt} hoverVideo={hoverVideo} note={markNote || undefined} pin={waiting?.time}>
     <TimelineSlider ref={slider} className="timeline-slider" playhead={playhead} start={start} end={end} from={from} span={span}
       width={width} zoomSpace={zoomSpace} drag={drag} skippedRanges={skippedRanges} loupe={!!lens} selectPosition={selectPosition} tabIndex={total ? 0 : -1} aria-disabled={!total}
-      aria-label="Position in the video" aria-description="Drag up from the picture or waveform to scrub one frame at a time."
+      aria-label={zhReview.timeline.position} aria-description={zhReview.timeline.frameScrub}
       onPointerDown={e => {
         if (!total || e.button !== 0 || !e.isPrimary || drag.current) return;
         if (onRange) {
@@ -847,7 +848,7 @@ function Scrubber({ duration, start = 0, playhead, waveform, activeShortcuts, su
       }}
       onPointerUp={finish} onPointerCancel={finish} onLostPointerCapture={finish}>
       <TimelineRuler start={from} duration={span} width={width} endInset={zoomSpace} />
-      {onRange && total > 0 && <div aria-hidden="true" className="timeline-range-zone" title="Drag to mark a range for your message" />}
+      {onRange && total > 0 && <div aria-hidden="true" className="timeline-range-zone" title={zhReview.timeline.markRange} />}
       <div className="timeline-lanes">
         {mediaWindows.map((sample, i) => {
           const projection = sample.span !== span || sample.from !== from

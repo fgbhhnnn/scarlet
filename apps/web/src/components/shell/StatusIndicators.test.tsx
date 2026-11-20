@@ -37,12 +37,12 @@ it("stays quiet through a short drop in the connection, then says in words what 
   await after(2499);
   expect(said()).toBeUndefined();
   await after(1);
-  expect(said()).toBe("Reconnecting to Scarlet…");
+  expect(said()).toBe("正在重新连接 Scarlet…");
   // Giving up on the connection changes the words at once: the wait ran from when it dropped, and doesn't start again.
   await ws("closed");
-  expect(said()).toBe("Offline: live updates paused");
+  expect(said()).toBe("离线：实时更新已暂停");
   await ws("connecting");
-  expect(said()).toBe("Reconnecting to Scarlet…");
+  expect(said()).toBe("正在重新连接 Scarlet…");
   // Back, it says nothing, at once.
   await ws("open");
   expect(said()).toBeUndefined();
@@ -56,6 +56,6 @@ it("stays quiet through a short drop in the connection, then says in words what 
   await after(2499);
   expect(said()).toBeUndefined();
   await after(1);
-  expect(said()).toBe("Offline: live updates paused");
-  expect(container.querySelector('[role="status"]')?.getAttribute("title")).toContain("Your work is saved either way.");
+  expect(said()).toBe("离线：实时更新已暂停");
+  expect(container.querySelector('[role="status"]')?.getAttribute("title")).toContain("连接中断时也会保存你的工作。");
 });

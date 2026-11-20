@@ -1,5 +1,6 @@
 import { CHANGELOG, plainChange, type ChangelogDay } from "../../lib/changelog";
 import { Icon } from "../ui/primitives";
+import { shellZh } from "../../lib/zh-shell";
 
 /** Show the latest dated group up front and keep the full history available. */
 export function Changelog() {
@@ -7,10 +8,10 @@ export function Changelog() {
   if (!latest) return null;
 
   return <section className="card about-changelog" aria-labelledby="changelog-heading">
-    <h2 id="changelog-heading">What’s new</h2>
+    <h2 id="changelog-heading">{shellZh.changelog.whatsNew}</h2>
     <Day {...latest} />
     {earlier.length > 0 && <details className="about-disclosure">
-      <summary>Earlier changes<Icon name="chevron" size={12} /></summary>
+      <summary>{shellZh.changelog.earlier}<Icon name="chevron" size={12} /></summary>
       {earlier.map(day => <Day key={day.date} {...day} />)}
     </details>}
   </section>;

@@ -42,9 +42,9 @@ const WordParagraph = memo(function WordParagraph({ words, from, to }: {
   return <p className="reading-passage">{words.map((w, i) => {
     const key = wordKey(w);
     return <Fragment key={key}>{i > 0 && " "}<span data-w={w.index} data-word-key={key} role="button" tabIndex={-1}
-      data-log-label="Transcript word" data-log-control="transcript-word" aria-label={w.cut ? `${w.word.text} (unused in edit)` : w.word.text}
+      data-log-label="Transcript word" data-log-control="transcript-word" aria-label={w.cut ? `${w.word.text} （未用于成片）` : w.word.text}
       className={`rounded px-[2px] py-0.5 -mx-px cursor-pointer hover:bg-raised data-[current]:bg-hi data-[current]:text-bg data-[current]:hover:bg-hi ${w.cut ? "line-through text-dim decoration-dim/70" : "text-fg"} ${w.index >= from && w.index <= to ? "bg-hi-dim" : ""}`}
-      title={w.cut ? `Unused in edit · source ${clock(w.word.start)}` : `${clock(w.placements[0]!.start)}${w.word.speaker ? ` · ${w.word.speaker}` : ""}`}>
+      title={w.cut ? `未用于成片 · 原素材 ${clock(w.word.start)}` : `${clock(w.placements[0]!.start)}${w.word.speaker ? ` · ${w.word.speaker}` : ""}`}>
       {w.word.text}
     </span></Fragment>;
   })}</p>;
@@ -175,7 +175,7 @@ export function TranscriptPane({ source, draft, onAsk }: { draft?: Timeline; sou
   };
 
   if (!project) return null;
-  if (!assets.length) return <EmptyState icon="diff" title="No speech media in this edit" body="The transcript follows audio and video clips with audible sound." />;
+  if (!assets.length) return <EmptyState icon="diff" title="此剪辑中没有对白素材" body="转写会显示包含声音的音频和视频片段。" />;
   // A file with no transcript yet is said after the words, plainly: Media is where a transcription is started.
   const status = assets.filter(asset => !asset.transcriptId).map(asset => (
     <p key={asset.id} className="transcript-missing">
@@ -232,31 +232,31 @@ export function TranscriptPane({ source, draft, onAsk }: { draft?: Timeline; sou
     focusComposer();
     setSel(null);
   };
-  const markUnused = source && timeline && <button className="btn-quiet" onClick={() => setShowCut(v => !v)} aria-pressed={showCut}>Mark unused words</button>;
+  const markUnused = source && timeline && <button className="btn-quiet" onClick={() => setShowCut(v => !v)} aria-pressed={showCut}>标记未使用的文字</button>;
 
   return (
     <div className="flex flex-col h-full" onMouseUp={() => (dragging.current = false)} onMouseLeave={() => (dragging.current = false)}>
       <div className="transcript-search">
         <Icon name="search" size={13} />
-        <input type="search" value={query} placeholder="Search the transcript" aria-label="Search the transcript"
+        <input type="search" value={query} placeholder="搜索转写" aria-label="搜索转写"
           onChange={e => { setQuery(e.target.value); setHit(0); placed.current = false; }}
           onKeyDown={e => {
             if (e.key === "Enter") { e.preventDefault(); goToHit(e.shiftKey ? -1 : 1); }
             else if (e.key === "Escape" && query) { e.preventDefault(); e.stopPropagation(); setQuery(""); }
           }} />
-        {query.trim() && <span className="transcript-search-count" title="Enter for the next, Shift + Enter for the one before">
-          {hits.length ? `${shownHit + 1} of ${hits.length}` : "No matches"}</span>}
+        {query.trim() && <span className="transcript-search-count" title="按 Enter 跳到下一项，Shift + Enter 返回上一项">
+          {hits.length ? `${shownHit + 1} / ${hits.length}` : "没有匹配项"}</span>}
         {markUnused}
       </div>
-      {page.loading && <p role="status" className="px-4"><Spinner /> Loading transcript…</p>}
-      {page.error && <p role="alert" className="px-4">{page.error} <button className="btn-ghost" onClick={page.retry}>Retry transcript</button></p>}
-      {!page.loading && !page.error && !words.length && !status.length && <p className="p-4 text-muted">No spoken words here.</p>}
+      {page.loading && <p role="status" className="px-4"><Spinner /> 正在加载转写…</p>}
+      {page.error && <p role="alert" className="px-4">{page.error} <button className="btn-ghost" onClick={page.retry}>重试转写</button></p>}
+      {!page.loading && !page.error && !words.length && !status.length && <p className="p-4 text-muted">这里没有识别到对白。</p>}
       {range && sel && <div className="transcript-chosen">
         <span>{clockRange(range.start, range.end)}</span>
-        <button type="button" className="simple-link" onClick={() => askAboutSelection()}>Ask about this</button>
-        <button type="button" className="simple-link simple-link-quiet" onClick={() => setSel(null)}>Clear</button>
+        <button type="button" className="simple-link" onClick={() => askAboutSelection()}>询问这段话</button>
+        <button type="button" className="simple-link simple-link-quiet" onClick={() => setSel(null)}>清除</button>
       </div>}
-      <div ref={listRef} tabIndex={0} role="group" aria-label="Transcript words"
+      <div ref={listRef} tabIndex={0} role="group" aria-label="转写文字"
         onMouseDown={e => {
           if (e.button !== 0) return;
           const word = wordAt(e.target);
@@ -318,7 +318,7 @@ export function TranscriptPane({ source, draft, onAsk }: { draft?: Timeline; sou
           next.focus();
         }}
         className="reading-scroll transcript-words"
-        title="Click a word to place the playhead there · Double-click or drag to choose words · Shift + ← → to select"
+        title="点击文字定位播放头 · 双击或拖动选择文字 · Shift + 左右方向键选取"
         onScroll={() => { userScrolledAt.current = Date.now(); }}>
         {groups.map((g, gi) => {
           const first = g.words[0];
@@ -331,10 +331,10 @@ export function TranscriptPane({ source, draft, onAsk }: { draft?: Timeline; sou
             <div className="reading-turn-head">
               {hasVoices && <span className="reading-speaker" data-known={!!g.voice}>
                 <i aria-hidden="true" data-tone={g.voice === "me" ? "host" : g.voice ? String((g.tone ?? 0) % 4) : "unknown"} />
-                {g.voice || "Voice unclear"}
+                {g.voice || "说话人不明确"}
               </span>}
               {first.placements[0] && (
-                <button tabIndex={-1} className="reading-time" onClick={() => seek(first.placements[0]!.start)} aria-label={`Seek to ${clock(first.placements[0].start)}`}>
+                <button tabIndex={-1} className="reading-time" onClick={() => seek(first.placements[0]!.start)} aria-label={`定位到 ${clock(first.placements[0].start)}`}>
                   {clock(first.placements[0].start)}
                 </button>
               )}

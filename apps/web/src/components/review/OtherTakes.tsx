@@ -4,6 +4,7 @@ import type { MediaAsset, TimeRange, Timeline } from "@scarlet/timeline";
 import { api, errorMessage } from "../../lib/client";
 import { clock } from "../../lib/format";
 import { cutSource, otherTakes } from "./retakeLookup";
+import { zh } from "../../lib/zh";
 
 /**
  * Other attempts at the line a staged cut removes, from the engine's retake grouping of that recording.
@@ -27,11 +28,11 @@ export function OtherTakes({ projectId, timeline, media, range }: {
   const takes = useMemo(() => source && loaded?.groups ? otherTakes(loaded.groups, source, timeline) : [], [loaded, source, timeline]);
   // Takes are context. Missing or failed grouping leaves the review as it was.
   if (!takes.length) return null;
-  return <div className="other-takes" role="group" aria-label="Other takes">
-    <div className="other-takes-head">Other takes · {takes.length}</div>
+  return <div className="other-takes" role="group" aria-label={zh.ui.review.otherTakes}>
+    <div className="other-takes-head">{zh.ui.review.otherTakes} · {takes.length}</div>
     <ul>
       {takes.map(take => <li key={take.start}>
-        <span className="other-take-time">{take.at !== undefined ? clock(take.at) : "Cut"}</span>
+        <span className="other-take-time">{take.at !== undefined ? clock(take.at) : "剪辑"}</span>
         <span className="other-take-text">{take.text}</span>
       </li>)}
     </ul>

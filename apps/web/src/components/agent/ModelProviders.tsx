@@ -4,6 +4,7 @@ import geminiLogo from "../../assets/providers/gemini.svg";
 import openaiLogo from "../../assets/providers/openai.svg";
 import { AGENT_LABEL } from "../../stores/hosts";
 import { Icon } from "../ui/primitives";
+import { zhAgent } from "../../lib/zh-agent";
 
 export type ModelScope = AgentId | "favorites";
 
@@ -12,9 +13,9 @@ const logos = { claude: claudeLogo, codex: openaiLogo, gemini: geminiLogo };
 export function ModelProviders<T extends ModelScope>({ providers, active, onChange, compact = false }: {
   providers: T[]; active?: T; onChange: (value: T) => void; compact?: boolean;
 }) {
-  const labels = { ...AGENT_LABEL, favorites: "Favorites" };
+  const labels = { ...AGENT_LABEL, favorites: "收藏" };
   return (
-    <div aria-label="Providers" role="group" className={compact
+    <div data-model-providers aria-label={zhAgent.providers} role="group" className={compact
       ? "flex shrink-0 flex-col items-center gap-1 border-r border-line bg-bg/50 p-1.5"
       : "flex flex-wrap gap-1 border-b border-line pb-3"}>
       {providers.map(id => {

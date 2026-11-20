@@ -3,6 +3,7 @@ import { player } from "../../lib/player";
 import { Icon } from "../ui/primitives";
 import { usePlayerStore } from "../../stores/player";
 import { dropCaughtUpFrame, useCaughtUpStore, type CaughtUp } from "../../stores/shownCut";
+import { zh } from "../../lib/zh";
 
 /** The longest the held picture waits for the new player's own once the video plays. */
 const FRAME_WAIT_MS = 4000;
@@ -17,7 +18,7 @@ export function CaughtUpOnMonitor() {
   const waiting = useCaughtUpStore(s => s.waiting);
   return <>
     {caughtUp?.frame && <HeldFrame key={`frame ${caughtUp.id}`} caughtUp={caughtUp} />}
-    {waiting && <div className="caught-up-notice" role="status"><Icon name="pause" size={12} />New edits ready<span> · pause to see them</span></div>}
+    {waiting && <div className="caught-up-notice" role="status"><Icon name="pause" size={12} />{zh.ui.player.newEdits}<span> · {zh.ui.player.pauseToSee}</span></div>}
   </>;
 }
 

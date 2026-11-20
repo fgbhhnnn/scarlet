@@ -14,6 +14,7 @@ import { usePlayerStore } from "../../stores/player";
 import { selectHeadRender, useProjectStore } from "../../stores/project";
 import { useShownCut } from "../../stores/shownCut";
 import { Icon, Spinner } from "../ui/primitives";
+import { zh } from "../../lib/zh";
 
 export const Player = memo(function Player({ source, autoPlaySource, cut, hidden, active, rejectedOriginal, onRejectOriginal, onMedia }: {
   source?: MediaAsset;
@@ -76,7 +77,7 @@ export const Player = memo(function Player({ source, autoPlaySource, cut, hidden
           poster={source?.kind === "video" ? interactiveFrameUrl(api.frameUrl(source.id, 0, 960)) : undefined}
           playsInline preload={hidden ? "none" : original ? "auto" : "metadata"}
           autoPlay={!!source && autoPlaySource && source.id !== rejectedOriginal && active && !hidden}
-          aria-label={source ? source.name : "The current edit"}
+          aria-label={source ? source.name : zh.ui.player.current}
           onPlay={source ? undefined : () => setPlayingCutFile(src)}
           onPause={source ? undefined : () => setPlayingCutFile(undefined)}
           onEnded={source ? undefined : () => setPlayingCutFile(undefined)}
@@ -100,14 +101,14 @@ export const Player = memo(function Player({ source, autoPlaySource, cut, hidden
       ) : (
         <div className="absolute inset-0 grid place-items-center p-6 text-center">
           {src && failedSrc === src ? <div>
-            <p>Couldn’t play this video.</p>
-            <button className="btn-ghost mt-2" onClick={() => setFailedSrc(undefined)}>Retry</button>
+            <p>{zh.ui.player.couldNotPlay}</p>
+            <button className="btn-ghost mt-2" onClick={() => setFailedSrc(undefined)}>{zh.common.retry}</button>
           </div> : source && !isPlayableMedia(source) ? <div>
-            {source.status === "failed" ? <p>{source.error || "The preview couldn’t be prepared."}</p>
-              : <span className="inline-flex gap-2 items-center"><Spinner /> Preparing a compatible preview…</span>}
+            {source.status === "failed" ? <p>{source.error || "无法准备预览。"}</p>
+              : <span className="inline-flex gap-2 items-center"><Spinner /> {zh.ui.player.preparing}</span>}
           </div> : <div>
-            <p className="font-medium">{hasMedia ? "No playable footage yet" : "Add footage to start editing"}</p>
-            <button className="btn-ghost mt-3" onClick={onMedia}><Icon name="film" /> {hasMedia ? "View media" : "Add footage"}</button>
+            <p className="font-medium">{hasMedia ? "暂无可播放素材" : "添加素材后开始编辑"}</p>
+            <button className="btn-ghost mt-3" onClick={onMedia}><Icon name="film" /> {hasMedia ? zh.workspace.viewMedia : zh.create.addFootage}</button>
           </div>}
         </div>
       )}

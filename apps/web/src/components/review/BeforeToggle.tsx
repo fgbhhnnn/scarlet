@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { COMPARE_KEY, useComparisonShortcut } from "../../lib/hotkeys";
 import { Icon } from "../ui/primitives";
+import { zhReview } from "../../lib/zhReview";
 
 interface BeforeToggleProps {
   on: boolean;
@@ -21,10 +22,10 @@ export function BeforeToggle({ on, toggle, shortcutActive, disabled, flash }: Be
       type="button"
       className={flash ? "edit-card-icon edit-card-before is-flash" : "edit-card-icon edit-card-before"}
       data-log-control="toggle-before"
-      aria-label="Before"
+      aria-label={zhReview.before.label}
       aria-pressed={on}
       aria-keyshortcuts={COMPARE_KEY}
-      title={on ? `Back to After (${COMPARE_KEY})` : `Play Before (${COMPARE_KEY})`}
+      title={`${on ? zhReview.before.backToAfter : zhReview.before.play} (${COMPARE_KEY})`}
       disabled={disabled}
       onClick={e => {
         // Give Space back to the player after a pointer click. Inside a dialog, keep shortcuts in that dialog.

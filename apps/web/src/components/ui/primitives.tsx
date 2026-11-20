@@ -7,7 +7,7 @@ export function Spinner({ className = "" }: { className?: string }) {
   return (
     <span
       role="status"
-      aria-label="Loading"
+      aria-label={zh.common.loading}
       className={`inline-block size-4 rounded-full border-2 border-line border-t-fg animate-spin ${className}`}
     />
   );
@@ -152,7 +152,7 @@ export function Modal({ open, onClose, title, children, width = 440, footer, foc
           <h2 id={id} className="font-semibold text-[14px]">
             {title}
           </h2>
-          <button data-close className="btn-icon" aria-label="Close" title="Close (Esc)" onClick={onClose}>
+          <button data-close className="btn-icon" aria-label={zh.common.close} title={zh.common.closeShortcut} onClick={onClose}>
             <CloseIcon />
           </button>
         </div>
@@ -162,7 +162,7 @@ export function Modal({ open, onClose, title, children, width = 440, footer, foc
   );
 }
 
-export function ConfirmDialog({ open, onClose, onConfirm, title, body, confirmLabel = "Confirm", danger }: { open: boolean; onClose: () => void; onConfirm: () => void | Promise<void>; title: string; body?: ReactNode; confirmLabel?: string; danger?: boolean }) {
+export function ConfirmDialog({ open, onClose, onConfirm, title, body, confirmLabel = zh.common.confirm, danger }: { open: boolean; onClose: () => void; onConfirm: () => void | Promise<void>; title: string; body?: ReactNode; confirmLabel?: string; danger?: boolean }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   // A dialog that stays mounted while closed opens clean: the last attempt's error isn't this one's.
@@ -176,7 +176,7 @@ export function ConfirmDialog({ open, onClose, onConfirm, title, body, confirmLa
       footer={
         <>
           <button className="btn-ghost" onClick={onClose} disabled={busy}>
-            取消
+            {zh.common.cancel}
           </button>
           <button
             className={danger ? "btn-danger" : "btn-primary"}
@@ -212,7 +212,7 @@ export function Drawer({ open, onClose, title, children, width = 380, wrapConten
   const contents = <>
     <div className="flex items-center justify-between px-5 py-3 min-h-[57px] border-b border-line">
       <h2 className="font-semibold text-[14px]">{title}</h2>
-      <button className="btn-icon" aria-label="Close" title="Close (Esc)" onClick={onClose}>
+      <button className="btn-icon" aria-label={zh.common.close} title={zh.common.closeShortcut} onClick={onClose}>
         <CloseIcon />
       </button>
     </div>

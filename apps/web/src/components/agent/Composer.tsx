@@ -22,6 +22,7 @@ import { useProjectStore } from "../../stores/project";
 import { commandSkillIds, enabledSkills, useSkillsStore } from "../../stores/skills";
 import { editTargetAt, markedRangeOf, pointOf, playheadPoints, useUiStore, withMarkedRange, type AgentContext } from "../../stores/ui";
 import { Icon, Spinner, InlineError } from "../ui/primitives";
+import { zhAgent } from "../../lib/zh-agent";
 import { AgentChip, useAgentAvailability } from "./AgentChip";
 import { SkillCommandInput } from "./SkillCommandInput";
 import { MicButton } from "./MicButton";
@@ -178,14 +179,14 @@ function ComposerBox({ project, thread, onCreated, onSent, selectedEdit, onClear
     (thread.latest?.state === "ready" || thread.latest?.state === "failed") ? thread.latest : undefined;
   const spot = displayAnchor?.editIndex ?? displayAnchor?.cutIndex;
   const numberedEdit = displayAnchor?.editNumber ?? (spot !== undefined ? spot + 1 : undefined);
-  const editTitle = numberedEdit ? displayAnchor?.label ?? `Edit ${numberedEdit}` : thread && cutSummary(thread.title);
-  const mode = !thread ? "New thread" : displayAnchor?.changeId && !numberedEdit && !selectedEdit ? "Revising" : "Reply to";
-  const sendLabel = !thread ? "Start new edit" : question ? "Send answer" : displayAnchor?.changeId ? "Send revision" : "Send reply";
+  const editTitle = numberedEdit ? displayAnchor?.label ?? `剪辑 ${numberedEdit}` : thread && cutSummary(thread.title);
+  const mode = !thread ? "新建剪辑对话" : displayAnchor?.changeId && !numberedEdit && !selectedEdit ? "修改" : "回复";
+  const sendLabel = !thread ? "开始新的剪辑" : question ? "发送回答" : displayAnchor?.changeId ? "发送修改要求" : "发送回复";
   const timestamp = displayAnchor && `${timestampLabel(displayAnchor.time)}${displayAnchor.end === undefined ? "" : `–${timestampLabel(displayAnchor.end)}`}`;
-  const targetName = numberedEdit ? `Edit ${numberedEdit}` : displayAnchor?.changeId ? displayAnchor.label || editTitle || timestamp : timestamp;
+  const targetName = numberedEdit ? `剪辑 ${numberedEdit}` : displayAnchor?.changeId ? displayAnchor.label || editTitle || timestamp : timestamp;
   const sourceName = displayAnchor?.mediaId && media?.find(m => m.id === displayAnchor.mediaId)?.name;
   const targetDetails = [...new Set([targetName, sourceName, displayAnchor?.label].filter(Boolean))].join(" · ");
-  const removeTarget = displayAnchor?.changeId ? "Remove revision target" : "Remove timestamp";
+  const removeTarget = displayAnchor?.changeId ? "清除修改目标" : "清除时间标记";
   // A reply keeps its original edit if the selection changes while the editor types or dictates.
   const captureTarget = () => {
     if (replying && !context) setContext(selectedEdit ?? "whole");
@@ -206,7 +207,7 @@ function ComposerBox({ project, thread, onCreated, onSent, selectedEdit, onClear
     if (!effective) throw new Error(unavailableReason);
     let context: Parameters<typeof createTask>[1]["context"];
     if (replying) {
-      if (anchor?.changeId && ![...thread.changes, ...thread.flagged ?? []].some(c => c.id === anchor.changeId)) throw new Error("This suggestion is unavailable. Select the edit again.");
+      if (anchor?.changeId && ![...thread.changes, ...thread.flagged ?? []].some(c => c.id === anchor.changeId)) throw new Error("此建议已不可用，请重新选择剪辑。");
       const position = anchor && { ...requestPosition(anchor), ...stoppedAt() };
       // A revision takes no files, so one that carries some is a request in the thread, as a reply is.
       if (revising && !attachments) {
@@ -374,8 +375,8 @@ function ComposerBox({ project, thread, onCreated, onSent, selectedEdit, onClear
   }, [value, firstTime, inputClock, typedPoint, sameClock, rewording, replying, aimsByText, setContext]);
   const tagWords = targetTag && `${targetTag.charAt(0).toLowerCase()}${targetTag.slice(1)}`;
   // What the tag's message does, for its hover note: a cut or an edit is revised, a question answered, an edit replied to.
-  const tagAct = !targetTag ? undefined : question && targetTag === "Answer" ? "Answering Scarlet’s question"
-    : thread && targetTag === "Reply" ? "Replying to this edit" : `Revising ${tagWords === "whole edit" ? "the whole edit" : tagWords}`;
+  const tagAct = !targetTag ? undefined : question && targetTag === "Answer" ? "回答 Scarlet 的问题"
+    : thread && targetTag === "Reply" ? "回复此剪辑" : `修改${tagWords === "whole edit" ? "整个剪辑" : ` ${tagWords}`}`;
   const tag = rewording ? undefined : targetTag;
   // A stretch marked on the timeline's ruler rides with the message, beside the tag of the cut or edit it is aimed at.
   const marked = rewording ? undefined : markedRangeOf(context);
@@ -392,20 +393,20 @@ function ComposerBox({ project, thread, onCreated, onSent, selectedEdit, onClear
   // A call's tag keeps its number: the playhead's time is beside it already.
   const stopped = replying && !targetIsPoint && pausedAt && aimTime === undefined ? clock(pausedAt.time) : undefined;
   const aimItems: AimItem[] = [
-    ...placeTag ? [{ key: `target:${placeTag}`, name: targetIsPoint ? placeTag.replace(/^At /, "") : stopped ? `${placeTag}, stopped at ${stopped}` : placeTag,
+    ...placeTag ? [{ key: `target:${placeTag}`, name: targetIsPoint ? placeTag.replace(/^At /, "") : stopped ? `${placeTag}，暂停于 ${stopped}` : placeTag,
       displayName: stopped ?? placeTag.replace(/^(?:(?:Cut|Edit) at|At) /, ""),
-      clearLabel: targetIsPoint ? `Take “${placeTag}” off: the message is about the whole video` : `Start a new edit instead of ${tagAct!.charAt(0).toLowerCase()}${tagAct!.slice(1)}`,
+      clearLabel: targetIsPoint ? `清除“${placeTag}”，改为针对整段视频` : `开始新的剪辑，取消${tagAct}`,
       onClear: takeOffTarget }] : [],
-    ...marked ? [{ key: `range:${marked.start}/${marked.end}`, name: `Range ${markedWords}`,
+    ...marked ? [{ key: `range:${marked.start}/${marked.end}`, name: `范围 ${markedWords}`,
       displayName: markedWords.replace(" – ", "–"),
-      clearLabel: `Take the marked range ${markedWords} off the message`, onClear: () => {
+      clearLabel: `从消息中清除标记范围 ${markedWords}`, onClear: () => {
         const was = context && context !== "whole" ? context : undefined;
         setContext(withMarkedRange(context, undefined), was?.changeId ? was : undefined);
         inputRef.current?.focus();
       } }] : [],
   ];
   const [primaryAim, ...additionalAims] = aimItems;
-  const saveLabel = rewording ? "Save the new words" : sendLabel;
+  const saveLabel = rewording ? "保存新措辞" : sendLabel;
   function changeText(text: string) {
     dismissFirstEditHint();
     setError("");
@@ -435,9 +436,9 @@ function ComposerBox({ project, thread, onCreated, onSent, selectedEdit, onClear
       {/* Where the message goes (a cut, an edit, a moment, a stretch marked on the ruler) is a line of its own on top of
           the box, under the queue's tray, so the box keeps its whole width for the words. */}
       {primaryAim && <div className="composer-aim-line">
-        <ComposerAim items={[primaryAim, ...additionalAims]} disabled={recording || heard} disabledReason="Waits until what you’re saying is sent" />
+        <ComposerAim items={[primaryAim, ...additionalAims]} disabled={recording || heard} disabledReason="请先发送这条语音消息" />
         {/* A call's tag is its number, so the line says where its cut is and where the playhead is now. */}
-        {aimTime !== undefined && placeTag && <span className="composer-aim-when">at {clock(aimTime)} · <PlayheadClock /></span>}
+        {aimTime !== undefined && placeTag && <span className="composer-aim-when">{clock(aimTime)} · <PlayheadClock /></span>}
       </div>}
       {(attached.length > 0 || markedFrame) && <AttachedFiles files={attached} onRemove={key => { detach(project.id, key); inputRef.current?.focus(); }}
         marked={markedFrame} onOpenMarked={frame => {
@@ -470,17 +471,17 @@ function ComposerBox({ project, thread, onCreated, onSent, selectedEdit, onClear
           e.preventDefault();
           attach(project.id, files);
         }}>
-        <label htmlFor={inputId} className="composer-destination sr-only">{rewording ? "Changing the words of a queued request" : <>{mode}{editTitle && ` ${editTitle}`}</>}</label>
+        <label htmlFor={inputId} className="composer-destination sr-only">{rewording ? "正在修改排队中的请求" : <>{mode}{editTitle && ` ${editTitle}`}</>}</label>
         <div className="composer-row">
           {wordTag && <span className="composer-tag" title={tagAct}>
-            <span className="composer-tag-name">{wordTag}</span>
+            <span className="composer-tag-name">{wordTag === "Answer" ? "回答" : "回复"}</span>
             {/* A spoken message stays where it was said until it is out: aiming the box elsewhere would drop it. */}
             <button type="button" className="composer-tag-clear" disabled={recording || heard}
-              aria-label={`Start a new edit instead of ${tagAct!.charAt(0).toLowerCase()}${tagAct!.slice(1)}`}
-              title={recording || heard ? "Waits until what you’re saying is sent" : "New edit instead"} onClick={takeOffTarget}><Icon name="x" size={10} /></button>
+              aria-label={`开始新的剪辑，取消${tagAct}`}
+              title={recording || heard ? "请先发送这条语音消息" : "开始新的剪辑"} onClick={takeOffTarget}><Icon name="x" size={10} /></button>
           </span>}
           <SkillCommandInput key={owner} id={inputId} inputRef={inputRef} value={value} skills={skills}
-            placeholder={rewording ? "What should it ask instead?" : question ? "Answer Scarlet…" : displayAnchor?.changeId && context ? "What should change?" : replying ? "Write a follow-up…" : NEW_EDIT_HINT}
+            placeholder={rewording ? "你想把请求改成什么？" : question ? "回答 Scarlet…" : displayAnchor?.changeId && context ? "你想修改什么？" : replying ? "写一条回复…" : NEW_EDIT_HINT}
             timestamps={sameClock ? times : undefined} onTimestamp={inputClock?.seek} onChange={changeText} onSubmit={() => void submitText()} />
           {/* The reason is only for a mic with no agent to talk to. While a message sends or is written down the spinner says why. */}
           <MicButton onResult={(r) => void onVoice(r)} onStart={() => {
@@ -488,7 +489,7 @@ function ComposerBox({ project, thread, onCreated, onSent, selectedEdit, onClear
             setError("");
             voiceReword.current = rewording ? rewordSession : undefined;
             if (!voiceReword.current) voiceAnchor.current = captureTarget();
-          }} onRecording={setRecording} onError={setError} followHold disabled={unavailable || busy || speech.busy} disabledReason={unavailable ? unavailableReason : undefined} label="Talk to Scarlet" />
+          }} onRecording={setRecording} onError={setError} followHold disabled={unavailable || busy || speech.busy} disabledReason={unavailable ? unavailableReason : undefined} label={zhAgent.talk} />
           {(busy || speech.busy) && <Spinner className="size-3.5 shrink-0" />}
           {/* Shown once there's something to send (Enter sends too). Stopping an edit is on its card, where its progress is. */}
           {value.trim() && !onlyTime && <button type="button" className={rewording ? "btn-primary composer-send is-save shrink-0" : "btn-primary composer-send shrink-0"} data-log-control={rewording ? "save-queued-request" : "send-request"} aria-label={saveLabel} title={saveLabel}
@@ -520,18 +521,18 @@ function ComposerBox({ project, thread, onCreated, onSent, selectedEdit, onClear
     }}>
     <InlineError>{error || (refused && unavailable && unavailableReason)}</InlineError>
     {editor}
-    {dropping && <div className="composer-drop" aria-hidden="true">Attach to your message</div>}
+    {dropping && <div className="composer-drop" aria-hidden="true">{zhAgent.attach}</div>}
   </div>;
 }
 
 /** Where the playhead is, in whole seconds as the clock under the timeline reads, so it redraws once a second. */
 function PlayheadClock() {
   const second = usePlayerStore(s => Math.floor(s.time + 1e-6));
-  return <span className="composer-playhead">Playhead {clock(second)}</span>;
+  return <span className="composer-playhead">播放头 {clock(second)}</span>;
 }
 
 /** What the empty box says when the message would start a new edit. */
-export const NEW_EDIT_HINT = "Describe an edit, / skills";
+export const NEW_EDIT_HINT = "描述剪辑要求，输入 / 选择技能";
 
 const NO_FILES: PendingAttachment[] = [];
 
@@ -542,26 +543,26 @@ const NO_FILES: PendingAttachment[] = [];
  */
 function AttachedFiles({ files, onRemove, marked, onOpenMarked, onRemoveMarked }: { files: readonly PendingAttachment[]; onRemove(key: string): void;
   marked?: MarkedFrame; onOpenMarked(frame: MarkedFrame): void; onRemoveMarked(): void }) {
-  const markedName = marked && `Marked frame ${clock(marked.time)}`;
-  return <div className="composer-files" role="group" aria-label="Files attached to your message">
+  const markedName = marked && `标记画面 ${clock(marked.time)}`;
+  return <div className="composer-files" role="group" aria-label="消息附件">
     {/* The frame the editor drew on: its picture with the marks, a press on it goes back there to mark more. */}
-    {marked && <div className="composer-file is-marked-frame" title={`${markedName} · ${marked.marks.length === 1 ? "1 mark" : `${marked.marks.length} marks`}`}>
-      <button type="button" className="composer-marked-frame" onClick={() => onOpenMarked(marked)} aria-label={`${markedName}, mark it again`}>
+    {marked && <div className="composer-file is-marked-frame" title={`${markedName} · ${marked.marks.length} 个标记`}>
+      <button type="button" className="composer-marked-frame" onClick={() => onOpenMarked(marked)} aria-label={`重新标记 ${markedName}`}>
         <span className="composer-marked-picture" aria-hidden="true">
           {marked.picture && <img src={marked.picture} alt="" />}
           <MarksDrawing marks={marked.marks} />
         </span>
         <span className="composer-file-name">{markedName}</span>
-        {marked.marks.length > 1 && <span className="composer-file-state">{marked.marks.length} marks</span>}
+        {marked.marks.length > 1 && <span className="composer-file-state">{marked.marks.length} 个标记</span>}
       </button>
-      <button type="button" className="composer-file-remove" aria-label={`Remove ${markedName}`} title="Remove" onClick={onRemoveMarked}><Icon name="x" size={11} /></button>
+      <button type="button" className="composer-file-remove" aria-label={`${zhAgent.remove} ${markedName}`} title={zhAgent.remove} onClick={onRemoveMarked}><Icon name="x" size={11} /></button>
     </div>}
     {files.map(file => <div key={file.key} className={`composer-file is-${file.state}`} title={file.error ? `${file.name}: ${file.error}` : file.name}>
       <span className="composer-file-icon"><Icon name="file" size={12} /></span>
       <span className="composer-file-name">{file.name}</span>
-      {file.state === "adding" && <span className="composer-file-state" role="status">Adding…</span>}
-      {file.state === "failed" && <span className="composer-file-state is-bad" role="alert">{file.error ?? "Couldn’t add it"}</span>}
-      <button type="button" className="composer-file-remove" aria-label={`Remove ${file.name}`} title="Remove" onClick={() => onRemove(file.key)}><Icon name="x" size={11} /></button>
+      {file.state === "adding" && <span className="composer-file-state" role="status">{zhAgent.adding}</span>}
+      {file.state === "failed" && <span className="composer-file-state is-bad" role="alert">{file.error ?? "无法添加"}</span>}
+      <button type="button" className="composer-file-remove" aria-label={`${zhAgent.remove} ${file.name}`} title={zhAgent.remove} onClick={() => onRemove(file.key)}><Icon name="x" size={11} /></button>
     </div>)}
   </div>;
 }
@@ -573,7 +574,7 @@ function AttachedFiles({ files, onRemove, marked, onOpenMarked, onRemoveMarked }
  */
 async function sendMarks(projectId: string, frame: MarkedFrame): Promise<{ attachment: TaskAttachment; marks: PictureMarks }> {
   const where = { time: frame.time, ...(frame.version && { version: frame.version }), ...(frame.mediaId && { mediaId: frame.mediaId }), marks: frame.marks };
-  if (!frame.picture) throw new Error("The marked frame has no picture to send. Mark it again.");
+  if (!frame.picture) throw new Error("这帧画面无法发送，请重新标记。");
   const picture = await markedFramePicture(frame.picture, frame.marks);
   const { attachment } = await api.uploadAttachment(projectId, new File([picture], `Marked frame ${clock(frame.time).replace(/:/g, ".")}.png`, { type: "image/png" }));
   rememberMarkedFrame(attachment.id, picture);

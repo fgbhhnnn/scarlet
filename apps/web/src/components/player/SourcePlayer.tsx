@@ -5,6 +5,7 @@ import { player } from "../../lib/player";
 import { openSourcePlayback } from "../../lib/sourcePlayback";
 import { usePlayerStore } from "../../stores/player";
 import { FramedVideo } from "./FramedVideo";
+import { zh } from "../../lib/zh";
 
 export function SourcePlayer({ id, name, duration, autoPlay, hidden }: {
   id: string; name: string; duration: number; autoPlay: boolean; hidden: boolean;
@@ -26,7 +27,7 @@ export function SourcePlayer({ id, name, duration, autoPlay, hidden }: {
     <FramedVideo ref={ref} poster={poster} aria-label={name} playsInline preload={hidden ? "none" : "metadata"} data-waiting={state === "loading" || undefined}
       onClick={() => player.toggle()} />
     {state === "failed" && <div className="absolute inset-0 grid place-items-center">
-      <button className="btn-ghost" onClick={() => player.play()}>Retry this section</button>
+      <button className="btn-ghost" onClick={() => player.play()}>{zh.ui.player.retrySection}</button>
     </div>}
   </div>;
 }

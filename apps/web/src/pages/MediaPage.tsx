@@ -15,6 +15,8 @@ import { cacheLabel, cachePercent, useSourceCaches } from "../components/media/s
 import { useMediaProcessing } from "../components/media/useMediaProcessing";
 import { ConfirmDialog, EmptyState, Icon, InlineError } from "../components/ui/primitives";
 import { ImportUrlModal } from "./ProjectsPage";
+import { zh } from "../lib/zh";
+import { zhMedia } from "../lib/zh-media-settings";
 
 function Thumb({ m }: { m: MediaAsset }) {
   const [failed, setFailed] = useState(false);
@@ -39,7 +41,7 @@ function Reading({ m, paused }: { m: MediaAsset; paused: boolean }) {
   const { text, percent, held } = preparationStep(m, paused);
   if (held) return <MediaStatusLine name={m.name} status={{ text, tone: "idle" }} />;
   return <MediaStatusLine name={m.name} status={{ text: percent ? text : `${text}…`, tone: "busy" }}
-    bar={{ label: `Preparation progress for ${m.name}`, fraction: m.preparation?.fraction, percent }} />;
+    bar={{ label: `准备进度：${m.name}`, fraction: m.preparation?.fraction, percent }} />;
 }
 
 /** A video's cache: under way or still to make, with a way to start or retry it, and Cached once it's done. */
@@ -50,13 +52,13 @@ function SourceCache({ cache, name, paused, onCache }: { cache?: SourceCacheStat
   const startable = !paused && (cache.state === "failed" || (cache.state === "uncached" && !cache.queued));
   const percent = cachePercent(cache);
   const caching = !paused && cache.state === "caching";
-  return <MediaStatusLine name={name} status={caching ? { text: percent ? "Caching" : "Caching…", tone: "busy" } : label}
-    bar={caching ? { label: `Caching ${name}`, fraction: cache.progress, percent } : undefined}>
-    {startable && <button type="button" className="simple-link" onClick={onCache}>{cache.state === "failed" ? "Retry" : "Cache now"}</button>}
+  return <MediaStatusLine name={name} status={caching ? { text: percent ? zhMedia.caching : `${zhMedia.caching}…`, tone: "busy" } : label}
+    bar={caching ? { label: `正在缓存 ${name}`, fraction: cache.progress, percent } : undefined}>
+    {startable && <button type="button" className="simple-link" onClick={onCache}>{cache.state === "failed" ? zh.common.retry : "立即缓存"}</button>}
   </MediaStatusLine>;
 }
 
-const KIND_LABEL: Record<MediaAsset["kind"], string> = { video: "Video", audio: "Audio", image: "Image", graphic: "Graphic" };
+const KIND_LABEL: Record<MediaAsset["kind"], string> = { video: "视频", audio: "音频", image: "图片", graphic: "图形" };
 
 export function MediaPage({ uploads, onPlay }: {
   uploads: ReturnType<typeof useUploader>;
@@ -110,10 +112,10 @@ export function MediaPage({ uploads, onPlay }: {
           <Icon name={processing.icon} size={12} />{processing.label}
         </button>}
         <button className="btn-ghost" onClick={() => setImportOpen(true)}>
-          <Icon name="link" size={12} /> Add from a link
+          <Icon name="link" size={12} /> {zh.create.addFromLink}
         </button>
         {media.length > 0 && <button className="btn-ghost" aria-describedby="media-file-types" disabled={adding} onClick={addFiles}>
-          <Icon name="upload" size={12} /> Add files
+          <Icon name="upload" size={12} /> {zhMedia.addFiles}
         </button>}
         <input ref={fileInput} type="file" multiple accept={ACCEPTED_MEDIA} hidden onChange={(e) => {
           if (e.target.files?.length) start(e.target.files);
@@ -130,9 +132,9 @@ export function MediaPage({ uploads, onPlay }: {
       <InlineError>{processing.error || pickerError || cacheError}</InlineError>
       <UploadList items={items} onDismiss={dismiss} />
       {media.length === 0 ? (
-        !localImport && <EmptyState title="Add your first file" body={`Drop files here (${MEDIA_FORMATS}).`} action={
+        !localImport && <EmptyState title="添加第一个文件" body={`将文件拖到这里（${MEDIA_FORMATS}）。`} action={
           <button type="button" className="btn-primary" aria-describedby="media-file-types" disabled={adding} onClick={addFiles}>
-            <Icon name="upload" /> Choose files
+            <Icon name="upload" /> {zhMedia.chooseFiles}
           </button>
         } />
       ) : (
@@ -140,7 +142,7 @@ export function MediaPage({ uploads, onPlay }: {
           {media.map((m) => (
             <li key={m.id} className="media-row">
               {canPreviewMedia(m) ? (
-                <button type="button" className="media-thumb-button" aria-label={`Preview source ${m.name}`} title="Preview source" onClick={() => onPlay(m.id)}>
+                <button type="button" className="media-thumb-button" aria-label={`预览素材 ${m.name}`} title={zhMedia.preview} onClick={() => onPlay(m.id)}>
                   <Thumb m={m} /><span className="media-thumb-play"><Icon name="play" size={14} /></span>
                 </button>
               ) : <Thumb m={m} />}
@@ -148,7 +150,7 @@ export function MediaPage({ uploads, onPlay }: {
                 <div className="font-medium truncate" title={m.name}>{m.name}</div>
                 <div className="media-meta">
                   {m.status === "failed" ? (
-                    <span className="text-bad">{m.preparation?.stage === "waveform" ? "Couldn’t read the waveform" : "Couldn’t read this file"}{m.error ? `: ${m.error}` : ""}</span>
+                    <span className="text-bad">{m.preparation?.stage === "waveform" ? "无法读取波形" : "无法读取文件"}{m.error ? `: ${m.error}` : ""}</span>
                   ) : (
                     // A length reads as the player and History write it: 0:20, 1:02:07.
                     m.duration ? clock(m.duration) : m.width && m.height ? `${m.width}×${m.height}` : KIND_LABEL[m.kind]
@@ -163,7 +165,7 @@ export function MediaPage({ uploads, onPlay }: {
                 {(m.kind === "video" || m.kind === "audio") && m.hasAudio !== false && <TranscriptLine asset={m} available={transcriptionAvailable} cloud={local === false} />}
               </div>
               {/* A file Scarlet couldn't read ends in a small ×, named on hover, that asks before taking it out of the project. */}
-              {m.status === "failed" && <button type="button" className="edit-card-icon media-remove" aria-label={`Remove ${m.name}`} title="Remove"
+              {m.status === "failed" && <button type="button" className="edit-card-icon media-remove" aria-label={`移除 ${m.name}`} title={zh.common.remove}
                 onClick={() => setRemoval(m)}><Icon name="x" size={12} /></button>}
             </li>
           ))}
@@ -171,8 +173,8 @@ export function MediaPage({ uploads, onPlay }: {
       )}
       <ImportUrlModal projectId={projectId} open={importOpen} notice={notice} onClose={() => setImportOpen(false)} />
       {/* The project's copy is deleted with it, so it asks first, as every press that deletes does. The dialog says why the engine wouldn't. */}
-      {removal && <ConfirmDialog open danger onClose={() => setRemoval(null)} title={`Remove “${removal.name}”?`} confirmLabel="Remove"
-        body="Scarlet deletes the project's copy of this file. This cannot be undone."
+      {removal && <ConfirmDialog open danger onClose={() => setRemoval(null)} title={`移除“${removal.name}”？`} confirmLabel={zh.common.remove}
+        body="Scarlet 会删除该文件在项目中的副本。此操作无法撤销。"
         onConfirm={() => useProjectStore.getState().removeMedia(removal.id)} />}
     </>
   );

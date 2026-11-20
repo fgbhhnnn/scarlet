@@ -28,10 +28,10 @@ it("shows a build under way with how far along it is, then becomes the button th
     status.mockResolvedValue({ ready: null, building });
     await poll();
     expect(container.querySelector("button")).toBeNull();
-    expect(container.querySelector("[role=status]")!.textContent).toBe("Updating20%");
+    expect(container.querySelector("[role=status]")!.textContent).toBe("更新中20%");
     expect(container.querySelector("[role=status]")!.closest(".update-corner")).not.toBeNull();
     // Hovering it names the build on its way and the one that's running.
-    const on = `You’re on ${__SCARLET_VERSION__}${__SCARLET_REVISION__ ? `, build ${__SCARLET_REVISION__.slice(0, 7)}` : ""}.`;
+    const on = `当前版本为 ${__SCARLET_VERSION__}${__SCARLET_REVISION__ ? `，构建 ${__SCARLET_REVISION__.slice(0, 7)}` : ""}.`;
     const hint = () => {
       const described = container.querySelector("[aria-describedby]")!;
       const tip = container.querySelector("[role=tooltip]")!;
@@ -39,11 +39,11 @@ it("shows a build under way with how far along it is, then becomes the button th
       expect(described.hasAttribute("title")).toBe(false);
       return [...tip.firstElementChild!.children].map(line => line.textContent);
     };
-    expect(hint()).toEqual(["Updating to build bbbbbbb", on,
-      "Scarlet is building it in the background. Keep working: this becomes Restart to update when it’s ready."]);
+    expect(hint()).toEqual(["正在更新至构建 bbbbbbb", on,
+      "Scarlet 正在后台构建更新。你可以继续编辑，更新就绪后即可重启安装。"]);
     // It moves on between the updater's reports, at the pace this part took last time.
     await act(async () => vi.advanceTimersByTimeAsync(120_000).then(() => undefined));
-    expect(container.querySelector("[role=status]")!.getAttribute("aria-label")).toBe("Updating Scarlet, 50% built");
+    expect(container.querySelector("[role=status]")!.getAttribute("aria-label")).toBe("正在更新 Scarlet, 50% 已构建");
     // A part that runs long waits at its end. The figure never reaches 100 by itself.
     await act(async () => vi.advanceTimersByTimeAsync(600_000).then(() => undefined));
     expect(container.querySelector(".update-button-figure")!.textContent).toBe("80%");
@@ -51,34 +51,34 @@ it("shows a build under way with how far along it is, then becomes the button th
     // The first build is ready. A new head starts updating while this window stays open.
     status.mockResolvedValue({ ready: commit, building: null });
     await poll();
-    expect(hint()).toEqual(["Build bbbbbbb is ready", on, "Restarting installs it and brings you back here. An edit Scarlet is working on picks up where it left off."]);
+    expect(hint()).toEqual(["构建 bbbbbbb 已就绪", on, "重启会安装更新并返回此处，Scarlet 正在处理的剪辑会从中断处继续。"]);
     const newer = { ...building, revision: "c".repeat(40), done: 0, stepStarted: Date.now() / 1000 + 5 };
     status.mockResolvedValue({ ready: commit, building: newer });
     await poll();
     expect(container.querySelector("button")).toBeNull();
-    expect(container.querySelector("[role=status]")!.textContent).toBe("Updating0%");
-    expect(hint()[0]).toBe("Updating to build ccccccc");
+    expect(container.querySelector("[role=status]")!.textContent).toBe("更新中0%");
+    expect(hint()[0]).toBe("正在更新至构建 ccccccc");
     await act(async () => vi.advanceTimersByTimeAsync(60_000).then(() => undefined));
-    expect(container.querySelector("[role=status]")!.textContent).toBe("Updating15%");
+    expect(container.querySelector("[role=status]")!.textContent).toBe("更新中15%");
     expect(restart).not.toHaveBeenCalled();
     // If the newer build fails, the verified one is still available.
     status.mockResolvedValue({ ready: commit, building: null });
     await poll();
-    expect(hint()[0]).toBe("Build bbbbbbb is ready");
+    expect(hint()[0]).toBe("构建 bbbbbbb 已就绪");
     // Once the retry verifies, restart targets it even if its last progress report is still on disk.
     status.mockResolvedValue({ ready: commit, building: newer });
     await poll();
     status.mockResolvedValue({ ready: newer.revision, building: newer });
     await poll();
     const button = container.querySelector("button")!;
-    expect(button.textContent).toBe("Restart to update");
+    expect(button.textContent).toBe("重启并更新");
     expect(button.closest(".update-corner")).not.toBeNull();
     expect(container.querySelector("[role=status]")).toBeNull();
-    expect(hint()).toEqual(["Build ccccccc is ready", on, "Restarting installs it and brings you back here. An edit Scarlet is working on picks up where it left off."]);
+    expect(hint()).toEqual(["构建 ccccccc 已就绪", on, "重启会安装更新并返回此处，Scarlet 正在处理的剪辑会从中断处继续。"]);
     window.addEventListener("beforeunload", dirty);
     await act(async () => button.click());
     expect(restart).not.toHaveBeenCalled();
-    expect(container.querySelector("[role=alert]")!.textContent).toBe("Save your changes before restarting.");
+    expect(container.querySelector("[role=alert]")!.textContent).toBe("请先保存更改再重启。");
     expect(container.querySelector("[role=tooltip]")).toBeNull();  // The reason it didn't restart takes the hint's place.
     window.removeEventListener("beforeunload", dirty);
     await act(async () => button.click());
@@ -88,7 +88,7 @@ it("shows a build under way with how far along it is, then becomes the button th
     await act(async () => button.click());
     expect(restart).toHaveBeenLastCalledWith(newer.revision);
     expect(button.disabled).toBe(true);
-    expect(button.textContent).toBe("Restarting…");
+    expect(button.textContent).toBe("正在重启…");
     expect(restart).toHaveBeenCalledTimes(2);
   } finally {
     window.removeEventListener("beforeunload", dirty);
@@ -172,7 +172,7 @@ it("lists what a waiting build adds to this one's changelog when the control is 
     expect(read).toHaveBeenCalledWith(commit);
     const items = [...container.querySelectorAll(".update-hint-news li")].map(li => li.textContent);
     expect(items).toEqual(["New change 1.", "New change 2.", "New change 3.", "New change 4.", "New change 5.", "New change 6."]);
-    expect(container.querySelector(".update-hint-news")!.lastElementChild!.textContent).toBe("And 3 more in Settings › About once it’s installed.");
+    expect(container.querySelector(".update-hint-news")!.lastElementChild!.textContent).toBe("安装后可在「设置 → 关于」查看其余 3 项更新。");
   } finally {
     await act(async () => root.unmount());
     vi.restoreAllMocks();

@@ -3,6 +3,8 @@ import { buildThreads, changeEdits, matchesEdit, threadEditList, type EditRef, t
 import { historyLineage, type Change } from "@scarlet/timeline";
 import { errorMessage } from "../lib/client";
 import { authorLabel, clock, relTime, removedSeconds } from "../lib/format";
+import { zh } from "../lib/zh";
+import { zhReview } from "../lib/zhReview";
 import { useProjectStore } from "../stores/project";
 import { HistoryLog } from "../components/review/HistoryLog";
 import { editGroups } from "../components/review/ThreadEdits";
@@ -33,8 +35,8 @@ function VersionEdits({ groups, thread }: { groups: EditGroup[]; thread: ListedE
     const earlier = changes?.find(c => c.id === ref.changeId);
     return earlier && changeEdits(earlier).find(edit => edit.spot === ref.spot)?.label;
   };
-  return <div className="version-edits" role="group" aria-label="Edits in this version">
-    <div className="version-edits-head">{groups.length} {groups.length === 1 ? "edit" : "edits"}</div>
+  return <div className="version-edits" role="group" aria-label={zhReview.history.inVersion}>
+    <div className="version-edits-head">{zhReview.history.edits(groups.length)}</div>
     <ol>
       {groups.map(({ members }) => {
         const { edit } = members[0]!;
@@ -49,12 +51,12 @@ function VersionEdits({ groups, thread }: { groups: EditGroup[]; thread: ListedE
         const revisedLater = revisions.find(r => r.revisedLater)?.revisedLater;
         const removed = edit.beforeCut?.removed;
         // A cut says how much came out; an edit made in several places says how many.
-        const value = members.length > 1 ? `${members.length} places` : removed && removedSeconds(removed.end - removed.start);
+        const value = members.length > 1 ? zhReview.history.places(members.length) : removed && removedSeconds(removed.end - removed.start);
         return <li key={edit.spot}>
           <span className="version-edit-time">{clock(removed?.start ?? edit.range.start)}</span>
           <span className="version-edit-label">{edit.label}
-            {revises && <small>Revises “{labelOf(revises) ?? "an earlier edit"}”</small>}
-            {revisedLater && <small>Revised later: “{revisedLater.label}”</small>}
+            {revises && <small>{zhReview.history.revises(labelOf(revises))}</small>}
+            {revisedLater && <small>{zhReview.history.revisedLater(revisedLater.label)}</small>}
           </span>
           {value && <span className="version-edit-value">{value}</span>}
         </li>;
@@ -112,10 +114,10 @@ export function ChangelogPage() {
   return (
     <div className="flex-1 overflow-y-auto">
       <div>
-        <nav className="control-tabs" aria-label="Changelog view">
+        <nav className="control-tabs" aria-label={zhReview.history.view}>
           {(["cut", "history"] as const).map((t) => (
             <button key={t} onClick={() => setTab(t)} aria-current={tab === t} className={`rounded-md px-3 py-1.5 text-[13px] ${tab === t ? "bg-raised text-fg" : "text-muted hover:text-fg"}`}>
-              {t === "cut" ? "Edit versions" : "Full history"}
+              {t === "cut" ? zhReview.history.versions : zhReview.history.full}
             </button>
           ))}
         </nav>
@@ -134,12 +136,12 @@ export function ChangelogPage() {
             const expanded = open === v.version;
             const summary = <>
               <div className="flex items-baseline gap-2">
-                <span className={`text-[14px] font-medium${groups ? " group-hover:underline decoration-line underline-offset-4" : ""}`}>{v.description ?? "Untitled edit"}</span>
-                {undone.has(v.version) && <span className="chip">Undone</span>}
-                {isHead && <span className="chip bg-hi-dim text-fg">Current</span>}
+                <span className={`text-[14px] font-medium${groups ? " group-hover:underline decoration-line underline-offset-4" : ""}`}>{v.description ?? zhReview.history.untitled}</span>
+                {undone.has(v.version) && <span className="chip">{zhReview.history.undone}</span>}
+                {isHead && <span className="chip bg-hi-dim text-fg">{zhReview.history.current}</span>}
               </div>
               <div className="mt-0.5 text-[12px] text-muted">
-                {v.author ? authorLabel(v.author) : "Unknown"} · {relTime(v.createdAt)} · {clock(v.duration)} long
+                {v.author ? authorLabel(v.author) : zhReview.history.unknown} · {relTime(v.createdAt)} · 时长 {clock(v.duration)}
               </div>
             </>;
             return (
@@ -155,9 +157,9 @@ export function ChangelogPage() {
           })}
           {/* Once a list is up, a newer one loads behind it. Only a failure to load says so. */}
           {!current.versions && (historyError
-            ? <li role="status">{historyError} <button className="btn-ghost" onClick={() => setAttempt(a => a + 1)}>Retry</button></li>
-            : !list && <li role="status">Loading versions…</li>)}
-          {list?.versions.length === 0 && <li className="pl-6 text-[13px] text-muted">Applied edits appear here.</li>}
+            ? <li role="status">{historyError} <button className="btn-ghost" onClick={() => setAttempt(a => a + 1)}>{zh.common.retry}</button></li>
+            : !list && <li role="status">{zhReview.history.loading}</li>)}
+          {list?.versions.length === 0 && <li className="pl-6 text-[13px] text-muted">{zhReview.history.applied}</li>}
         </ol></section>
         )}
       </div>

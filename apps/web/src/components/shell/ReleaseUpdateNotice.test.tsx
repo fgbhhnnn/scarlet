@@ -66,7 +66,7 @@ it("automatically retries after going online and discovers a release while the e
   await act(async () => { window.dispatchEvent(new Event("online")); });
   expect(element.textContent).toBe("");
   await act(async () => { await vi.advanceTimersByTimeAsync(6 * 60 * 60 * 1000); });
-  expect(element.textContent).toContain("Get Scarlet 9.1.100");
+  expect(element.textContent).toContain("获取 Scarlet 9.1.100");
   expect(open).not.toHaveBeenCalled();
   await act(async () => element.querySelector("button")!.click());
   expect(open).toHaveBeenCalledExactlyOnceWith("https://github.com/Forward-Future/scarlet/releases/tag/v9.1.100");
@@ -83,7 +83,7 @@ it("checks the published edition from About and offers the same release as the n
   await act(async () => check.click());
   expect(element.textContent).toContain("Couldn’t check Scarlet releases");
   await act(async () => check.click());
-  expect(element.textContent).toContain("Scarlet 9.0.1 is available.");
+  expect(element.textContent).toContain("Scarlet 9.0.1 已发布。");
   await act(async () => element.querySelectorAll("button")[1]!.click());
   expect(open).toHaveBeenCalledExactlyOnceWith("https://github.com/Forward-Future/scarlet/releases/tag/v9.0.1");
   expect(git).not.toHaveBeenCalled();

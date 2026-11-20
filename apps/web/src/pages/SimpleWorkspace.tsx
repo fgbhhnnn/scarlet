@@ -44,9 +44,10 @@ import { useThreadTimeline } from "../components/review/useThreadTimeline";
 import { Drawer, Icon, Loading } from "../components/ui/primitives";
 import { api, errorMessage } from "../lib/client";
 import { readTimeline } from "../lib/timelineCache";
+import { zh } from "../lib/zh";
 import { appLog } from "../lib/appLog";
 import { markedFrameUrl } from "../lib/markedFramePictures";
-import { clock as clockLabel, clockRange, lengthLabel, plural, removedSeconds } from "../lib/format";
+import { clock as clockLabel, clockRange, lengthLabel, removedSeconds } from "../lib/format";
 import { editPlaybackRange } from "../lib/editPlaybackRange";
 import { listMoments, momentRange, type Moment } from "../lib/editMoments";
 import { madeSentence, type SentencePart } from "../lib/madeSentence";
@@ -277,9 +278,9 @@ function LearnedLine({ learning, onReview }: { learning: Learning; onReview?(id:
   useEffect(() => { if (useSkillsStore.getState().status === "idle") void loadSkills(); }, [loadSkills]);
   return <p className="simple-learned">
     <Icon name="bulb" size={13} />
-    <span>{skill ? `Learned for ${skill}: ` : "Learned: "}<span className="simple-learned-rule">“{learning.rule}”</span>
+    <span>{skill ? zh.workspace.learnedFor(skill) : zh.workspace.learned}<span className="simple-learned-rule">“{learning.rule}”</span>
       {onReview && <> <button type="button" className="simple-learned-review" onClick={() => onReview(learning.id)}
-        title="Approve, revise or decline it in Learnings">Review</button></>}</span>
+        title={zh.workspace.learningReview}>{zh.terms.review}</button></>}</span>
   </p>;
 }
 
@@ -306,7 +307,7 @@ function EditNote({ text, unchecked }: { text: string; unchecked?: boolean }) {
   return <h2 ref={ref} className={`edit-card-title${open ? " is-open" : clipped ? " is-clipped" : ""}`}
     title={open ? undefined : text}
     aria-expanded={opens ? open : undefined} onClick={opens ? () => setOpen(!open) : undefined}>
-    {unchecked && <span className="edit-card-unchecked">Not checked yet. </span>}{text}</h2>;
+    {unchecked && <span className="edit-card-unchecked">{zh.workspace.unchecked} </span>}{text}</h2>;
 }
 
 /**
@@ -321,7 +322,7 @@ const letGo = (act: () => void) => (e: MouseEvent<HTMLElement>) => { if (e.detai
  * own, so they sit with its note and decisions, not in the chat. Hovering names it.
  */
 function TranscriptLink({ open, toggle, disabled }: { open: boolean; toggle(): void; disabled?: boolean }) {
-  const name = open ? "Hide transcript" : "Show transcript";
+  const name = open ? zh.workspace.hideTranscript : zh.workspace.showTranscript;
   return <button type="button" className="edit-card-icon edit-card-words" data-log-control="toggle-transcript" aria-label={name} title={name} aria-expanded={open} disabled={disabled} onClick={letGo(toggle)}>
     <Icon name="diff" size={14} /></button>;
 }
@@ -329,10 +330,10 @@ function TranscriptLink({ open, toggle, disabled }: { open: boolean; toggle(): v
 /** Where the decisions were, on a call that's with Scarlet: at work on it, asking about it, or not started yet. */
 function CallStanding({ run, answer }: { run?: Task; answer?(): void }) {
   const state = run?.state;
-  return state === "queued" ? <span className="edit-card-status" role="status">Queued</span>
-    : state === "waiting_for_user" && answer ? <button type="button" className="simple-link edit-card-status is-ask" aria-label="Answer" onClick={answer}>Needs your answer</button>
-    : state === "waiting_for_user" ? <span className="edit-card-status is-ask" role="status">Needs your answer</span>
-    : <span className="edit-card-status working-text" role="status">Revising…</span>;
+  return state === "queued" ? <span className="edit-card-status" role="status">{zh.workspace.queued}</span>
+    : state === "waiting_for_user" && answer ? <button type="button" className="simple-link edit-card-status is-ask" aria-label={zh.workspace.answer} onClick={answer}>{zh.workspace.needsAnswer}</button>
+    : state === "waiting_for_user" ? <span className="edit-card-status is-ask" role="status">{zh.workspace.needsAnswer}</span>
+    : <span className="edit-card-status working-text" role="status">{zh.workspace.revising}</span>;
 }
 
 /** What Approve chooses on a call: the cut, or for a revision that left the footage in, keeping it. */
@@ -346,7 +347,7 @@ function SourceName({ source }: { source: ProjectSource }) {
 }
 
 function SourceLine({ source }: { source: ProjectSource }) {
-  return <span className="simple-header-source" title={`From ${source.name}`}>From <SourceName source={source} /></span>;
+  return <span className="simple-header-source" title={zh.workspace.fromSource(source.name)}>{zh.workspace.from} <SourceName source={source} /></span>;
 }
 
 /**
@@ -357,11 +358,11 @@ function SourceNote({ projectId, source }: { projectId: string; source: ProjectS
   const [gone, setGone] = useState(false);
   const updateProject = useProjectStore(s => s.updateProject);
   if (gone) return null;
-  return <section className="simple-turn simple-source-note" aria-label="New project">
+  return <section className="simple-turn simple-source-note" aria-label={zh.create.newProject}>
     <div className="simple-msg from-scarlet">
       <span className="simple-who">Scarlet</span>
-      <p className="said">New project, made from <SourceName source={source} />. That video isn’t changed.</p>
-      <button type="button" className="btn-icon simple-source-dismiss" aria-label="Dismiss" title="Dismiss"
+      <p className="said">{zh.workspace.sourceNoteStart}<SourceName source={source} />{zh.workspace.sourceNoteEnd}</p>
+      <button type="button" className="btn-icon simple-source-dismiss" aria-label={zh.workspace.dismiss} title={zh.workspace.dismiss}
         // Through the store, so the project it holds says the note is dismissed and it doesn't come back with the chat.
         onClick={() => { setGone(true); void updateProject({ sourceNotice: false }, projectId).catch(() => setGone(false)); }}>
         <Icon name="x" size={12} /></button>
@@ -387,11 +388,11 @@ function CallActions({ choice, proposes = "cut", disabled, decide, revise }: { c
   // The decisions stay on the card for the next call. Clicked, one lets go of the focus (WebView2 leaves it there), or
   // Space would press it again on the next call while the video is paused. Pressed by keyboard, it keeps it.
   return <div className="review-actions">
-    <button type="button" className="btn-quiet" data-key="R" data-log-control="revise-call" aria-keyshortcuts="R" title="Revise (R)" disabled={disabled} onClick={revise}>Revise</button>
-    <button type="button" className="btn-primary" data-key="A" data-log-control="approve-call" aria-keyshortcuts="A" title="Approve (A)" aria-pressed={choice === proposes} disabled={disabled}
-      onClick={letGo(() => decide(proposes))}>Approve</button>
+    <button type="button" className="btn-quiet" data-key="R" data-log-control="revise-call" aria-keyshortcuts="R" title={zh.workspace.reviseShortcut} disabled={disabled} onClick={revise}>{zh.workspace.revise}</button>
+    <button type="button" className="btn-primary" data-key="A" data-log-control="approve-call" aria-keyshortcuts="A" title={zh.workspace.approveShortcut} aria-pressed={choice === proposes} disabled={disabled}
+      onClick={letGo(() => decide(proposes))}>{zh.workspace.approve}</button>
     {/* Skip is a small × after the decision, named on hover, so the row's one button is Approve. */}
-    <button type="button" className="edit-card-icon edit-card-skip" data-log-control="skip-call" aria-label="Skip" aria-keyshortcuts="S" title="Skip (S)" aria-pressed={choice === skips}
+    <button type="button" className="edit-card-icon edit-card-skip" data-log-control="skip-call" aria-label={zh.workspace.skip} aria-keyshortcuts="S" title={zh.workspace.skipShortcut} aria-pressed={choice === skips}
       disabled={disabled} onClick={letGo(() => decide(skips))}><Icon name="x" size={12} /></button>
   </div>;
 }
@@ -444,7 +445,7 @@ function ChangeReply({ thread, entry, actions }: { thread: Thread; entry: Extrac
     <span className="simple-who">Scarlet</span>
     {/* A suggestion still waiting has no Play link under it: its one line is the control, led by the play mark. */}
     {pending && !pass ? <button type="button" className={reviewing ? "simple-suggest is-on" : "simple-suggest"} aria-pressed={reviewing}
-      title={reviewing ? "Stop showing this suggestion" : "Play this suggestion"} onClick={() => reviewing ? actions.stopShowing() : actions.review(change)}>
+      title={reviewing ? zh.workspace.stopSuggestion : zh.workspace.playSuggestion} onClick={() => reviewing ? actions.stopShowing() : actions.review(change)}>
       <Icon name="play" size={11} /><span title={entry.text}>{entry.text}</span></button> : <Said text={entry.text} />}
   </div>;
 }
@@ -481,9 +482,9 @@ function EditResultLink({ thread, actions, single, count, soFar, list: [open, se
   const isLink = (!!single && (!expanded || current)) || !!soFar;
   if (isLink !== (place === "inline")) return null;
   if (!soFar && !isLink) {
-    const label = count === 2 ? "See both" : "See all";
-    return <div className="simple-review-tabs" role="group" aria-label="Edit lists">
-      <button type="button" className="simple-review-tab" aria-pressed={expanded} title={expanded ? "Hide the edits" : "Show the edits in order"}
+    const label = count === 2 ? zh.workspace.seeBoth : zh.workspace.seeAll;
+    return <div className="simple-review-tabs" role="group" aria-label={zh.workspace.editLists}>
+      <button type="button" className="simple-review-tab" aria-pressed={expanded} title={expanded ? zh.workspace.hideEdits : zh.workspace.showEditsInOrder}
         onClick={letGo(() => { if (!expanded) reveal(); setOpen(expanded ? undefined : "all"); })}>{label}</button>
     </div>;
   }
@@ -494,11 +495,11 @@ function EditResultLink({ thread, actions, single, count, soFar, list: [open, se
       actions.stopShowing();
     };
     return <button type="button" className="simple-pass-toggle" aria-current={current || undefined}
-      title={current ? "Close this edit (Esc)" : "Show on the timeline"} onClick={letGo(toggleEdit)}>{current ? "Close edit" : "See edit"}</button>;
+      title={current ? zh.workspace.closeEditShortcut : zh.workspace.showOnTimeline} onClick={letGo(toggleEdit)}>{current ? zh.workspace.closeEdit : zh.workspace.seeEdit}</button>;
   }
   return <button type="button" className="simple-pass-toggle" data-so-far aria-expanded={expanded}
-    title={expanded ? "Hide the edits" : "Show the edits Scarlet has made so far, in order"}
-    onClick={() => { if (!expanded) reveal(); setOpen(expanded ? undefined : "all"); }}>{expanded ? "Hide" : `See ${count} ${count === 1 ? "edit" : "edits"} so far`}</button>;
+    title={expanded ? zh.workspace.hideEdits : zh.workspace.showEditsSoFar}
+    onClick={() => { if (!expanded) reveal(); setOpen(expanded ? undefined : "all"); }}>{expanded ? zh.workspace.hide : zh.workspace.showEditsSoFarCount(count)}</button>;
 }
 
 function ReviewListTabs({ need, canSeeAll, list: [open, setOpen], reveal, showNeeded }: {
@@ -510,12 +511,12 @@ function ReviewListTabs({ need, canSeeAll, list: [open, setOpen], reveal, showNe
     reveal();
     setOpen("all");
   };
-  return <div className="simple-review-tabs" role="group" aria-label="Edit lists">
-    <button type="button" className="simple-review-tab simple-pass-need" aria-label="For you" aria-pressed={!all}
-      title={need ? `${need} ${need === 1 ? "needs" : "need"} you` : undefined} onClick={letGo(showNeeded)}>
-      For you{need > 0 && <span className="simple-review-tab-count" aria-hidden="true">{need}</span>}
+  return <div className="simple-review-tabs" role="group" aria-label={zh.workspace.editLists}>
+    <button type="button" className="simple-review-tab simple-pass-need" aria-label={zh.workspace.forYou} aria-pressed={!all}
+      title={need ? zh.workspace.needsReview(need) : undefined} onClick={letGo(showNeeded)}>
+      {zh.workspace.forYou}{need > 0 && <span className="simple-review-tab-count" aria-hidden="true">{need}</span>}
     </button>
-    {canSeeAll && <button type="button" className="simple-review-tab" aria-pressed={all} onClick={letGo(showAll)}>See all</button>}
+    {canSeeAll && <button type="button" className="simple-review-tab" aria-pressed={all} onClick={letGo(showAll)}>{zh.workspace.seeAll}</button>}
   </div>;
 }
 
@@ -626,12 +627,12 @@ function PassSummary({ projectId, thread, edits, rejected = noRejected, actions,
       const revised = e.check === REVISED_CHECK && !seen && !sent;
       // Where it stands, when it isn't simply waiting: the word a row among the calls ends on. In the list of every edit
       // it follows the row's amount, as in any other request's list, and the amount stays.
-      const word = sent ? rejecting(e) ? "Rejecting…" : "Revising…" : revised ? REVISED_CHECK : undefined;
+      const word = sent ? rejecting(e) ? zh.workspace.rejecting : zh.workspace.revising : revised ? zh.workspace.revised : undefined;
       const at = (e as ThreadEdit).at ?? e.range.start;
       const displayAt = (!seen && !sent ? e.reviewRange?.start : undefined) ?? at;
       // Listed with the calls, it has the number it has among them.
       return [{ key, at, displayAt, mark: displayAt as number | undefined, hover: { threadId: thread.id, editKey: key }, label: (e.reason && e.summary) || e.label, n: 0, num: pass?.editNumbers.get(key)?.n,
-        state: word, value: editRemoved(e) ?? editRowWord(e), word, revised, rejected: false,
+        state: word, value: editRemoved(e) ?? editRowWord(e), word, transitioning: !!sent, revised, rejected: false,
         // Scarlet is on that revision now, so its word moves; one still waiting its turn sits still.
         busy: isWorking(sent),
         needs: !!e.check && !seen && !sent, sentBack: !!e.check && !seen && !!sent,
@@ -643,18 +644,18 @@ function PassSummary({ projectId, thread, edits, rejected = noRejected, actions,
     // A call goes by its number, as on its card and on the timeline.
     ...(pass?.calls ?? []).map(c => ({ key: callRowKey(c), at: c.start, displayAt: c.start, mark: c.at, hover: { threadId: thread.id, call: c.index }, label: c.summary, n: c.n, num: c.n as number | undefined, needs: c.state === "open", sentBack: c.state === "revising",
       decided: c.state === "approved" || c.state === "skipped",
-      state: c.state === "approved" ? "Approved" : c.state === "skipped" ? "Skipped" : c.state === "revising" ? "Revising…" : c.version > 1 ? `v${c.version}` : undefined,
-      value: c.state === "approved" ? "Approved" : c.state === "skipped" ? "Skipped" : c.state === "revising" ? "Revising…" : undefined,
+      state: c.state === "approved" ? zh.workspace.approved : c.state === "skipped" ? zh.workspace.skipped : c.state === "revising" ? zh.workspace.revising : c.version > 1 ? `v${c.version}` : undefined,
+      value: c.state === "approved" ? zh.workspace.approved : c.state === "skipped" ? zh.workspace.skipped : c.state === "revising" ? zh.workspace.revising : undefined,
       busy: c.state === "revising" && isWorking(c.run?.state),
-      version: c.version > 1 ? c.version : 0, title: c.earlier && `v${c.version - 1}: ${c.earlier.reason ?? "Scarlet’s earlier version."}${c.earlier.note ? `\nYou: “${c.earlier.note}”` : ""}`,
-      on: listening?.changeId === pass!.change.id && listening.index === c.index, word: undefined, revised: false, rejected: false, fresh: false,
+      version: c.version > 1 ? c.version : 0, title: c.earlier && `v${c.version - 1}: ${c.earlier.reason ?? zh.workspace.earlierVersion}${c.earlier.note ? `\n${zh.workspace.you}：“${c.earlier.note}”` : ""}`,
+      on: listening?.changeId === pass!.change.id && listening.index === c.index, word: undefined, transitioning: false, revised: false, rejected: false, fresh: false,
       open: c.state === "revising" ? undefined : () => pass!.openCall(c.index) })),
     // An edit the editor rejected is out of the video. Its row stays where it was in the list of every edit, with a ×
     // where a kept one has its tick and "Rejected" where it said how much it took. A press shows it again: where it was
     // on the timeline, with its note, over the video as it plays without it (2026-11-19).
     ...(listed ? rejected : []).map(e => ({ key: editKey(e), at: e.range.start, displayAt: e.range.start, mark: undefined as number | undefined,
-      hover: { threadId: thread.id, editKey: editKey(e) }, label: e.label, n: 0, num: undefined as number | undefined, state: "Rejected" as string | undefined,
-      value: "Rejected" as string | undefined, word: undefined as string | undefined, revised: false, rejected: true, busy: false, needs: false, sentBack: false, decided: false, version: 0,
+      hover: { threadId: thread.id, editKey: editKey(e) }, label: e.label, n: 0, num: undefined as number | undefined, state: zh.workspace.rejected as string | undefined,
+      value: zh.workspace.rejected as string | undefined, word: undefined as string | undefined, transitioning: false, revised: false, rejected: true, busy: false, needs: false, sentBack: false, decided: false, version: 0,
       title: undefined as string | undefined, on: !!showing && (matchesEdit(showing, e) || matchesEdit(e as ThreadEdit, showing)), open: (() => actions.openEdit(thread, e)) as (() => void) | undefined, fresh: false })),
   ].sort((a, b) => a.at - b.at);
   // While the pass waits on the editor, its calls are listed: every one of them, so a call keeps its place once it is
@@ -677,7 +678,7 @@ function PassSummary({ projectId, thread, edits, rejected = noRejected, actions,
   // What it came to, once Scarlet is done, while calls still wait too: what it applied so far, with the link that opens
   // every edit after it. Until its cuts are applied, a pass that finished with no call to make says how many it proposes.
   const made: SentencePart[] | undefined = edits.length ? working ? undefined : madeSentence(edits, lengthLabel, true)
-    : calls.length || quiet ? undefined : [{ strong: plural(count, "cut") }, " proposed."];
+    : calls.length || quiet ? undefined : ["建议 ", { strong: zh.workspace.proposedCuts(count) }, "。"];
   // The list of every edit goes by moments, at the time of the first of its edits. The moment's row stands for all of
   // them: ticked once they're all kept, Revising… while Scarlet is on one, and lit while the moment is open. Its own
   // edits show only once it is unfolded, or while one of them is open on its own, each without a time: they all play
@@ -700,7 +701,7 @@ function PassSummary({ projectId, thread, edits, rejected = noRejected, actions,
     });
     const main = byKey.get(moment.key) ?? row;
     const others = moment.edits.filter(e => e !== moment.main);
-    const sent = members.find(m => m.word === "Revising…" || m.word === "Rejecting…");
+    const sent = members.find(member => member.transitioning);
     const more = others.length === 1 ? `+ ${(others[0]!.beforeCut ? "cut" : editKindWord(others[0] as ThreadEdit)?.toLowerCase()) ?? "1 edit"}` : `+ ${others.length} edits`;
     drawn.push({ row: { ...main, displayAt: Math.min(...members.map(m => m.displayAt)), on: main.on && !actions.showingSingle,
       decided: members.every(m => m.decided), word: sent?.word ?? main.word, busy: members.some(m => m.busy), revised: members.some(m => m.revised),
@@ -712,7 +713,7 @@ function PassSummary({ projectId, thread, edits, rejected = noRejected, actions,
   // A list that leads with times widens their column for all its rows once one of them is past an hour ("1:02:07").
   const hours = filter !== "calls" && shown.some(row => clockLabel(row.displayAt).length > 5);
   const rowList = filter && <ol ref={list} className={filter === "calls" ? "simple-pass-list is-short" : hours ? "simple-pass-list has-hours" : "simple-pass-list"}
-    aria-label={filter === "calls" ? "Calls that need you" : filter === "need" ? "Edits that need you" : "Every edit"}>
+    aria-label={filter === "calls" ? zh.workspace.callsNeedingReview : filter === "need" ? zh.workspace.editsNeedingReview : zh.workspace.allEdits}>
     {drawn.map(({ row, members, more, moment, unfolded: open }) => <li key={row.key}><button type="button" className={[row.on && "is-on", row.rejected && "is-rejected", !row.on && !row.rejected && row.decided && "is-decided"].filter(Boolean).join(" ") || undefined} aria-current={row.on || undefined}
       data-log-control="open-pass-item" data-log-label={moment ? "Moment" : "Pass item"} disabled={!row.open} title={row.title || row.label} onClick={letGo(() => row.open?.())}
       aria-label={more ? `${clockLabel(row.displayAt)} ${row.label}, ${more.replace("+ ", "and ")}` : row.rejected ? `${clockLabel(row.displayAt)} ${row.label}, rejected` : undefined}
@@ -723,10 +724,10 @@ function PassSummary({ projectId, thread, edits, rejected = noRejected, actions,
           and amount: the time is bold amber on a tint while the row needs the editor, and a decided row is ticked. */}
       {filter === "calls" && row.num ? <EditBadge n={row.num} check={row.needs} />
         : <span className={row.needs ? "simple-pass-time is-need" : "simple-pass-time"}>{clockLabel(row.displayAt)}{row.needs && <span>, needs you</span>}</span>}
-      <span className="simple-pass-label">{filter === "calls" ? row.label : <>{row.rejected && <RejectedMark />}{row.decided && !row.needs && <span className="simple-pass-tick" aria-label="Decided"><Icon name="check" size={10} /></span>}<span className="simple-pass-words">{row.label}</span>
-        {row.version > 0 && <EditVersion n={row.version} hover={spent.get(row.key)} />}{row.fresh && <small className="edit-version is-new">New</small>}
+      <span className="simple-pass-label">{filter === "calls" ? row.label : <>{row.rejected && <RejectedMark />}{row.decided && !row.needs && <span className="simple-pass-tick" aria-label={zh.workspace.decided}><Icon name="check" size={10} /></span>}<span className="simple-pass-words">{row.label}</span>
+        {row.version > 0 && <EditVersion n={row.version} hover={spent.get(row.key)} />}{row.fresh && <small className="edit-version is-new">{zh.workspace.new}</small>}
         {/* What else the moment holds, which unfolds its edits under the row and folds them again. */}
-        {more && moment && <span className="simple-pass-more" aria-expanded={!!open} title={open ? "Hide its edits" : "Show its edits"}
+        {more && moment && <span className="simple-pass-more" aria-expanded={!!open} title={open ? zh.workspace.hideMomentEdits : zh.workspace.showMomentEdits}
           onClick={e => { e.stopPropagation(); fold(moment); }}>{more}</span>}</>}</span>
       {/* The word a row ends on (v2, Approved, Revising…) says on hover what the requests about its cut or edit took:
           their time and tokens, nothing else. The rest of the row keeps the row's own hover. */}
@@ -738,11 +739,11 @@ function PassSummary({ projectId, thread, edits, rejected = noRejected, actions,
     </button>
     {/* Folded, a request about any of the moment's edits sits under the moment's row; unfolded, under its edit's. */}
     {nests.filter(nest => nest.key === row.key || (!open && !!members?.some(m => m.key === nest.key))).map(nest => nest.node)}
-    {open && members && <ol className="simple-pass-list is-moment" aria-label="Edits in this moment">
+    {open && members && <ol className="simple-pass-list is-moment" aria-label={zh.workspace.momentEdits}>
       {members.map(m => <li key={m.key}><button type="button" className={m.on ? "is-on" : m.decided ? "is-decided" : undefined} aria-current={m.on || undefined}
         data-log-control="open-pass-item" data-log-label="Edit in a moment" disabled={!m.open} title={m.title || m.label} onClick={letGo(() => m.open?.())}
         onPointerEnter={() => actions.lightMark(m.mark, m.hover)} onPointerLeave={() => actions.lightMark()}>
-        <span className="simple-pass-label">{m.decided && !m.needs && <span className="simple-pass-tick" aria-label="Decided"><Icon name="check" size={10} /></span>}<span className="simple-pass-words">{m.label}</span>
+        <span className="simple-pass-label">{m.decided && !m.needs && <span className="simple-pass-tick" aria-label={zh.workspace.decided}><Icon name="check" size={10} /></span>}<span className="simple-pass-words">{m.label}</span>
           {m.version > 0 && <EditVersion n={m.version} hover={spent.get(m.key)} />}</span>
         {m.value && <span className={m.busy && !m.word ? "simple-pass-value working-text" : "simple-pass-value"} title={spent.get(m.key)}>{m.value}</span>}
         {m.word && <span className={`simple-pass-check${m.revised ? "" : " is-kept"}${m.busy ? " working-text" : ""}`} title={spent.get(m.key)}>{m.word}</span>}
@@ -763,13 +764,13 @@ function PassSummary({ projectId, thread, edits, rejected = noRejected, actions,
     <div className="simple-pass-line req-row">
       {!made && seeEvery}
       {/* The pass goes in once its calls are decided and Scarlet finishes checking. Only a failed apply offers Retry. */}
-      {pass?.scheduled && <span className="simple-pass-ok">Goes in when Scarlet finishes</span>}
-      {waiting && pass.deciding && <span className="simple-pass-ok">Applying…</span>}
-      {waiting && !pass.deciding && !!pass.error && <button type="button" className="simple-link" onClick={pass.apply}>Retry</button>}
+      {pass?.scheduled && <span className="simple-pass-ok">{zh.workspace.applyWhenDone}</span>}
+      {waiting && pass.deciding && <span className="simple-pass-ok">{zh.workspace.applying}</span>}
+      {waiting && !pass.deciding && !!pass.error && <button type="button" className="simple-link" onClick={pass.apply}>{zh.common.retry}</button>}
       <span className="req-right">{aside}</span>
     </div>
   </>;
-  return <div ref={host} className="simple-pass" role="group" aria-label="Dialogue pass">
+  return <div ref={host} className="simple-pass" role="group" aria-label={zh.workspace.dialoguePass}>
     {made && <Made parts={made} link={seeEvery} />}
     {filter !== "calls" && outsideList}
     {filter !== "calls" && seeTab}
@@ -845,7 +846,7 @@ function ThreadResult({ projectId, thread, edits, rejected, actions, aside, work
     setOpen(undefined);
     if (flagged.length && !flagged.some(edit => !!actions.showing && matchesEdit(actions.showing, edit))) actions.openEdit(thread, flagged[0]!);
   };
-  return <div ref={host} className="simple-pass" role="group" aria-label="Edits">
+  return <div ref={host} className="simple-pass" role="group" aria-label={zh.workspace.edits}>
     {made && <Made parts={made} link={seeEvery} />}
     <div className="simple-pass-line req-row">
       {!made && seeEvery}
@@ -879,7 +880,7 @@ const stepsOver = (listen: Audition | undefined) => listen?.beyond?.length ? [..
 const inFullScreen = () => !!document.fullscreenElement || !!document.querySelector(".cut-preview[data-expanded]");
 
 /** What a request paused with the project's editing waits for. */
-const PAUSED_HINT = "Editing is paused. Resume picks this up where it left off.";
+const PAUSED_HINT = zh.workspace.editingPausedHint;
 
 /**
  * One thread's requests. Each is the editor's message, then what Scarlet is doing about it or what it made. The request
@@ -1003,10 +1004,10 @@ function Turn({ projectId, thread, actions, pinned, pinHost, list: passList, rep
     switch (entry.kind) {
       // The editor's words keep to two lines, as a request's do, and a click opens the rest.
       case "request":
-        return <div key={i} className="simple-msg from-you"><span className="simple-who">You</span>
+        return <div key={i} className="simple-msg from-you"><span className="simple-who">{zh.workspace.you}</span>
           {entry.revisionLabel && <span className="simple-revising">{tagOf(tagFor(entry) ?? entry.revisionLabel)}</span>}<Said text={entry.text} /></div>;
       case "answer":
-        return <div key={i} className="simple-msg from-you"><span className="simple-who">You</span><Said text={entry.text} /></div>;
+        return <div key={i} className="simple-msg from-you"><span className="simple-who">{zh.workspace.you}</span><Said text={entry.text} /></div>;
       case "agent":
         return <div key={i} className="simple-msg from-scarlet"><span className="simple-who">Scarlet</span><Said text={entry.fullText ?? entry.text} /></div>;
       case "change":
@@ -1127,7 +1128,7 @@ function Turn({ projectId, thread, actions, pinned, pinHost, list: passList, rep
       // All of what Scarlet said: folded it keeps to two lines, and a click opens the rest.
       if (e.kind === "agent") { if (!quiet && !(e.onNote && closed)) { told = true; if (!listing) said.push(<Said key={i} className="req-say" text={e.fullText ?? e.text} />); } }
       else if (e.kind === "question") said.push(<p key={i} className={e.answered ? "req-say is-quiet" : "req-say"}>{e.text}
-        {!e.answered && <button type="button" className="simple-link is-warn" onClick={() => actions.reply(thread)}>Answer</button>}</p>);
+        {!e.answered && <button type="button" className="simple-link is-warn" onClick={() => actions.reply(thread)}>{zh.workspace.answer}</button>}</p>);
       // The editor's answer is their message: two lines at most, and a click opens the rest.
       else if (e.kind === "answer") said.push(<Said key={i} className="req-say is-yours" text={e.text} />);
       // An applied change is on the card's last row. A suggestion still says what it is and how to play it. A pass's
@@ -1143,7 +1144,7 @@ function Turn({ projectId, thread, actions, pinned, pinHost, list: passList, rep
       else if (e.kind === "system" && e.taskId === task.id && closingCheckFailed(task)) {
         const action = e.action;
         said.push(<p key={i} className="req-say is-note">{e.text}
-          {action && <button type="button" className="simple-link req-recover" onClick={() => attempt(run.root, retryTask(action.taskId))}>Retry</button>}</p>);
+          {action && <button type="button" className="simple-link req-recover" onClick={() => attempt(run.root, retryTask(action.taskId))}>{zh.common.retry}</button>}</p>);
       }
       else if (e.kind === "system" && e.taskId === task.id) {
         // The card's own row says it stopped or couldn't finish; only a specific reason adds to that.
@@ -1153,7 +1154,7 @@ function Turn({ projectId, thread, actions, pinned, pinHost, list: passList, rep
         // about another cut or edit were other work, and leave this one to pick up.
         const redone = allTasks.some(t => t.state === "done" && Date.parse(t.createdAt ?? "") > Date.parse(task.createdAt ?? "") && requestText(t) === requestText(task)
           && requestTargetKey(t, threadChanges) === requestTargetKey(task, threadChanges));
-        if (action && !redone) recovery = { label: action.label === "Resume agent" ? "Resume" : "Retry", run: () => attempt(run.root, retryTask(action.taskId)) };
+        if (action && !redone) recovery = { label: action.label === "Resume agent" ? zh.project.resume : zh.common.retry, run: () => attempt(run.root, retryTask(action.taskId)) };
       }
     });
     const final = finals.get(task.id);
@@ -1186,8 +1187,8 @@ function Turn({ projectId, thread, actions, pinned, pinHost, list: passList, rep
     const editsProject = isProjectEditTask(task);
     const paused = editingPaused && editsProject && task.state === "queued";
     const stands = runIsActive(task) ? task.state === "waiting_for_user" ? <span className="unit-dot" aria-hidden />
-        : paused ? <span className="unit-word" title={PAUSED_HINT}>Paused</span> : null
-      : ended ? <span className="unit-word">{ended.replace(/ · .*$/, "")}</span> : proposing ? <span className="unit-word">Suggestion</span> : null;
+        : paused ? <span className="unit-word" title={PAUSED_HINT}>{zh.workspace.paused}</span> : null
+      : ended ? <span className="unit-word">{ended.replace(/ · .*$/, "")}</span> : proposing ? <span className="unit-word">{zh.workspace.suggestion}</span> : null;
     // Scarlet works on several cuts or edits at once, an agent on each. The block that holds one of them says how many
     // there are, in the heading's place for where a request stands: each has its own row, and some may be out of view.
     const atOnce = actions.atOnce ?? 0;
@@ -1201,13 +1202,13 @@ function Turn({ projectId, thread, actions, pinned, pinHost, list: passList, rep
     const hold = editingPaused ? () => attempt(run.root, resumeEditing(projectId)) : () => attempt(run.root, stopEditing(projectId));
     const editActions = editsProject && stop ?
       <div className="unit-actions">
-        <TipButton className="unit-pause-edit" tip={editingPaused ? "Resume editing" : "Pause editing"}
-          aria-description={editingPaused ? "Paused work picks up first, where it left off."
-            : "All editing in this project stops. Nothing new starts, and edits already made stay."}
+        <TipButton className="unit-pause-edit" tip={editingPaused ? zh.workspace.resumeEditing : zh.workspace.pauseEditing}
+          aria-description={editingPaused ? zh.workspace.resumeHint
+            : zh.workspace.pauseHint}
           onClick={hold}><Icon name={editingPaused ? "play" : "pause"} size={13} /></TipButton>
-        <TipButton className="unit-stop-edit" tip="Stop this edit" aria-label={request ? `Stop this edit: ${request.text}` : "Stop this edit"}
-          aria-description="What it already changed stays, and the next request can start." onClick={stop}><Icon name="stop" size={13} /></TipButton></div> : undefined;
-    const requestControl = editsProject ? editActions : stop && <button type="button" className="simple-link unit-stop" onClick={stop}>Stop</button>;
+        <TipButton className="unit-stop-edit" tip={zh.workspace.stopEdit} aria-label={request ? zh.workspace.stopEditRequest(request.text) : zh.workspace.stopEdit}
+          aria-description={zh.workspace.stopHint} onClick={stop}><Icon name="stop" size={13} /></TipButton></div> : undefined;
+    const requestControl = editsProject ? editActions : stop && <button type="button" className="simple-link unit-stop" onClick={stop}>{zh.workspace.stop}</button>;
     const headingEnd = <><RequestMetrics attempts={run.attempts} events={events} />{requestControl}</>;
     const bundle = <RunBundle task={task} events={events[task.id] ?? []} changes={thread.changes} finalChange={final} banded={!!request} callNumber={actions.callNumber}
         say={said.length ? <div className="req-said">{said}</div> : undefined} told={told} result={rows} recovery={recovery}
@@ -1225,7 +1226,7 @@ function Turn({ projectId, thread, actions, pinned, pinHost, list: passList, rep
     // Inside another request's block, under the row it is about: its tag and the editor's words, with where it stands
     // at their right, as in a block's heading, and its work. Under its row the row names it, and the tag is hidden.
     if (inside) return <div key={run.root} className="subunit" data-run={run.root}>
-      {request && <div className="subunit-msg"><span className="simple-who">You</span>
+      {request && <div className="subunit-msg"><span className="simple-who">{zh.workspace.you}</span>
         <Said lead={<span className="simple-revising">{about ?? "Revision"}</span>} text={request.text} /><span className="unit-state">{standing}</span>{headingEnd}</div>}
       {bundle}
       {wrong}
@@ -1243,7 +1244,7 @@ function Turn({ projectId, thread, actions, pinned, pinHost, list: passList, rep
           if ((e.target as Element).closest('button, a, input, textarea, [role="menu"], .said.is-clipped, .said.is-open') || window.getSelection()?.toString()) return;
           if (markable) actions.mark!(thread.id);
           actions.fitTimeline?.();
-        } : undefined}><span className="simple-who">You</span>
+        } : undefined}><span className="simple-who">{zh.workspace.you}</span>
         <Said lead={<>{(about ?? tag) && <span className="simple-revising">{about ?? tag}</span>}<MarkedFrameOnRequest projectId={projectId} task={task} /></>} text={request.text} />
         <span className="unit-state">{standing}</span>{headingEnd}</div>}
       {bundle}
@@ -1942,9 +1943,9 @@ export function SimpleWorkspace() {
     ?? (hasCut ? undefined : previewable.find(m => m.kind === "video" && m.status !== "failed") ?? previewable[0]);
   const [transcript, setTranscript] = useState(false);
   const [menuError, setMenuError] = useState("");
-  const needsYou = [toLearn > 0 && `${plural(toLearn, "rule")} to review in Learnings`, exportWarning, modelNeedsYou && "No model is ready"]
+  const needsYou = [toLearn > 0 && zh.workspace.rulesPending(toLearn), exportWarning, modelNeedsYou && zh.workspace.noModel]
     .filter((reason): reason is string => !!reason);
-  const menuSays = needsYou.join(". ");
+  const menuSays = needsYou.join("。");
   // A clip from Media and the cut each keep their own place: the clip opens at its start, not at the cut's time on
   // it, and going back returns the cut to where it was left.
   const cutPlace = useRef<number>(undefined);
@@ -2044,7 +2045,7 @@ export function SimpleWorkspace() {
     if (suggestion) {
       const range = viewed?.ranges[shownPlace];
       if (suggestionThread) startRevision(suggestionThread, { changeId: suggestion.id, version: viewed?.toVersion ?? suggestion.toVersion, time: range?.start ?? 0, end: range?.end,
-        clipIds: [], label: "Suggestion" }, "this suggestion");
+        clipIds: [], label: "Suggestion" }, zh.workspace.thisSuggestion);
       return;
     }
     if (!pass || !passThread) return;
@@ -2127,7 +2128,7 @@ export function SimpleWorkspace() {
         void saveChoices(calls, choices);
         if (!cutReview.error) return;
       }
-      setDecideError(cutReview.error ? `Couldn’t load this pass’s cuts: ${cutReview.error}` : "Still loading this pass’s cuts. Try again in a moment.");
+      setDecideError(cutReview.error ? zh.workspace.cutLoadFailed(cutReview.error) : zh.workspace.unavailableCut);
       // One failed load would otherwise answer every Apply until the project was reopened.
       if (cutReview.error) cutReview.retry();
       return;
@@ -2386,7 +2387,7 @@ export function SimpleWorkspace() {
     allCalls.forEach((call, i) => callNo.set(call.index, numbers.get(callKeys[i]!.key)!));
     for (const e of edits) {
       const n = numbers.get(editKeyOf(e))!;
-      const name = `${e.beforeCut || editKindWord(e) === "Cut" ? "Cut" : "Edit"} ${n}`;
+      const name = e.beforeCut || e.kind === "cut" ? zh.workspace.cutNumber(n) : zh.workspace.editNumber(n);
       for (const ref of [e, ...e.previous]) passEditNo.set(editKey(ref), { n, name });
     }
     return { callNo, passEditNo };
@@ -2417,7 +2418,7 @@ export function SimpleWorkspace() {
   const cutName = (about: { changeId?: string; cutIndex?: number; editIndex?: number }) => {
     if (about.editIndex !== undefined && about.changeId) return passEditNo.get(`${about.changeId}/${about.editIndex}`)?.name;
     const n = callNumber(about);
-    return n ? `Cut ${n}` : undefined;
+    return n ? zh.workspace.cutNumber(n) : undefined;
   };
   actions.cutName = cutName;
   actions.callNumber = (changeId, cutIndex) => callNumber({ changeId, cutIndex });
@@ -2597,8 +2598,8 @@ export function SimpleWorkspace() {
   // A file or window prepared ahead belongs to one version. It plays only under the clock made for that version.
   const preparedAfter = appliedJoined && preparedEdit?.after.version === appliedJoined.version ? preparedEdit.after : undefined;
   const joinPending = appliedSide === "after" && !!afterSource && (!afterTimeline || (!!appliedJoined && !appliedCache));
-  const cutLoadError = cutBefore.error ? { message: "Couldn’t load the earlier version.", reason: cutBefore.error, retry: cutBefore.retry }
-    : appliedSide === "after" && cutAfter.error ? { message: "Couldn’t load the version for After.", reason: cutAfter.error, retry: cutAfter.retry } : undefined;
+  const cutLoadError = cutBefore.error ? { message: zh.workspace.earlierFailed, reason: cutBefore.error, retry: cutBefore.retry }
+    : appliedSide === "after" && cutAfter.error ? { message: zh.workspace.afterFailed, reason: cutAfter.error, retry: cutAfter.retry } : undefined;
   // The player for After: the version with the join in its media, once it's known how it plays.
   const joinedListen = appliedCut ? appliedJoined : callView ? viewJoined : listenJoined;
   const joinedFile = appliedCut ? appliedCache : listenCache;
@@ -2734,24 +2735,24 @@ export function SimpleWorkspace() {
   }, []);
   const onVideo = openCall && conflict ? (heard && callTimeline ? `Current passage at ${clockLabel(heard.start)}` : undefined)
     : openCall && visit?.side === "before" ? `Showing what the cut at ${visit.label} took out · Before`
-    : openCall ? (cutPosition ? `Showing ${cutPosition} · ${listening!.side === "after" ? "After" : "Before"}${pinnedCallVersion ? " · As reviewed" : ""}` : undefined)
-    : suggestion ? `Showing the suggestion · ${side === "after" ? "After" : "Before"}`
+    : openCall ? (cutPosition ? `Showing ${cutPosition} · ${listening!.side === "after" ? zh.workspace.after : zh.workspace.before}${pinnedCallVersion ? zh.workspace.asReviewed : ""}` : undefined)
+    : suggestion ? `Showing the suggestion · ${side === "after" ? zh.workspace.after : zh.workspace.before}`
     : shownEdit && visiting ? `Showing what the cut at ${visiting.at} took out · Before`
-    : shownEdit && appliedCut ? `Showing “${shownEdit.label}” · ${appliedSide === "after" ? "After" : "Before"}`
+    : shownEdit && appliedCut ? `Showing “${shownEdit.label}” · ${appliedSide === "after" ? zh.workspace.after : zh.workspace.before}`
     : shownEdit ? `Showing “${shownEdit.label}” at ${clockLabel(reviewRange?.start ?? shownEdit.at ?? shownEdit.range.start)}`
     : chosenSource && source === chosenSource ? `Showing ${chosenSource.name}` : undefined;
   // A call's passage is shaded where its footage is on the working cut. One that can't be placed there shades nothing.
-  const lineFocus = listening ? callView ? callView.focus : heard && callTimeline && focusAround(heard, callDuration ?? 0, conflict ? "Current passage" : `Removed · ${lengthLabel(heard.end - heard.start)}`)
+  const lineFocus = listening ? callView ? callView.focus : heard && callTimeline && focusAround(heard, callDuration ?? 0, conflict ? zh.workspace.currentPassage : `Removed · ${lengthLabel(heard.end - heard.start)}`)
     : places.length ? suggestionLine
     : appliedCut ? focusAround(appliedCut, beforeDuration, `Removed · ${lengthLabel(appliedCut.end - appliedCut.start)}`, { playbackEnd: afterListen?.end })
     // Until the earlier version arrives, a line marks the join in the working cut and says how much came out there.
     : shownEdit?.beforeCut ? focusAround({ start: shownAt!, end: shownAt! }, cutDuration ?? 0,
       `Removed · ${lengthLabel(shownEdit.beforeCut.removed.end - shownEdit.beforeCut.removed.start)}`)
     // A rejected edit is out of the video: its band is where it was, outlined, over the video as it runs without it.
-    : shownEdit?.rejected ? focusAround(shownEdit.at !== undefined ? { start: shownEdit.at, end: shownEdit.at } : shownEdit.range, cutDuration ?? 0, "Rejected", { tone: "kept" })
+    : shownEdit?.rejected ? focusAround(shownEdit.at !== undefined ? { start: shownEdit.at, end: shownEdit.at } : shownEdit.range, cutDuration ?? 0, zh.workspace.rejected, { tone: "kept" })
     // Any other edit is drawn for what it did: a sound fix or a zoom keeps its footage, so After plays it.
     // A doubt Scarlet left is the passage it asks the editor to look at or hear: amber, as what waits on them is.
-    : reviewRange ? focusAround(reviewRange, cutDuration ?? 0, "Check", { tone: "check" })
+    : reviewRange ? focusAround(reviewRange, cutDuration ?? 0, zh.workspace.check, { tone: "check" })
     // A moment is drawn across all of its edits, as it plays.
     : shownEdit ? editFocus(threadTimeline.selectedMoment ? { ...shownEdit, range: momentRange(threadTimeline.selectedMoment) } : shownEdit, cutDuration ?? 0) : undefined;
   const playerView = suggestion || appliedCut ? undefined : !listening && focusThread && !source ? threadTimeline : undefined;
@@ -3238,7 +3239,7 @@ export function SimpleWorkspace() {
   const cutSwitched = shownSide?.side === "before" && shownSide.at !== undefined;
   // A marker left for the editor changed nothing in the video: its card says what it is, and has nothing to compare or undo.
   const shownMarker = !!reviewingEdit?.marker;
-  const shownKind = reviewingEdit && (shownMarker ? "To do" : editKindWord(reviewingEdit));
+  const shownKind = reviewingEdit && (shownMarker ? zh.workspace.todo : editKindWord(reviewingEdit));
   // The transcript stays folded away. Its icon on the card opens it for this edit only.
   const scriptKey = reviewingEdit && beforeCut ? editKey(reviewingEdit) : undefined;
   const scriptOpen = !!scriptKey && scriptFor === scriptKey;
@@ -3303,23 +3304,23 @@ export function SimpleWorkspace() {
   };
   // A rejected edit shows where it was and says so, just rejected or opened again from its row: nothing of it is left
   // to keep, revise or reject.
-  const rejectedCard = reviewingEdit && (reviewingEdit.rejected || leavingNow) && focusThread ? <section className="edit-card is-rejected" role="region" aria-label="Rejected edit">
+  const rejectedCard = reviewingEdit && (reviewingEdit.rejected || leavingNow) && focusThread ? <section className="edit-card is-rejected" role="region" aria-label={zh.workspace.rejectedEdit}>
     <div className="edit-card-bar">
       <EditNote key={editKey(reviewingEdit)} text={editNote(reviewingEdit)} />
-      <span className="edit-card-length is-kind">Rejected</span>
+      <span className="edit-card-length is-kind">{zh.workspace.rejected}</span>
     </div>
   </section> : undefined;
-  const editCard = reviewingEdit && !reviewingEdit.rejected && !leavingNow && shownChange && focusThread && !editSentBack ? <section className="edit-card" role="region" aria-label="Applied edit">
+  const editCard = reviewingEdit && !reviewingEdit.rejected && !leavingNow && shownChange && focusThread && !editSentBack ? <section className="edit-card" role="region" aria-label={zh.workspace.appliedEdit}>
     {/* Whose footage is playing, and nothing else: the lit icon in the row under it is the way back, and names its key. */}
     {visiting && <div className="edit-card-switched" role="status">
-      <span className="edit-card-switched-side">Before</span>
-      <span className="edit-card-switched-text">The cut at {visiting.at} took this part out.</span>
+      <span className="edit-card-switched-side">{zh.workspace.before}</span>
+      <span className="edit-card-switched-text">{zh.workspace.cutRemoved(visiting.at)}</span>
     </div>}
     <div className="edit-card-bar">
       {/* One the pass still waits on leads with its number, as on its line in the chat and its dot; its place among the
           ones still to check is on hover. Any other flagged edit leads with that place. */}
-      {shownPassNo ? <span className="edit-card-count" title={editPlace >= 0 ? `${editPlace + 1} of ${flaggedRows.length} still to check` : undefined}>{shownPassNo}</span>
-        : editPlace >= 0 && <span className="edit-card-count" title="Edits still to check">{editPlace + 1} of {flaggedRows.length}</span>}
+      {shownPassNo ? <span className="edit-card-count" title={editPlace >= 0 ? `待检查的剪辑 ${zh.workspace.position(editPlace + 1, flaggedRows.length)}` : undefined}>{shownPassNo}</span>
+        : editPlace >= 0 && <span className="edit-card-count" title={zh.workspace.remainingChecks}>{zh.workspace.position(editPlace + 1, flaggedRows.length)}</span>}
       {/* The note explains the choice and includes any cue for the editor to check. */}
       {/* It's on up to two lines, so an edit with a short note is a single line. A clipped note opens on a click. */}
       <EditNote key={editKey(reviewingEdit)} text={editNote(reviewingEdit, !!reviewRange)} />
@@ -3330,7 +3331,7 @@ export function SimpleWorkspace() {
       {/* Scarlet asks the editor to look or listen at a part of the video, which the timeline marks. It is a pill like the
           edit's kind, in amber: a press plays just that part, and its times are on hover. */}
       {reviewRange && <button type="button" className="edit-card-length is-check" onClick={playCheck}
-        title={`Play the part to check, ${checkSpan(reviewRange)}`}>Check</button>}
+        title={zh.workspace.checkRange(checkSpan(reviewRange))}>{zh.workspace.check}</button>}
       <span className="edit-card-side">
         {/* A cut's words open under this row, behind a small icon. An edit that isn't a cut has none. */}
         {scriptKey && <TranscriptLink open={scriptOpen} toggle={() => setScriptFor(scriptOpen ? undefined : scriptKey)} />}
@@ -3340,7 +3341,7 @@ export function SimpleWorkspace() {
       </span>
       <span className="edit-card-acts">
         <ReviewActions revise={() => actions.revise(focusThread, shownChange)} approve={keepShown}
-          approveLabel={shownMarker ? "Done" : "Keep"} approveKey={shownMarker ? "D" : "K"} />
+          approveLabel={shownMarker ? zh.workspace.done : zh.workspace.keep} approveKey={shownMarker ? "D" : "K"} />
         {/* Reject edit is a small × after Keep, as Skip is after a call's Approve: it puts back just this edit, also on
             a moment's card. The edit leaves the timeline where it is and the card stays, saying Rejected. A spot marked for the editor changed nothing, so
             it has none. Each edit has its own: one on its way for the edit before doesn't hold this one's back. */}
@@ -3374,8 +3375,8 @@ export function SimpleWorkspace() {
     {scriptOpen && beforeCut && <div className="thread-passage">{cutBefore.timeline
       ? <EditPassage key={editKey(reviewingEdit)} timeline={cutBefore.timeline} media={media} range={beforeCut.removed} length={lengthLabel(removedLength)} others={otherCuts} />
       : <div className="edit-passage"><p className="review-spoken"><CutMark length={lengthLabel(removedLength)} />{" "}
-        {cutBefore.error ? <button type="button" className="btn-quiet" title={cutBefore.error} onClick={cutBefore.retry}>Retry transcript</button>
-          : <span className="edit-passage-wait working-text" role="status">Loading the words…</span>}</p></div>}</div>}
+        {cutBefore.error ? <button type="button" className="btn-quiet" title={cutBefore.error} onClick={cutBefore.retry}>{zh.workspace.retryTranscript}</button>
+          : <span className="edit-passage-wait working-text" role="status">{zh.workspace.loadingWords}</span>}</p></div>}</div>}
   </section> : undefined;
 
   // A call the pass wasn't sure about opens the same card, as the same single row: Scarlet's reason, then Revise (R),
@@ -3395,19 +3396,19 @@ export function SimpleWorkspace() {
   const callScriptOpen = !!callKey && scriptFor === callKey && (!conflict || !!heard);
   // Where the call's cut is in the video, as its dot on the timeline says.
   const callAt = openCall ? (heard ?? placeCut(openCall))?.start : undefined;
-  const callCard = !editOpen && pass && openCall && listening ? <section className="edit-card is-call" role="region" aria-label="Call">
+  const callCard = !editOpen && pass && openCall && listening ? <section className="edit-card is-call" role="region" aria-label={zh.workspace.call}>
     {/* A grey gap clicked: whose footage is playing, as on an applied cut's card. The lit icon is the way back. */}
     {visit?.side === "before" && <div className="edit-card-switched" role="status">
-      <span className="edit-card-switched-side">Before</span>
-      <span className="edit-card-switched-text">The cut at {visit.label} took this part out.</span>
+      <span className="edit-card-switched-side">{zh.workspace.before}</span>
+      <span className="edit-card-switched-text">{zh.workspace.cutRemoved(visit.label)}</span>
     </div>}
     {(decideError || pass.error) && <p className="text-bad" role="alert">{decideError || pass.error}</p>}
     <div className="edit-card-bar">
       {/* The call's number, the same as on its line in the chat and its dot on the timeline. */}
       {/* Hovered, it says where the cut is in the video. */}
-      <span className="edit-card-count" title={callAt !== undefined ? `Cut at ${clockLabel(callAt)}` : undefined}>Cut {callNo.get(openCall.index)}</span>
+      <span className="edit-card-count" title={callAt !== undefined ? zh.workspace.cutAt(clockLabel(callAt)) : undefined}>{zh.workspace.cutNumber(callNo.get(openCall.index)!)}</span>
       {callHistory.length > 0 && <EditVersion n={callHistory.length + 1}
-        title={`v${callHistory.length}: ${callHistory.at(-1)!.reason ?? "Scarlet’s earlier version."}${callHistory.at(-1)!.note ? `\nYou: “${callHistory.at(-1)!.note}”` : ""}`} />}
+        title={`v${callHistory.length}: ${callHistory.at(-1)!.reason ?? zh.workspace.earlierVersion}${callHistory.at(-1)!.note ? `\n${zh.workspace.you}：“${callHistory.at(-1)!.note}”` : ""}`} />}
       <EditNote key={callKey} text={openCall.reason} unchecked={openCall.unchecked} />
       <span className="edit-card-side">
         <TranscriptLink open={callScriptOpen} disabled={!!conflict && !heard} toggle={() => setScriptFor(callScriptOpen ? undefined : callKey)} />
@@ -3424,8 +3425,8 @@ export function SimpleWorkspace() {
       <EditPassage key={callKey} current={!!conflict} timeline={callWords.timeline} media={media} range={callWords.range} length={callLength!} />
       {!conflict && <OtherTakes projectId={current.id} timeline={callWords.timeline} media={media} range={callWords.range} />}
     </> : <div className="edit-passage"><p className="review-spoken"><CutMark length={callLength!} />{" "}
-      {placing && stagedOn.error ? <button type="button" className="btn-quiet" title={stagedOn.error} onClick={stagedOn.retry}>Retry transcript</button>
-        : <span className="edit-passage-wait working-text" role="status">Loading the words…</span>}</p></div>}</div>}
+      {placing && stagedOn.error ? <button type="button" className="btn-quiet" title={stagedOn.error} onClick={stagedOn.retry}>{zh.workspace.retryTranscript}</button>
+        : <span className="edit-passage-wait working-text" role="status">{zh.workspace.loadingWords}</span>}</p></div>}</div>}
   </section> : undefined;
 
   // A suggestion that isn't a dialogue pass opens the same card on top of the timeline, as the same single row:
@@ -3433,7 +3434,7 @@ export function SimpleWorkspace() {
   const suggestionNote = suggestion && (suggestion.reason
     || [...new Set(suggestion.timelineEdits?.flatMap(edit => edit.reason ? [edit.reason] : []))].join(" ")
     || suggestion.description);
-  const suggestCard = !editOpen && !callCard && suggestion && suggestionThread ? <section className="edit-card is-suggestion" role="region" aria-label="Suggestion">
+  const suggestCard = !editOpen && !callCard && suggestion && suggestionThread ? <section className="edit-card is-suggestion" role="region" aria-label={zh.workspace.suggestion}>
     {stripError && <p className="text-bad" role="alert">{stripError}</p>}
     <div className="edit-card-bar">
       <EditNote key={suggestion.id} text={suggestionNote!} />
@@ -3443,7 +3444,7 @@ export function SimpleWorkspace() {
       </span>
       <span className="edit-card-acts">
         {/* While another change is applied this one waits its turn: it can still be revised or closed. */}
-        <ReviewActions revise={reviseReview} disabled={applyingShown} approvalDisabled={!!deciding} approveLabel={applyingShown ? "Applying…" : "Apply"} approve={() => void approveReview(suggestion)} />
+        <ReviewActions revise={reviseReview} disabled={applyingShown} approvalDisabled={!!deciding} approveLabel={applyingShown ? zh.workspace.applying : zh.workspace.apply} approve={() => void approveReview(suggestion)} />
       </span>
     </div>
   </section> : undefined;
@@ -3465,7 +3466,7 @@ export function SimpleWorkspace() {
     const moment = threadTimeline.selectedMoment;
     if (target) return { target, label: `${moment ? `${moment.edits.length} edits` : `“${edit.label}”`} at ${clockLabel(edit.at ?? edit.range.start)}` };
     const range = change.ranges[0];
-    return { label: "this whole edit", target: { changeId: change.id, version: change.appliedVersion ?? change.toVersion, time: range?.start ?? 0, end: range?.end,
+    return { label: zh.workspace.wholeEdit, target: { changeId: change.id, version: change.appliedVersion ?? change.toVersion, time: range?.start ?? 0, end: range?.end,
       clipIds: [], label: "Revision" } };
   };
   /**
@@ -3603,7 +3604,7 @@ export function SimpleWorkspace() {
     if (cleared) emptied.current();
   }, [written]);
   // An answer says so too, so a message meant as a new edit isn't sent to Scarlet's question by mistake.
-  const boxTag = aimedAt ? (aimed && cutName(aimed)) ?? tagOf(aimedAt) : replyThread ? replyThread.question ? "Answer" : "Reply" : undefined;
+  const boxTag = aimedAt ? (aimed && cutName(aimed)) ?? tagOf(aimedAt) : replyThread ? replyThread.question ? zh.workspace.answer : zh.workspace.reply : undefined;
   const aimOnOpen = callCard ? answeringCut ? !aimed : aimed?.changeId === pass!.id && aimed.cutIndex === listening!.index
     : editOpen && !!aimed && aimed.cutIndex === undefined && (aimed.changeId === reviewingEdit!.changeId || aimed.changeId === shownChange!.id)
       && (aimed.editIndex === undefined || aimed.editIndex === reviewingEdit!.spot);
@@ -3620,12 +3621,12 @@ export function SimpleWorkspace() {
     ? allCalls.find(a => a.index === aimed.cutIndex) ?? (aimed.end !== undefined ? { start: aimed.time, end: aimed.end } : undefined) : undefined;
   // A call's tag is only its number ("Cut 3"), so the box's tag line says where that cut is.
   const aimTime = boxTag && aimedCall && aimed && cutName(aimed) === boxTag ? (placeCut(aimedCall) ?? aimedCall).start : undefined;
-  const aimLabel = !replyThread ? "Starting a new edit"
+  const aimLabel = !replyThread ? zh.workspace.startNewEdit
     : aimedCall && (targetLabel || aimedAtItem) ? `Revising the cut at ${clockLabel((placeCut(aimedCall) ?? aimedCall).start)}`
     : targetLabel ? `Revising ${targetLabel}`
     // A message that came back with its aim names it from the aim itself: a cut by where it is, an edit by its name.
-    : aimedAtItem ? `Revising ${aimed!.cutIndex !== undefined ? `the cut at ${clockLabel(aimed!.time)}` : aimed!.label ? `“${aimed!.label}”` : "this edit"}`
-    : `${replyThread.question ? "Answering" : "Replying to"} “${replyThread.title}”`;
+    : aimedAtItem ? `Revising ${aimed!.cutIndex !== undefined ? `the cut at ${clockLabel(aimed!.time)}` : aimed!.label ? `“${aimed!.label}”` : zh.workspace.thisEdit}`
+    : `${replyThread.question ? zh.workspace.answering : zh.workspace.replyingTo} “${replyThread.title}”`;
   /**
    * What a queued request is waiting for. Held by the pass whose calls are all made, it waits on Scarlet and not the
    * editor: the pass goes in once Scarlet's revisions or rechecks of its cuts are done.
@@ -3638,8 +3639,8 @@ export function SimpleWorkspace() {
   };
   const waitHint = (task: Task) => {
     const wait = waitFor(task);
-    return !wait ? undefined : wait.kind === "review" ? "Starts once you’ve made your calls on the dialogue pass"
-      : wait.kind === "question" ? "Starts once you’ve answered Scarlet" : "Starts when Scarlet finishes what it’s on";
+    return !wait ? undefined : wait.kind === "review" ? zh.workspace.waitForReview
+      : wait.kind === "question" ? zh.workspace.waitForAnswer : zh.workspace.waitForScarlet;
   };
 
   /**
@@ -3648,7 +3649,7 @@ export function SimpleWorkspace() {
    */
   const waitsOnEditor = (task: Task) => {
     const wait = waitFor(task);
-    return wait?.kind === "review" ? "Waits for your calls" : wait?.kind === "question" ? "Waits for your answer" : undefined;
+    return wait?.kind === "review" ? zh.workspace.waitingReview : wait?.kind === "question" ? zh.workspace.waitingAnswer : undefined;
   };
 
   const compact = useSyncExternalStore(subscribeWidth, () => narrow.matches);
@@ -3911,12 +3912,12 @@ export function SimpleWorkspace() {
 
   return <EditHoverContext.Provider value={hoveredEdit}>
     <main className="min-h-0 flex flex-1 flex-col">
-      <Dropzone className="edit-workspace simple-workspace" label="Add footage to this project" notice={notice}
+      <Dropzone className="edit-workspace simple-workspace" label={zh.workspace.addFootage} notice={notice}
         onPaths={paths => { void uploads.startPaths(paths); setPanel("media"); }}
         onFiles={files => { uploads.start(files); setPanel("media"); }}>
-        <ChatRail compact={compact} id="simple-chat" className="simple-rail" label="Chat" storageKey="scarlet.simpleChatWidth" initialWidth={simpleRailWidth} minWidth={SIMPLE_RAIL_MIN}>
+        <ChatRail compact={compact} id="simple-chat" className="simple-rail" label={zh.workspace.chat} storageKey="scarlet.simpleChatWidth" initialWidth={simpleRailWidth} minWidth={SIMPLE_RAIL_MIN}>
           <header className="simple-header">
-            <Link to="/" className="simple-back" onClick={() => player.pause()} title="All projects" aria-label="All projects">
+            <Link to="/" className="simple-back" onClick={() => player.pause()} title={zh.common.allProjects} aria-label={zh.common.allProjects}>
               <span className="rotate-180 inline-flex"><Icon name="arrow" size={13} /></span></Link>
             {/* A short says which video it was made from, under its name, for as long as it is open. */}
             <h1 title={current.project.name} className={current.project.source ? "has-source" : undefined}>
@@ -3929,25 +3930,25 @@ export function SimpleWorkspace() {
               <MediaButton importing={importing} importFailed={importFailed} onOpen={() => setPanel("media")} />
               <AutoRoughCut key={current.id} importing={importing} onQueued={() => { follow.current = true; }} />
               <ExportButton onOpen={() => setPanel("export")} />
-              <button type="button" className="btn-quiet" aria-haspopup="dialog" onClick={() => setPanel("history")}>History</button>
-              <Dropdown label="More" align="right" width={240} description={menuSays || undefined}
-                button={<span className={`btn-icon simple-more${needsYou.length ? " needs-you" : ""}`} title={menuSays || "More"}>
+              <button type="button" className="btn-quiet" aria-haspopup="dialog" onClick={() => setPanel("history")}>{zh.workspace.history}</button>
+              <Dropdown label={zh.workspace.more} align="right" width={240} description={menuSays || undefined}
+                button={<span className={`btn-icon simple-more${needsYou.length ? " needs-you" : ""}`} title={menuSays || zh.workspace.more}>
                   <Icon name="more" /></span>}>
                 {close => <>
-                  <MenuItem onClick={() => { close(); setLearnFocus(undefined); setPanel("learnings"); }} title={toLearn ? `${plural(toLearn, "rule")} to review` : undefined}>
-                    <Icon name="bulb" />Learnings{toLearn > 0 && <span className="menu-dot" role="img" aria-label={`${plural(toLearn, "rule")} to review`} />}</MenuItem>
+                  <MenuItem onClick={() => { close(); setLearnFocus(undefined); setPanel("learnings"); }} title={toLearn ? zh.workspace.rulesPending(toLearn) : undefined}>
+                    <Icon name="bulb" />{zh.learning.title}{toLearn > 0 && <span className="menu-dot" role="img" aria-label={zh.workspace.rulesPending(toLearn)} />}</MenuItem>
                   <CachingMenuItem close={close} />
                   <MenuItem onClick={() => { close(); setManualOpen(open => !open); }}>
-                    <Icon name="scissors" />{manualOpen ? "隐藏手动剪辑" : "手动剪辑"}
+                    <Icon name="scissors" />{manualOpen ? zh.workspace.hideManual : zh.workspace.manual}
                   </MenuItem>
-                  <MenuItem onClick={() => { close(); setTranscript(v => !v); }}><Icon name="diff" />{transcript ? "Hide transcript" : "Transcript"}</MenuItem>
+                  <MenuItem onClick={() => { close(); setTranscript(v => !v); }}><Icon name="diff" />{transcript ? zh.workspace.hideTranscript : zh.workspace.transcript}</MenuItem>
                   <ExportMenuItem onOpen={() => setPanel("export")} close={close} />
                   {/* A short is made from the long video, not from another short. */}
-                  {!current.project.source && <MenuItem onClick={() => { close(); setPanel("shorts"); }}><Icon name="portrait" />Make shorts</MenuItem>}
+                  {!current.project.source && <MenuItem onClick={() => { close(); setPanel("shorts"); }}><Icon name="portrait" />{zh.workspace.makeShorts}</MenuItem>}
                   <div role="separator" className="my-1 border-t border-line" />
                   <AgentChip variant="menu" direction="down" threadInput={replyThread ? replyThread.question ? "answer" : "reply" : undefined} />
-                  <MenuItem onClick={() => { close(); useUiStore.getState().setProjectSettingsOpen(true); }}><Icon name="monitor" />Project settings</MenuItem>
-                  <MenuItem to="/settings" onClick={close}><Icon name="settings" />App settings</MenuItem>
+                  <MenuItem onClick={() => { close(); useUiStore.getState().setProjectSettingsOpen(true); }}><Icon name="monitor" />{zh.workspace.projectSettings}</MenuItem>
+                  <MenuItem to="/settings" onClick={close}><Icon name="settings" />{zh.workspace.appSettings}</MenuItem>
                 </>}
               </Dropdown>
             </div>
@@ -3955,8 +3956,8 @@ export function SimpleWorkspace() {
           {panel === "learnings" && <LearningsPanel focus={learnFocus} onClose={() => { setPanel(null); setLearnFocus(undefined); }} />}
           {/* A pause of caching isn't said here: the editor chose it, and the menu's Resume caching row says it. */}
           {(importFailed || menuError) && <div className="simple-banner" role="status">
-            <span>{menuError || "Some files need attention."}</span>
-            {importFailed && !menuError && <button type="button" className="simple-link" onClick={() => setPanel("media")}>View media</button>}
+            <span>{menuError || zh.workspace.mediaProblems}</span>
+            {importFailed && !menuError && <button type="button" className="simple-link" onClick={() => setPanel("media")}>{zh.workspace.viewMedia}</button>}
           </div>}
           <div className="simple-thread">
             <div ref={chat} className="simple-chat" onScroll={e => {
@@ -3964,20 +3965,20 @@ export function SimpleWorkspace() {
               follow.current = pane.scrollHeight - pane.clientHeight - pane.scrollTop < 48;
             }}>
               {current.project.source?.notice && <SourceNote projectId={current.id} source={current.project.source} />}
-              {current.reviewStatus === "loading" ? <Loading label="Loading edits…" />
+              {current.reviewStatus === "loading" ? <Loading label={zh.workspace.loadingEdits} />
                 : current.reviewStatus === "error" ? <p className="simple-error" role="alert">{current.reviewError}{" "}
-                  <button type="button" className="simple-link" onClick={() => void useProjectStore.getState().load(current.id)}>Retry</button></p>
+                  <button type="button" className="simple-link" onClick={() => void useProjectStore.getState().load(current.id)}>{zh.common.retry}</button></p>
                 : ordered.length ? ordered.map(thread => <Turn key={thread.id} projectId={current.id} thread={thread} actions={actions}
                   pinned={pinned} pinHost={pinHost} list={listOf(thread.id)}
                   reportReviewMarkers={showOtherFlags && thread.id !== focusThread?.id && thread.id !== passThread?.id
                     ? reportReviewMarkers : undefined} />)
-                : !media.length ? <p className="simple-empty">Drop footage here, then say what you want.</p>
-                : caching && <p className="simple-empty" role="status">You can start editing while the video caches.</p>}
+                : !media.length ? <p className="simple-empty">{zh.workspace.dropFootage}</p>
+                : caching && <p className="simple-empty" role="status">{zh.workspace.editWhileCaching}</p>}
               {/* A new timeline that keeps failing to read is said after the conversation, which stays where it is. */}
               {!current.reviewStatus && current.headError && <p className="simple-error" role="alert">{current.headError}{" "}
-                <button type="button" className="simple-link" onClick={() => void useProjectStore.getState().load(current.id)}>Retry</button></p>}
+                <button type="button" className="simple-link" onClick={() => void useProjectStore.getState().load(current.id)}>{zh.common.retry}</button></p>}
             </div>
-            <div ref={setPinHost} className="simple-pin" aria-label="Working on now" />
+            <div ref={setPinHost} className="simple-pin" aria-label={zh.workspace.workingNow} />
             {/* The tag in the box shows where a message goes. This line says it for screen readers only. */}
             {!rewordingItem && (replyThread || !aimMatches) && <div className="simple-target" role="status">
               <span>{aimLabel}</span>
@@ -4015,19 +4016,19 @@ export function SimpleWorkspace() {
             allowFirstVideo={emptyWorkingTimeline && !appliedCut && !previewVersion && !listening}
             onClose={() => setManualOpen(false)} onMedia={() => setPanel("media")}
             onAddFirstVideo={async () => { await addFirstVideo(); }} />
-          {chosenSource && hasCut && source === chosenSource && <div className="simple-decide" role="region" aria-label="Source preview">
-            <span className="simple-decide-text"><small>Source clip</small>{chosenSource.name}</span>
-            <button type="button" className="btn-ghost" onClick={backToVideo}>Back to the video</button>
+          {chosenSource && hasCut && source === chosenSource && <div className="simple-decide" role="region" aria-label={zh.workspace.sourcePreview}>
+            <span className="simple-decide-text"><small>{zh.workspace.sourceClip}</small>{chosenSource.name}</span>
+            <button type="button" className="btn-ghost" onClick={backToVideo}>{zh.workspace.backToVideo}</button>
           </div>}
         </div>
         {/* The Transcript is its own column on the right of the player, so the chat stays in view beside it. */}
-        {transcript && <ChatRail compact={compact} id="simple-transcript" className="simple-transcript-rail" label="Transcript" side="right" resizes="transcript"
+        {transcript && <ChatRail compact={compact} id="simple-transcript" className="simple-transcript-rail" label={zh.workspace.transcript} side="right" resizes="transcript"
           storageKey="scarlet.simpleTranscriptWidth" initialWidth={transcriptRailWidth} minWidth={TRANSCRIPT_RAIL_MIN} maxWidth={available => available * 0.4}>
           {/* Headed as the chat is: its name, and the × that closes it. */}
-          <header className="simple-header"><h1 title={source?.name}>Transcript{source && <span className="simple-header-sub"> · {source.name}</span>}</h1>
-            <button type="button" className="btn-icon" aria-label="Close transcript" title="Close transcript (Esc)"
+          <header className="simple-header"><h1 title={source?.name}>{zh.workspace.transcript}{source && <span className="simple-header-sub"> · {source.name}</span>}</h1>
+            <button type="button" className="btn-icon" aria-label={zh.workspace.closeTranscript} title={zh.workspace.closeTranscriptShortcut}
               onClick={() => setTranscript(false)}><Icon name="x" /></button></header>
-          <div className="simple-transcript"><Suspense fallback={<Loading label="Opening transcript…" />}>
+          <div className="simple-transcript"><Suspense fallback={<Loading label={zh.workspace.openingTranscript} />}>
             {/* An applied cut plays on the version before it, so its transcript is that version's: the working cut's
                 would highlight and seek early by everything the pass took out before that point. */}
             <TranscriptPane key={source?.id ?? (appliedCut ? beforeCut!.version : draftVersion) ?? head} draft={appliedCut ? beforeTimeline : draft} source={source}
@@ -4038,8 +4039,8 @@ export function SimpleWorkspace() {
     </main>
     {panel === "media" && <MediaDrawer uploads={uploads} notice={local ? undefined : notice}
       onPlay={id => previewSource(id, true)} onClose={() => setPanel(null)} />}
-    <Drawer open={panel === "history"} title="History" width={640} onClose={() => setPanel(null)}>
-      <Suspense fallback={<Loading label="Opening history…" />}><ChangelogPage /></Suspense>
+    <Drawer open={panel === "history"} title={zh.workspace.history} width={640} onClose={() => setPanel(null)}>
+      <Suspense fallback={<Loading label={zh.workspace.openingHistory} />}><ChangelogPage /></Suspense>
     </Drawer>
     {panel === "export" && <ExportSheet hasCut={hasCut} onClose={() => setPanel(null)} />}
     {panel === "shorts" && <MakeShortsSheet onClose={() => setPanel(null)} />}
@@ -4067,7 +4068,7 @@ function UndoLabel({ projectId, onUndo }: { projectId: string; onUndo(): void })
     {error && <span className="timeline-undo-error" role="alert" title={error.text}>{error.text}</span>}
     {step && words && <button type="button" className="timeline-undo-button" data-key={undoKey()} aria-keyshortcuts="Meta+Z Control+Z" title={words.title}
       disabled={undoing} onClick={e => { if (e.detail) e.currentTarget.blur(); onUndo(); }}>
-      <Icon name="undo" size={12} />{undoing ? "Undoing…" : words.label}</button>}
+      <Icon name="undo" size={12} />{undoing ? zh.workspace.undoing : words.label}</button>}
   </span>;
 }
 

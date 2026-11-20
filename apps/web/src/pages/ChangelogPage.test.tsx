@@ -73,8 +73,8 @@ it("counts an edit made in several places as one edit with its count of places, 
   ] });
   await show();
   await click(opener("ver_4")!);
-  expect(count("ver_4")).toBe("2 edits");
-  expect(listed("ver_4")).toEqual([["0:00", "Camera full screen", "3 places"], ["0:03", "Zoom in on the chart", undefined]]);
+  expect(count("ver_4")).toBe("2 处剪辑");
+  expect(listed("ver_4")).toEqual([["0:00", "Camera full screen", "3 处"], ["0:03", "Zoom in on the chart", undefined]]);
 });
 
 it("names the edit a revision replaced by its place in the change, not by where it falls in time", async () => {
@@ -87,11 +87,11 @@ it("names the edit a revision replaced by its place in the change, not by where 
   ] });
   await show();
   await click(opener("ver_5")!);
-  expect(count("ver_5")).toBe("1 edit");
-  expect(revisionNotes("ver_5")).toEqual(["Revises “Late edit”"]);
+  expect(count("ver_5")).toBe("1 处剪辑");
+  expect(revisionNotes("ver_5")).toEqual(["修改了“Late edit”"]);
   await click(opener("ver_4")!);
   expect(listed("ver_4").map(([, label]) => label)).toEqual(["Early edit", "Late edit"]);
-  expect(revisionNotes("ver_4")).toEqual(["Revised later: “Late edit, tighter”"]);
+  expect(revisionNotes("ver_4")).toEqual(["后来修改为“Late edit, tighter”"]);
 });
 
 it("makes a version a button only when it has edits to list", async () => {
@@ -110,13 +110,13 @@ it("makes a version a button only when it has edits to list", async () => {
     expect(row(version).querySelector(".mt-3, .version-edits"), version).toBeNull();
   }
   expect(row("ver_4").textContent).toContain("Undo · Tighten the wrap");
-  expect(row("ver_3").textContent).toContain("Undone");
+  expect(row("ver_3").textContent).toContain("已撤销");
   // The version that made three edits opens into them, and folds again.
   expect(opener("ver_3")!.getAttribute("aria-expanded")).toBe("false");
   expect(opener("ver_3")!.querySelector("[class*='underline']")).not.toBeNull();
   await click(opener("ver_3")!);
   expect(opener("ver_3")!.getAttribute("aria-expanded")).toBe("true");
-  expect(count("ver_3")).toBe("3 edits");
+  expect(count("ver_3")).toBe("3 处剪辑");
   await click(opener("ver_3")!);
   expect(row("ver_3").querySelector(".version-edits")).toBeNull();
 });
@@ -134,7 +134,7 @@ it("keeps the versions on screen while an applied edit's list is on its way", as
   expect(shownVersions()).toEqual(["ver_3", "ver_2", "ver_1"]);
   const stillListed = () => {
     expect(shownVersions()).toEqual(["ver_3", "ver_2", "ver_1"]);
-    expect(container.textContent).not.toContain("Loading versions…");
+    expect(container.textContent).not.toContain("正在加载版本…");
   };
 
   // The engine says the head moved. The list in hand doesn't hold the new head yet.
@@ -148,7 +148,7 @@ it("keeps the versions on screen while an applied edit's list is on its way", as
   // It arrives: the new version leads, as the one the video is on.
   await act(async () => versions({ versions: [...before.map(v => ({ ...v, isHead: false })), versionOf(applied, "ver_3")] }));
   expect(shownVersions()).toEqual(["ver_4", "ver_3", "ver_2", "ver_1"]);
-  expect(row("ver_4").querySelector(".chip")?.textContent).toBe("Current");
+  expect(row("ver_4").querySelector(".chip")?.textContent).toBe("当前");
   expect(row("ver_3").querySelector(".chip")).toBeNull();
 });
 
@@ -158,12 +158,12 @@ it("says who made a version by the name the interface uses, with no id, and list
     timelineEdits: Array.from({ length: 12 }, (_, i) => ({ label: `Edit ${i + 1}`, range: { start: i, end: i + 0.5 } })) });
   await show();
   const made = row("3e65a3c7be22d063");
-  expect(made.querySelector(".text-muted")!.textContent).toMatch(/^Claude Code · .+ · 0:16 long$/);
+  expect(made.querySelector(".text-muted")!.textContent).toMatch(/^Claude Code · .+ · 时长 0:16$/);
   expect(made.textContent).not.toMatch(/opus|3e65a3c7/);
   expect(container.querySelector("code")).toBeNull();
   // Every edit is listed when the version opens: nothing is folded behind a count.
   await click(opener("3e65a3c7be22d063")!);
-  expect(count("3e65a3c7be22d063")).toBe("12 edits");
+  expect(count("3e65a3c7be22d063")).toBe("12 处剪辑");
   expect(listed("3e65a3c7be22d063")).toHaveLength(12);
   expect([...made.querySelectorAll("button")].map(b => b.className)).toEqual(["version-row w-full text-left group"]);
 });
@@ -174,7 +174,7 @@ it("offers Retry when the versions didn't load", async () => {
   useProjectStore.setState({ current: data });
   await show();
   const status = container.querySelector('li[role="status"]')!;
-  expect(status.textContent).toBe("The engine is restarting Retry");
+  expect(status.textContent).toBe("The engine is restarting 重试");
   await click(status.querySelector("button")!);
   expect(read).toHaveBeenCalledTimes(2);
   expect(shownVersions()).toEqual(["ver_3", "ver_2", "ver_1"]);

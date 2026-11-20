@@ -8,11 +8,11 @@ import "./boot-splash.css";
 export const startup = { done: false };
 
 const LINES = [
-  "Warming up the engine",
-  "Scanning frames",
-  "Listening to the audio",
-  "Finding the best takes",
-  "Lining up the timeline",
+  "正在启动引擎",
+  "正在扫描画面",
+  "正在识别音频",
+  "正在挑选最佳片段",
+  "正在准备时间线",
 ];
 const LINE_MS = 1800;
 

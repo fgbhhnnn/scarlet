@@ -52,13 +52,13 @@ const named = (label: string) => el.querySelector<HTMLButtonElement>(`[aria-labe
 
 it("opens shortcut help from Settings and dismisses its modal", async () => {
   await mount(<><SettingsPage /><ShortcutsModal /></>, "/settings/skills");
-  expect(named("Projects").getAttribute("href")).toBe("/");
+  expect(named("项目").getAttribute("href")).toBe("/");
   expect(el.querySelector(".studio-topbar")).toBeNull();
-  await click([...el.querySelectorAll("button")].find(b => b.textContent === "Keyboard shortcuts")!);
+  await click([...el.querySelectorAll("button")].find(b => b.textContent === "键盘快捷键")!);
   const dialog = el.querySelector("dialog")!;
   expect(dialog.open).toBe(true);
-  expect(dialog.textContent).toContain("Apply the suggestion");
-  await click(dialog.querySelector('[aria-label="Close"]')!);
+  expect(dialog.textContent).toContain("应用当前建议");
+  await click(dialog.querySelector('[aria-label="关闭"]')!);
   expect(el.querySelector("dialog")).toBeNull();
 });
 
@@ -75,7 +75,7 @@ it("opens the shortcut list with ? and closes it with ? again, once however long
   /** The key held down: it repeats until it is let go. */
   const hold = async (key: string) => { for (let i = 0; i < 3; i++) await press(key, true); };
   await press("?");
-  expect(el.querySelector("dialog")?.textContent).toContain("Keyboard shortcuts");
+  expect(el.querySelector("dialog")?.textContent).toContain("键盘快捷键");
   // Held, the key that opened the list doesn't shut it again.
   await hold("?");
   expect(el.querySelector("dialog")).not.toBeNull();
@@ -98,15 +98,15 @@ it("lists Settings once, with the key of the computer it is on, and the keys of 
   const computer = vi.spyOn(navigator, "userAgent", "get").mockReturnValue("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
   useUiStore.setState({ shortcutsOpen: true });
   await mount(<ShortcutsModal />);
-  expect(keysFor("Open Settings")).toEqual(["Ctrl ,"]);
-  expect(keysFor("Select all projects")).toEqual(["Ctrl A"]);
-  expect(keysFor("Clear the selection")).toEqual(["Esc"]);
+  expect(keysFor("打开设置")).toEqual(["Ctrl ,"]);
+  expect(keysFor("选择所有项目")).toEqual(["Ctrl A"]);
+  expect(keysFor("清除选择")).toEqual(["Esc"]);
   // The same rows name ⌘ on a Mac.
   computer.mockReturnValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15");
   await act(async () => useUiStore.setState({ shortcutsOpen: false }));
   await act(async () => useUiStore.setState({ shortcutsOpen: true }));
-  expect(keysFor("Open Settings")).toEqual(["⌘ ,"]);
-  expect(keysFor("Select all projects")).toEqual(["⌘ A"]);
+  expect(keysFor("打开设置")).toEqual(["⌘ ,"]);
+  expect(keysFor("选择所有项目")).toEqual(["⌘ A"]);
   // No row is for another computer.
   expect(el.querySelector("dialog")!.textContent).not.toMatch(/macOS|Ctrl/);
 });
@@ -121,13 +121,13 @@ it("searches skills across projects and agents even from an old project-filtered
   await mount(<Routes><Route path="/settings" element={<SettingsPage />}>
     <Route path="skills" element={<SkillsPage />} />
   </Route></Routes>, "/settings/skills?project=a");
-  expect(el.querySelector('nav[aria-label="Settings sections"] a[aria-current="true"]')?.textContent).toBe("Tools & skills");
+  expect(el.querySelector('nav[aria-label="设置分类"] a[aria-current="true"]')?.textContent).toBe("工具与技能");
   const secondSkill = () => el.querySelector('a[href="/settings/skills/qa-b"]');
   expect(secondSkill()?.textContent).toContain("two-skill");
   expect(el.querySelector('[aria-label="Agent filter"]')).toBeNull();
   expect(el.querySelector('[aria-label="Project filter"]')).toBeNull();
   expect(el.querySelector('a[href="/settings/skills/qa-a"]')).toBeTruthy();
-  const search = el.querySelector<HTMLInputElement>('[aria-label="Search skills"]')!;
+  const search = el.querySelector<HTMLInputElement>('[aria-label="搜索技能"]')!;
   await act(async () => {
     Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(search, "AUDIO");
     search.dispatchEvent(new Event("input", { bubbles: true }));
@@ -148,25 +148,25 @@ it("reviews cache cleanup separately from permanent project deletion", async () 
   const clean = vi.spyOn(api, "cleanStorage").mockResolvedValue({ projects: 1 });
   const button = (text: string) => [...document.querySelectorAll("button")].find(b => b.textContent === text)!;
   await mount(<SettingsPage />, "/settings#storage");
-  expect(el.querySelector('nav a[aria-current="true"]')?.textContent).toBe("Usage");
+  expect(el.querySelector('nav a[aria-current="true"]')?.textContent).toBe("用量");
   // The figure at the top is what cleaning up gives back, and is titled for that.
-  expect(el.querySelector('[aria-label="Storage overview"]')?.textContent).toContain("Space you can free");
-  expect(el.querySelector('[aria-label="Storage overview"]')?.textContent).toContain("12 KB");
+  expect(el.querySelector('[aria-label="存储概览"]')?.textContent).toContain("可释放的空间");
+  expect(el.querySelector('[aria-label="存储概览"]')?.textContent).toContain("12 KB");
   // The Trash has one name, and a project in it reads as it does in the Trash opened from the project list.
-  const trash = el.querySelector('section[aria-label="Trash"]')!;
-  expect(trash.querySelector("h3")?.textContent).toBe("Trash");
-  expect(trash.textContent).toContain("Deleted 2d ago · gone for good in 28 days");
-  await click(button("Clear cache"));
+  const trash = el.querySelector('section[aria-label="废纸篓"]')!;
+  expect(trash.querySelector("h3")?.textContent).toBe("废纸篓");
+  expect(trash.textContent).toContain("删除于2 天前 · 28 天后永久删除");
+  await click(button("清除缓存"));
   expect(document.querySelector("dialog")?.textContent).toContain("Working cut");
-  await click(button("Cancel"));
+  await click(button("取消"));
   expect(clean).not.toHaveBeenCalled();
-  await click(button("Empty Trash"));
-  expect(document.querySelector("dialog h2")?.textContent).toBe("Empty Trash?");
-  expect(document.querySelector("dialog")?.textContent).toContain("Permanently delete Retired cut? This frees 8 KB and cannot be undone.");
+  await click(button("清空废纸篓"));
+  expect(document.querySelector("dialog h2")?.textContent).toBe("清空废纸篓？");
+  expect(document.querySelector("dialog")?.textContent).toContain("永久删除Retired cut？可释放 8 KB。此操作无法撤销。");
   catalog.mockResolvedValue({ projects: [live] });
-  await click(button("Delete permanently"));
+  await click(button("永久删除"));
   expect(clean).toHaveBeenCalledWith({ kind: "trash", projects: [{ id: trashed.id, deletedAt: trashed.deletedAt }] });
-  expect(el.textContent).toContain("Trash is empty.");
+  expect(el.textContent).toContain("废纸篓为空。");
   invalidateStorageScan();
 });
 
@@ -192,33 +192,33 @@ it("shows the desktop build version and telemetry disclosure under About", async
   vi.spyOn(api, "settings").mockResolvedValue({ settings: buildDb().settings });
   await mount(<SettingsPage />, "/settings/skills");
   await click(el.querySelector('a[href="/settings#about"]')!);
-  const about = el.querySelector('section[aria-label="About Scarlet"]')!;
+  const about = el.querySelector('section[aria-label="关于 Scarlet"]')!;
   expect(about.querySelector("dd")?.textContent).toBe(__SCARLET_VERSION__);
   if (__SCARLET_REVISION__) expect(about.textContent).toContain(__SCARLET_REVISION__.slice(0, 7));
   const telemetry = about.querySelector('section[aria-labelledby="telemetry-heading"]')!;
-  expect(telemetry.textContent).toContain("PostHog in the US");
-  for (const text of ["keep an applied edit", "send a revision", "installation-specific code", "revision text", "change.approve", "media.import"])
+  expect(telemetry.textContent).toContain("美国的 PostHog");
+  for (const text of ["保留、提出修改或拒绝一项已应用的剪辑", "修改或拒绝", "专用代码", "修改文字", "change.approve", "media.import"])
     expect(telemetry.textContent).toContain(text);
   expect(telemetry.querySelector("code")?.textContent).toBe("SCARLET_TELEMETRY_ENABLED=false");
   const check = about.querySelector("button")!;
-  expect(check.textContent).toBe("Check for updates");
+  expect(check.textContent).toBe("检查更新");
   const latest = vi.spyOn(desktop, "latestUpdateRevision").mockRejectedValueOnce("Connection failed.");
   await click(check);
   expect(about.querySelector('[role="status"]')?.textContent).toBe("Connection failed.");
   if (__SCARLET_REVISION__) {
     latest.mockResolvedValueOnce(__SCARLET_REVISION__).mockResolvedValueOnce("0".repeat(40));
     await click(check);
-    expect(about.textContent).toContain("Scarlet is up to date.");
+    expect(about.textContent).toContain("Scarlet 已是最新版本。");
     await click(check);
-    expect(about.textContent).toContain("An update is available.");
+    expect(about.textContent).toContain("有可用更新");
   }
 });
 
 it("lists Scarlet's tools under the skills, with nothing to switch off", async () => {
   await mount(<SettingsPage />, "/settings#tools");
-  const tools = el.querySelector('[aria-label="Editing tools"]')!;
-  expect(tools.querySelector("p")?.textContent).toBe("Scarlet can use all of these on every request.");
-  expect(tools.textContent).toContain("Frame inspection");
+  const tools = el.querySelector('[aria-label="剪辑工具"]')!;
+  expect(tools.querySelector("p")?.textContent).toBe("Scarlet 可以在每次请求中使用这些工具。");
+  expect(tools.textContent).toContain("逐帧检查");
   expect(tools.querySelector('[role="switch"]')).toBeNull();
   expect(el.textContent).not.toMatch(/Optional tools|Restore tool defaults/);
 });
@@ -232,24 +232,24 @@ it("previews an older skill version, restores it into the draft, and protects un
     { path: "/settings/skills", element: <p>Skill library</p> },
   ], { initialEntries: [`/settings/skills/${skill.id}`] });
   await act(async () => root.render(<RouterProvider router={router} />));
-  const editor = () => el.querySelector<HTMLTextAreaElement>('[aria-label="Skill markdown"]')!;
-  await selectOption(named("Version history"), /^First version/);
+  const editor = () => el.querySelector<HTMLTextAreaElement>('[aria-label="技能 Markdown"]')!;
+  await selectOption(named("版本历史"), /^First version/);
   expect(editor()).toBeNull();
   // The version reads line by line; what Restore puts in the editor is the same text.
   const words = (text: string) => text.replaceAll("\u200b", "").replace(/\s+/g, "");
-  const olderBody = words(el.querySelector('[aria-label="Skill markdown, v1"]')!.textContent!);
+  const olderBody = words(el.querySelector('[aria-label="技能 Markdown，v1"]')!.textContent!);
   expect(olderBody).toContain("(v1)");
   const button = (label: string) => [...el.querySelectorAll("button")].find(b => b.textContent?.trim() === label)!;
-  await click(button("Restore v1"));
+  await click(button("恢复 v1"));
   expect(editor().readOnly).toBe(false);
   expect(words(editor().value)).toBe(olderBody);
-  expect(button("Save").disabled).toBe(false);
-  await click(button("← Skill library"));
-  expect(el.querySelector("dialog")?.textContent).toContain("Save your skill changes?");
-  await click(button("Stay"));
+  expect(button("保存").disabled).toBe(false);
+  await click(button("← 技能库"));
+  expect(el.querySelector("dialog")?.textContent).toContain("保存对技能的更改？");
+  await click(button("留在此页"));
   expect(words(editor().value)).toBe(olderBody);
-  await click(button("← Skill library"));
-  await click(button("Discard changes"));
+  await click(button("← 技能库"));
+  await click(button("放弃更改"));
   expect(el.textContent).toBe("Skill library");
   router.dispose();
 });
@@ -266,7 +266,7 @@ it("sends only the name for a rename and includes format for a frame rate or asp
   useUiStore.setState({ projectSettingsOpen: true });
   await mount(<ProjectSettingsDrawer onDeleted={vi.fn()} />);
   // The project's own settings and nothing else: the model is the same for every project, and is picked in the menu.
-  expect([...el.querySelectorAll(".label")].map(label => label.textContent)).toEqual(["Name", "Frame rate", "Aspect"]);
+  expect([...el.querySelectorAll(".label")].map(label => label.textContent)).toEqual(["名称", "帧率", "画幅"]);
   const name = el.querySelector<HTMLInputElement>("#ps-name")!;
   await act(() => {
     Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(name, "Renamed cut");
@@ -279,13 +279,13 @@ it("sends only the name for a rename and includes format for a frame rate or asp
   // re-render, and a Save that only renames doesn't put the old format back.
   await act(() => { useProjectStore.setState(s => ({ current: { ...s.current!, project: { ...project, settings: { ...project.settings, fps: 23.976 } } } })); });
   expect(el.querySelector("#ps-fps")!.textContent).toContain("23.976 fps");
-  expect(el.textContent).not.toContain("invalidates existing renders");
+  expect(el.textContent).not.toContain("会使现有渲染失效");
   await act(() => { el.querySelector("form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })); });
   expect(updateProject).toHaveBeenLastCalledWith({ name: project.name });
   await act(() => { useProjectStore.setState(s => ({ current: { ...s.current!, project } })); useUiStore.setState({ projectSettingsOpen: true }); });
-  await selectOption(el.querySelector("#ps-aspect")!, /^9:16 vertical/);
+  await selectOption(el.querySelector("#ps-aspect")!, /^9:16 竖屏/);
   await selectOption(el.querySelector("#ps-fps")!, "24 fps");
-  expect(el.textContent).toContain("invalidates existing renders");
+  expect(el.textContent).toContain("会使现有渲染失效");
   await act(async () => { el.querySelector("form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })); });
   expect(updateProject).toHaveBeenCalledWith(expect.objectContaining({
     settings: expect.objectContaining({ fps: 24, aspect: "9:16", width: 1080, height: 1920 }),
@@ -310,7 +310,7 @@ it("lists a project matched to NTSC footage at its own rate once, in place of th
   expect(twins).toHaveLength(1);
   expect(twins[0]!.getAttribute("aria-selected")).toBe("true");
   await click(twins[0]!);
-  expect(el.textContent).not.toContain("invalidates existing renders");
+  expect(el.textContent).not.toContain("会使现有渲染失效");
 });
 
 it("takes a rate picked while the first clip's format lands as the footage's rate when they read the same", async () => {
@@ -328,7 +328,7 @@ it("takes a rate picked while the first clip's format lands as the footage's rat
   await click((await openOptions(trigger)).find(o => o.textContent === "29.97 fps")!);
   // The first clip matches the project to its 29.97 footage while the drawer is still open.
   await act(async () => useProjectStore.setState({ current: { ...data, project: { ...data.project, settings: { ...data.project.settings, fps: 30000 / 1001 } } } }));
-  expect([trigger.textContent, el.textContent?.includes("invalidates existing renders")]).toEqual(["29.97 fps", false]);
+  expect([trigger.textContent, el.textContent?.includes("会使现有渲染失效")]).toEqual(["29.97 fps", false]);
 });
 
 it("keeps what was typed in Project settings, with the reason, when the save fails", async () => {
@@ -376,8 +376,8 @@ it("keeps Project settings open until its save settles, so a failed save is said
   });
   await act(async () => { el.querySelector("form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })); });
   // While the save runs, the ×, Esc and Cancel leave the drawer where it is.
-  const cancel = [...el.querySelectorAll("button")].find(b => b.textContent === "Cancel")!;
-  await click(named("Close"));
+  const cancel = [...el.querySelectorAll("button")].find(b => b.textContent === "取消")!;
+  await click(named("关闭"));
   expect(useUiStore.getState().projectSettingsOpen).toBe(true);
   await act(async () => { el.querySelector("dialog")!.dispatchEvent(new Event("cancel", { cancelable: true })); });
   expect(useUiStore.getState().projectSettingsOpen).toBe(true);
@@ -398,11 +398,11 @@ it("restores one project from Trash at a time and never says a project is gone i
   vi.spyOn(desktop, "measureProjectStorage").mockResolvedValue({});
   vi.spyOn(api, "restoreProject").mockReturnValue(new Promise(() => {}));
   await mount(<TrashButton />);
-  await click([...el.querySelectorAll("button")].find(b => b.textContent?.includes("Trash (2)"))!);
-  expect(el.textContent).toContain("gone for good today");
-  expect(el.textContent).toContain("gone for good in 2 days");
-  expect(el.textContent).not.toContain("0 days");
-  const restore = () => [...el.querySelectorAll<HTMLButtonElement>("button")].filter(b => b.textContent?.trim() === "Restore");
+  await click([...el.querySelectorAll("button")].find(b => b.textContent?.includes("废纸篓 (2)"))!);
+  expect(el.textContent).toContain("今天永久删除");
+  expect(el.textContent).toContain("2 天后永久删除");
+  expect(el.textContent).not.toContain("0 天后永久删除");
+  const restore = () => [...el.querySelectorAll<HTMLButtonElement>("button")].filter(b => b.textContent?.trim() === "恢复");
   await click(restore()[0]!);
   // The first restore is still under way: the second can't start and take its spinner away.
   expect(restore().map(b => b.disabled)).toEqual([true, true]);
@@ -418,7 +418,7 @@ it("opens Trash with the keyboard on the dialog, not on the first project's Rest
   ] });
   vi.spyOn(desktop, "measureProjectStorage").mockResolvedValue({});
   await mount(<TrashButton />);
-  await click([...el.querySelectorAll("button")].find(b => b.textContent?.includes("Trash (2)"))!);
+  await click([...el.querySelectorAll("button")].find(b => b.textContent?.includes("废纸篓 (2)"))!);
   // Enter presses the button that has focus. It used to be the first Restore, so Enter put back a project nobody picked.
   const dialog = el.querySelector("dialog")!;
   expect(document.activeElement).toBe(dialog);

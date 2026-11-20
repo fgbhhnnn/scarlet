@@ -7,12 +7,12 @@ export function relTime(iso?: string): string {
   const t = Date.parse(iso);
   if (Number.isNaN(t)) return "";
   const diff = (Date.now() - t) / 1000;
-  if (diff < 45) return "just now";
+  if (diff < 45) return "刚刚";
   // Whole units that have passed, so the minutes never reach 60 nor the hours 24.
-  if (diff < 3600) return `${Math.max(1, Math.floor(diff / 60))}m ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  if (diff < 86400 * 7) return `${Math.floor(diff / 86400)}d ago`;
-  return new Date(t).toLocaleDateString();
+  if (diff < 3600) return `${Math.max(1, Math.floor(diff / 60))} 分钟前`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} 小时前`;
+  if (diff < 86400 * 7) return `${Math.floor(diff / 86400)} 天前`;
+  return new Date(t).toLocaleDateString("zh-CN");
 }
 
 /**
@@ -20,10 +20,10 @@ export function relTime(iso?: string): string {
  * Without the day it goes (an older engine's storage list) only the first half is said.
  */
 export function trashedLine(deletedAt: string, purgeAt?: string): string {
-  if (!purgeAt) return `Deleted ${relTime(deletedAt)}`;
+  if (!purgeAt) return `删除于${relTime(deletedAt)}`;
   const days = Math.max(0, Math.ceil((Date.parse(purgeAt) - Date.now()) / 86_400_000));
   // A project past its date waits for the next sweep: "in 0 days" reads as a mistake.
-  return `Deleted ${relTime(deletedAt)} · gone for good ${days === 0 ? "today" : `in ${plural(days, "day")}`}`;
+  return `删除于${relTime(deletedAt)} · ${days === 0 ? "今天永久删除" : `${days} 天后永久删除`}`;
 }
 
 /** The day something happened, for a heading over a list by day: "Today", "Yesterday", "Nov 13", or with its year. */
@@ -31,21 +31,21 @@ export function dayName(iso: string, now = new Date()): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
   const days = Math.round((new Date(now).setHours(0, 0, 0, 0) - new Date(d).setHours(0, 0, 0, 0)) / 86_400_000);
-  if (days === 0) return "Today";
-  if (days === 1) return "Yesterday";
-  return d.toLocaleDateString(undefined, { month: "short", day: "numeric", ...(d.getFullYear() === now.getFullYear() ? {} : { year: "numeric" }) });
+  if (days === 0) return "今天";
+  if (days === 1) return "昨天";
+  return d.toLocaleDateString("zh-CN", { month: "short", day: "numeric", ...(d.getFullYear() === now.getFullYear() ? {} : { year: "numeric" }) });
 }
 
 /** The time of day, as "9:35 AM" where the clock reads that way. */
 export function clockTime(iso: string): string {
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? "" : d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  return Number.isNaN(d.getTime()) ? "" : d.toLocaleTimeString("zh-CN", { hour: "numeric", minute: "2-digit" });
 }
 
 export function absTime(iso?: string): string {
   if (!iso) return "";
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? "" : d.toLocaleString();
+  return Number.isNaN(d.getTime()) ? "" : d.toLocaleString("zh-CN");
 }
 
 export function initials(name: string): string {
@@ -69,21 +69,20 @@ export function fmtBytes(n: number): string {
 
 /** A token count at a glance: 850 tokens, 48.2K tokens, 312K tokens, 1.2M tokens. */
 export function tokenLabel(n: number): string {
-  if (n === 1) return "1 token";
-  if (n < 1000) return `${n} tokens`;
+  if (n < 1000) return `${n} 个令牌`;
   const [value, unit] = n < 999_500 ? [n / 1000, "K"] : [n / 1_000_000, "M"];
   const shown = value >= 100 ? Math.round(value).toString() : (Math.round(value * 10) / 10).toString();
-  return `${shown}${unit} tokens`;
+  return `${shown}${unit} 个令牌`;
 }
 
 /** Every part of a token total, for a tooltip or an accessible label. */
 export function tokenBreakdown(u: { inputTokens: number; outputTokens: number; cacheReadTokens: number; cacheWriteTokens: number; runs?: number }): string {
   const parts = [
-    `${u.inputTokens.toLocaleString()} input`,
-    `${u.outputTokens.toLocaleString()} output`,
-    u.cacheReadTokens ? `${u.cacheReadTokens.toLocaleString()} cache read` : "",
-    u.cacheWriteTokens ? `${u.cacheWriteTokens.toLocaleString()} cache write` : "",
-    u.runs && u.runs > 1 ? `${u.runs} runs` : "",
+    `${u.inputTokens.toLocaleString()} 输入`,
+    `${u.outputTokens.toLocaleString()} 输出`,
+    u.cacheReadTokens ? `${u.cacheReadTokens.toLocaleString()} 读取缓存` : "",
+    u.cacheWriteTokens ? `${u.cacheWriteTokens.toLocaleString()} 写入缓存` : "",
+    u.runs && u.runs > 1 ? `${u.runs} 次运行` : "",
   ];
   return parts.filter(Boolean).join(" · ");
 }

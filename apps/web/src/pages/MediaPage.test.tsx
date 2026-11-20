@@ -87,19 +87,19 @@ it("accepts dropped files throughout the empty and populated Media drawer", asyn
     const position = new PhysicalPosition(10, 10);
     const paths = ["/footage/new clip.mov"];
     await act(() => deliver({ type: "enter", paths, position }));
-    expect(container.textContent).toContain("Drop to add files");
+    expect(container.textContent).toContain("拖放文件以添加");
     hit.mockReturnValue(container.querySelector("dialog h2"));
     await act(() => deliver({ type: "drop", paths, position }));
     expect(startPaths).toHaveBeenCalledExactlyOnceWith(paths);
-    expect(container.textContent).not.toContain("Drop to add files");
+    expect(container.textContent).not.toContain("拖放文件以添加");
     const input = container.querySelector<HTMLInputElement>('input[type="file"]')!;
     const pick = vi.spyOn(input, "click");
-    const add = [...container.querySelectorAll("button")].find((b) => b.textContent?.trim() === "Add files")!;
+    const add = [...container.querySelectorAll("button")].find((b) => b.textContent?.trim() === "添加文件")!;
     expect(add.tabIndex).toBe(0);
     await act(() => add.click());
     expect(pick).toHaveBeenCalledTimes(1);
 
-    const fromLink = [...container.querySelectorAll("button")].find(b => b.textContent?.trim() === "Add from a link")!;
+    const fromLink = [...container.querySelectorAll("button")].find(b => b.textContent?.trim() === "从链接导入")!;
     await act(() => fromLink.click());
     const urlField = container.querySelector("#import-url")!;
     hit.mockReturnValue(urlField);
@@ -137,25 +137,25 @@ it("tracks the native selection from the first pending import through media prep
   const container = document.createElement("div");
   const root = createRoot(container);
   function Panel() { return <MediaPage uploads={useUploader(PRJ)} onPlay={vi.fn()} />; }
-  const choose = () => [...container.querySelectorAll("button")].find(b => b.textContent?.trim() === "Choose files")!.click();
+  const choose = () => [...container.querySelectorAll("button")].find(b => b.textContent?.trim() === "选择文件")!.click();
   try {
     await act(async () => root.render(<MemoryRouter><Panel /></MemoryRouter>));
     await act(async () => choose());
     expect(container.querySelector("progress")).toBeNull();
     await act(async () => choose());
-    expect(container.textContent).toContain("File 1 of 2");
-    expect(container.querySelector("progress")?.getAttribute("aria-label")).toBe("Import progress for bad.mov");
+    expect(container.textContent).toContain("文件 1/2");
+    expect(container.querySelector("progress")?.getAttribute("aria-label")).toBe("导入进度：bad.mov");
     expect(container.querySelector("progress")!.hasAttribute("value")).toBe(false);
     const importId = imports.mock.calls[0]![1].importId!;
     await act(() => dispatchWsEvent({ type: "media.import.checking", projectId: PRJ, importId, fraction: 0.42 }));
     expect(container.querySelector("progress")!.value).toBe(0.42);
-    expect(container.textContent).toContain("Checking file · 42%");
+    expect(container.textContent).toContain("正在检查文件 · 42%");
     await act(async () => rejectFirst(new Error("Unreadable")));
-    expect(container.textContent).toContain("File 2 of 2");
+    expect(container.textContent).toContain("文件 2/2");
     await act(() => dispatchWsEvent({ type: "media.import.checking", projectId: PRJ, importId, fraction: 1 }));
     expect(container.querySelector("progress")!.hasAttribute("value")).toBe(false);
     await act(async () => finishSecond());
-    expect(container.querySelector("progress")?.getAttribute("aria-label")).toBe("Preparation progress for clip.mov");
+    expect(container.querySelector("progress")?.getAttribute("aria-label")).toBe("准备进度：clip.mov");
     expect(container.querySelector("progress")!.hasAttribute("value")).toBe(false);
     await act(() => dispatchWsEvent({ type: "media.updated", projectId: PRJ, media: { ...video, preparation: { stage: "preview", fraction: 0.6 } } }));
     expect(container.querySelectorAll("progress")).toHaveLength(1);
@@ -195,7 +195,7 @@ it("queues links as downloads and reports a failed, finished or cancelled transf
   function Panel() { return <MediaPage uploads={useUploader(PRJ)} onPlay={vi.fn()} />; }
   const button = (text: string) => [...container.querySelectorAll("button")].find(b => b.textContent?.trim() === text)!;
   const add = async (link: string) => {
-    await act(async () => button("Add from a link").click());
+    await act(async () => button("从链接导入").click());
     const field = container.querySelector<HTMLInputElement>("#import-url")!;
     await act(() => {
       Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(field, link);
@@ -204,7 +204,7 @@ it("queues links as downloads and reports a failed, finished or cancelled transf
     await act(async () => { container.querySelector<HTMLFormElement>("#import-link")!.requestSubmit(); });
   };
   /** The file being added, as its card reads: its name, its place in the batch, the step, and whether the bar has a share to show. */
-  const adding = () => { const bar = container.querySelector('progress[aria-label^="Import progress"]'); const card = bar?.closest(".card");
+  const adding = () => { const bar = container.querySelector('progress[aria-label^="导入进度"]'); const card = bar?.closest(".card");
     return card && [card.querySelector("span[title]")?.textContent, card.querySelector(".tnum.shrink-0")?.textContent, card.querySelector('[role="status"]')?.textContent, bar!.hasAttribute("value")]; };
   const drive = "https://drive.google.com/file/d/1Qx7mB2kPz9LrT4vN8cYwE6uJ/view?usp=sharing";
   try {
@@ -213,34 +213,34 @@ it("queues links as downloads and reports a failed, finished or cancelled transf
     // The dialog is gone while the link still downloads. A Drive link has no file name in it, so it goes by the link.
     expect(container.querySelector("dialog")).toBeNull();
     expect(imports).toHaveBeenCalledExactlyOnceWith(PRJ, { url: drive, importId: expect.any(String) }, expect.any(AbortSignal));
-    expect(adding()).toEqual([drive, "File 1 of 1", "Downloading…", false]);
+    expect(adding()).toEqual([drive, "文件 1/1", "正在下载…", false]);
     // Nothing waits for it. Files can still be chosen, and another link joins the queue behind it. Until its turn
     // the card counts it, as it counts the files of one drop.
-    expect(button("Add files").disabled).toBe(false);
+    expect(button("添加文件").disabled).toBe(false);
     await add("https://example.com/clips/interview.mp4?token=abc");
     expect(container.querySelector("dialog")).toBeNull();
     expect(imports).toHaveBeenCalledOnce();
-    expect(adding()).toEqual([drive, "File 1 of 2", "Downloading…", false]);
+    expect(adding()).toEqual([drive, "文件 1/2", "正在下载…", false]);
     // The first link failed. Its row says why, with a × that puts it away, and the next link's turn begins under the file name it ends in.
     await act(async () => fail());
     const failed = [...container.querySelectorAll("ul.mb-3 > li")].find(row => row.textContent?.includes(drive))!;
     expect([failed.querySelector(".truncate")?.textContent, failed.querySelector("span.text-bad")?.textContent, failed.querySelector("div.text-bad")?.textContent, failed.querySelector("button")?.getAttribute("aria-label")])
-      .toEqual([drive, "Failed", "Couldn’t download that URL: 404", "Dismiss"]);
+      .toEqual([drive, "失败", "Couldn’t download that URL: 404", "关闭"]);
     expect(imports.mock.calls[1]).toEqual([PRJ, { url: "https://example.com/clips/interview.mp4?token=abc", importId: expect.any(String) }, expect.any(AbortSignal)]);
-    expect(adding()).toEqual(["interview.mp4", "File 2 of 2", "Downloading…", false]);
+    expect(adding()).toEqual(["interview.mp4", "文件 2/2", "正在下载…", false]);
     // Downloaded, it is a file in the list like any other, being prepared.
     await act(async () => finish());
     expect(adding()).toBeFalsy();
     expect([...container.querySelectorAll(".media-row .media-file .truncate")].map(name => name.textContent)).toContain("interview.mp4");
     // The queue emptied, so the next link added is counted from one again. Its name reads without the address's escapes.
     await add("https://example.com/clips/B%20roll%20caf%C3%A9%2emov");
-    expect(adding()).toEqual(["B roll café.mov", "File 1 of 1", "Downloading…", false]);
+    expect(adding()).toEqual(["B roll café.mov", "文件 1/1", "正在下载…", false]);
     // Cancel is attached to the live download. A link queued behind it still gets its turn.
     const following = "https://example.com/after-cancel.png";
     imports.mockResolvedValueOnce({ media: { ...arrived, id: "med_after_cancel", name: "after-cancel.png" } });
     await add(following);
     expect(imports).toHaveBeenCalledTimes(3);
-    await act(async () => button("Cancel download").click());
+    await act(async () => button("取消下载").click());
     expect(imports.mock.calls[2]![2]?.aborted).toBe(true);
     expect(imports).toHaveBeenLastCalledWith(PRJ, { url: following, importId: expect.any(String) }, expect.any(AbortSignal));
     expect(pendingImports(PRJ)).toEqual([]);
@@ -256,7 +256,7 @@ it("queues links as downloads and reports a failed, finished or cancelled transf
   }
 });
 
-it("leaves Add files on after files are picked while a link downloads, until one of them is being copied in", async () => {
+it("leaves 添加文件 on after files are picked while a link downloads, until one of them is being copied in", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   const previous = useProjectStore.getState();
   const db = buildDb();
@@ -282,7 +282,7 @@ it("leaves Add files on after files are picked while a link downloads, until one
   const button = (text: string) => [...container.querySelectorAll("button")].find(b => b.textContent?.trim() === text)!;
   try {
     await act(async () => root.render(<MemoryRouter><Panel /></MemoryRouter>));
-    await act(async () => button("Add from a link").click());
+    await act(async () => button("从链接导入").click());
     const field = container.querySelector<HTMLInputElement>("#import-url")!;
     await act(() => {
       Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(field, "https://example.com/clips/interview.mp4");
@@ -290,13 +290,13 @@ it("leaves Add files on after files are picked while a link downloads, until one
     });
     await act(async () => { container.querySelector<HTMLFormElement>("#import-link")!.requestSubmit(); });
     // Files picked while the link downloads wait behind it, and more can be picked meanwhile.
-    await act(async () => button("Add files").click());
-    expect(container.textContent).toContain("File 1 of 2");
-    expect(button("Add files").disabled).toBe(false);
+    await act(async () => button("添加文件").click());
+    expect(container.textContent).toContain("文件 1/2");
+    expect(button("添加文件").disabled).toBe(false);
     // Once the link is in, the picked file is copied in, and that holds the picker until it is in.
     await act(async () => finish());
-    expect(container.querySelector("progress")?.getAttribute("aria-label")).toBe("Import progress for clip.mov");
-    expect(button("Add files").disabled).toBe(true);
+    expect(container.querySelector("progress")?.getAttribute("aria-label")).toBe("导入进度：clip.mov");
+    expect(button("添加文件").disabled).toBe(true);
   } finally {
     await act(() => root.unmount());
     container.remove();
@@ -342,12 +342,12 @@ it("shows a video's cache and its transcription the same way, at the right of it
       };
     });
     expect(lines(first!)).toEqual([
-      { text: "Caching | 4%", said: "first.mov: Caching · 4%", bar: ["activity-progress", "Caching first.mov", 0.04] },
-      { text: "Transcribing | 10%", said: "first.mov: Transcribing · 10%", bar: ["activity-progress", "Transcribing first.mov", 0.1] },
+      { text: "正在缓存 | 4%", said: "first.mov: 正在缓存 · 4%", bar: ["activity-progress", "正在缓存 first.mov", 0.04] },
+      { text: "正在转写 | 10%", said: "first.mov: 正在转写 · 10%", bar: ["activity-progress", "正在转写 first.mov", 0.1] },
     ]);
     expect(lines(second!)).toEqual([
-      { text: "Waiting to cache", said: "second.mov: Waiting to cache", bar: null },
-      { text: "Waiting to transcribe", said: "second.mov: Waiting to transcribe", bar: null },
+      { text: "等待缓存", said: "second.mov: 等待缓存", bar: null },
+      { text: "等待转写", said: "second.mov: 等待转写", bar: null },
     ]);
     // The file is at the left: its name, and under it its length. Nothing sits alone at the row's far right, and no time left is given.
     expect([...first!.children].map(part => part.className)).toEqual(["media-thumb-button", "media-file", "media-jobs"]);
@@ -361,10 +361,10 @@ it("shows a video's cache and its transcription the same way, at the right of it
       tasks: [{ ...task("first", { stage: "aligning", fraction: 0.4, remainingSeconds: 300 }), state }, s.current!.tasks[1]!] } })));
     await aligning("running");
     expect(lines(container.querySelector(".media-row")!)[1]).toEqual(
-      { text: "Transcribing | 40%", said: "first.mov: Transcribing · 40%", bar: ["activity-progress", "Transcribing first.mov", 0.4] });
+      { text: "正在转写 | 40%", said: "first.mov: 正在转写 · 40%", bar: ["activity-progress", "正在转写 first.mov", 0.4] });
     // Once alignment finishes, the row offers to replace its saved transcript.
     await aligning("done");
-    expect(lines(container.querySelector(".media-row")!)[1]).toEqual({ text: "Transcribed", said: "first.mov: Transcribed", bar: null });
+    expect(lines(container.querySelector(".media-row")!)[1]).toEqual({ text: "已转写", said: "first.mov: 已转写", bar: null });
   } finally {
     await act(() => root.unmount());
     useProjectStore.setState(previous, true);
@@ -401,17 +401,17 @@ it("shows each video's playback cache and starts one on request", async () => {
     // Finished jobs stay on the row, each a gray tick and its word.
     const cached = [...container.querySelectorAll('[aria-label^="cached.mov:"]')];
     expect(cached.map(line => [line.textContent, line.className, !!line.querySelector("svg")]))
-      .toEqual([["Cached", "media-cache is-done", true], ["Transcribed", "media-cache is-done", true]]);
-    expect(status("caching.mov")).toBe("Caching");
-    expect(container.querySelector('[aria-label="caching.mov: Caching · 50%"]')?.closest(".media-status")?.querySelector(".media-pct")?.textContent).toBe("50%");
-    expect(container.querySelector('progress[aria-label="Caching caching.mov"]')?.getAttribute("value")).toBe("0.5");
-    expect(status("cold.mov")).toBe("Not cached");
+      .toEqual([["已缓存", "media-cache is-done", true], ["已转写", "media-cache is-done", true]]);
+    expect(status("caching.mov")).toBe("正在缓存");
+    expect(container.querySelector('[aria-label="caching.mov: 正在缓存 · 50%"]')?.closest(".media-status")?.querySelector(".media-pct")?.textContent).toBe("50%");
+    expect(container.querySelector('progress[aria-label="正在缓存 caching.mov"]')?.getAttribute("value")).toBe("0.5");
+    expect(status("cold.mov")).toBe("未缓存");
     // The thumbnail previews the source; a row has no button of its own for it.
     expect([...container.querySelectorAll(".media-row")].map(row => row.querySelector(".media-thumb-button")?.getAttribute("aria-label")))
-      .toEqual(["Preview source cached.mov", "Preview source caching.mov", "Preview source cold.mov"]);
+      .toEqual(["预览素材 cached.mov", "预览素材 caching.mov", "预览素材 cold.mov"]);
     expect(container.querySelector(".media-row .btn-ghost")).toBeNull();
     const reads = list.mock.calls.length;
-    await act(async () => [...container.querySelectorAll("button")].find(b => b.textContent === "Cache now")!.click());
+    await act(async () => [...container.querySelectorAll("button")].find(b => b.textContent === "立即缓存")!.click());
     expect(prepare).toHaveBeenCalledWith("cold", true);
     expect(list.mock.calls.length).toBeGreaterThan(reads);
   } finally {
@@ -455,7 +455,7 @@ const jobs = (row: Element) => ({
 });
 
 it("hides Pause in the library toolbar until media processing is working or paused", async () => {
-  const button = (container: HTMLElement) => container.querySelector<HTMLButtonElement>('button[title$=" media processing"]');
+  const button = (container: HTMLElement) => container.querySelector<HTMLButtonElement>('button[title$="媒体处理"]');
   // Empty library: nothing is working yet, so Pause is absent.
   await showMedia({ media: [] }, async container => {
     expect(button(container)).toBeNull();
@@ -468,7 +468,7 @@ it("hides Pause in the library toolbar until media processing is working or paus
   // Preparing a file shows Pause.
   const reading = fixtureVideo({ id: "cam", name: "cam.mov", status: "ingesting", preparation: { stage: "waveform", fraction: 0.25 } });
   await showMedia({ media: [reading] }, async container => {
-    expect(button(container)?.textContent).toBe("Pause");
+    expect(button(container)?.textContent).toBe("暂停");
   });
   // Active transcription shows Pause even without video caching.
   const transcribing: Task = {
@@ -476,11 +476,11 @@ it("hides Pause in the library toolbar until media processing is working or paus
     context: { mediaId: ready.id }, instruction: "Transcribe camera.mov",
   };
   await showMedia({ media: [ready], tasks: [transcribing] }, async container => {
-    expect(button(container)?.textContent).toBe("Pause");
+    expect(button(container)?.textContent).toBe("暂停");
   });
   // While paused, Resume stays available even with no files.
   await showMedia({ media: [], mediaPaused: true }, async container => {
-    expect(button(container)?.textContent).toBe("Resume");
+    expect(button(container)?.textContent).toBe("恢复");
   });
 });
 
@@ -490,16 +490,16 @@ it("pauses and resumes media processing from the library toolbar", async () => {
     const update = vi.spyOn(api, "updateProject").mockImplementation(async (_id, body) => ({
       project: { ...useProjectStore.getState().current!.project, mediaPaused: body.mediaPaused === true },
     }));
-    const button = () => container.querySelector<HTMLButtonElement>('button[title$=" media processing"]')!;
-    expect(button().textContent).toBe("Pause");
+    const button = () => container.querySelector<HTMLButtonElement>('button[title$="媒体处理"]')!;
+    expect(button().textContent).toBe("暂停");
     await act(async () => button().click());
     expect(update).toHaveBeenNthCalledWith(1, PRJ, { mediaPaused: true });
-    expect(button().textContent).toBe("Resume");
-    expect(jobs(container.querySelector(".media-row")!).lines[0]).toEqual(["Caching paused", "media-cache is-idle"]);
-    expect(container.querySelector('progress[aria-label="Caching camera.mov"]')).toBeNull();
+    expect(button().textContent).toBe("恢复");
+    expect(jobs(container.querySelector(".media-row")!).lines[0]).toEqual(["缓存已暂停", "media-cache is-idle"]);
+    expect(container.querySelector('progress[aria-label="正在缓存 camera.mov"]')).toBeNull();
     await act(async () => button().click());
     expect(update).toHaveBeenNthCalledWith(2, PRJ, { mediaPaused: false });
-    expect(button().textContent).toBe("Pause");
+    expect(button().textContent).toBe("暂停");
   });
 });
 
@@ -517,33 +517,33 @@ it("confirms a saved recording's replacement, shows its progress, and lets a fai
     const action = () => job().querySelector<HTMLButtonElement>("button")!;
     const dialog = () => container.querySelector("dialog");
     const choose = (label: string) => act(async () => [...dialog()!.querySelectorAll("button")].find(b => b.textContent === label)!.click());
-    expect(action().getAttribute("aria-label")).toBe("Re-transcribe");
+    expect(action().getAttribute("aria-label")).toBe("重新转写");
     expect(action().textContent).toBe("");
     await act(async () => action().click());
-    expect(dialog()!.querySelector("h2")?.textContent).toBe("Re-transcribe “camera.mov”?");
-    expect(dialog()!.textContent).toContain("replace this file’s saved words and timings");
-    expect(dialog()!.textContent).toContain("Its audio will be sent to OpenAI.");
-    await choose("Cancel");
+    expect(dialog()!.querySelector("h2")?.textContent).toBe("重新转写“camera.mov”？");
+    expect(dialog()!.textContent).toContain("替换此文件中已保存的文字和时间点");
+    expect(dialog()!.textContent).toContain("音频会发送到 OpenAI。");
+    await choose("取消");
     expect(submit).not.toHaveBeenCalled();
-    expect(job().querySelector('[role="status"]')?.textContent).toBe("Transcribed");
+    expect(job().querySelector('[role="status"]')?.textContent).toBe("已转写");
 
     await act(async () => action().click());
-    const confirm = [...dialog()!.querySelectorAll("button")].find(b => b.textContent === "Re-transcribe")!;
+    const confirm = [...dialog()!.querySelectorAll("button")].find(b => b.textContent === "重新转写")!;
     await act(async () => { confirm.click(); confirm.click(); });
     expect(submit).toHaveBeenCalledExactlyOnceWith(video.id);
     expect(dialog()).toBeNull();
-    expect(job().textContent).toContain("Transcribing");
+    expect(job().textContent).toContain("正在转写");
     expect(job().querySelector("button")).toBeNull();
     await act(async () => accept());
     expect(job().querySelector("button")).toBeNull();
     await act(() => useProjectStore.setState(s => ({ current: { ...s.current!, tasks: [{ ...task, state: "failed", error: "Model could not be opened." }] } })));
     expect(job().querySelector('[role="status"]')?.textContent).toBe("Model could not be opened.");
-    expect(action().textContent).toBe("Retry");
+    expect(action().textContent).toBe("重试");
     await act(async () => action().click());
-    await choose("Re-transcribe");
+    await choose("重新转写");
     expect(submit.mock.calls).toEqual([[video.id], [video.id]]);
-    expect(job().querySelector('[role="status"]')?.textContent).toBe("Transcribed");
-    expect(action().getAttribute("aria-label")).toBe("Re-transcribe");
+    expect(job().querySelector('[role="status"]')?.textContent).toBe("已转写");
+    expect(action().getAttribute("aria-label")).toBe("重新转写");
     expect(action().textContent).toBe("");
   });
 });
@@ -554,7 +554,7 @@ it("describes the saved transcript’s actual model and local completion time on
   const saved = fixtureVideo({ id: "camera", transcriptId: "saved", lastTranscription: { completedAt, model } });
   const readWords = vi.spyOn(api, "transcript");
   await showMedia({ media: [saved] }, async container => {
-    const button = container.querySelector<HTMLButtonElement>('button[aria-label="Re-transcribe"]')!;
+    const button = container.querySelector<HTMLButtonElement>('button[aria-label="重新转写"]')!;
     const tip = () => container.querySelector('[role="tooltip"]');
     const pointer = (type: string) => act(() => { button.dispatchEvent(new PointerEvent(type, { pointerType: "mouse", bubbles: true })); });
     const focus = (type: string) => act(() => { button.dispatchEvent(new FocusEvent(type, { bubbles: true })); });
@@ -565,7 +565,7 @@ it("describes the saved transcript’s actual model and local completion time on
     expect(tip()?.id).toBe(button.getAttribute("aria-describedby"));
     expect(tip()?.textContent).toContain(model);
     expect(tip()?.querySelector("time")?.dateTime).toBe(completedAt);
-    expect(tip()?.querySelector("time")?.textContent).toBe(new Date(completedAt).toLocaleString());
+    expect(tip()?.querySelector("time")?.textContent).toBe(new Date(completedAt).toLocaleString("zh-CN"));
     await pointer("pointerout");
     expect(tip()).toBeNull();
 
@@ -590,13 +590,13 @@ it("shows the recorded date and model independently for older transcripts", asyn
     fixtureVideo({ id: "older", transcriptId: "three" }),
   ];
   await showMedia({ media }, async container => {
-    const buttons = [...container.querySelectorAll<HTMLButtonElement>('button[aria-label="Re-transcribe"]')];
+    const buttons = [...container.querySelectorAll<HTMLButtonElement>('button[aria-label="重新转写"]')];
     expect(buttons).toHaveLength(media.length);
     for (const [index, button] of buttons.entries()) {
       await act(() => { button.dispatchEvent(new FocusEvent("focusin", { bubbles: true })); });
       const tip = container.querySelector('[role="tooltip"]')!;
-      expect(tip.textContent).toContain(index === 0 ? new Date(completedAt).toLocaleString() : "Transcription date not recorded");
-      expect(tip.textContent).toContain(index === 1 ? "Custom local model" : "Model not recorded");
+      expect(tip.textContent).toContain(index === 0 ? new Date(completedAt).toLocaleString("zh-CN") : "未记录转写日期");
+      expect(tip.textContent).toContain(index === 1 ? "Custom local model" : "未记录模型");
       await act(() => { button.dispatchEvent(new FocusEvent("focusout", { bubbles: true })); });
     }
   });
@@ -608,10 +608,10 @@ it("explains a paused or unavailable replacement and never offers it for a silen
   const submit = vi.spyOn(api, "transcribe");
   await showMedia({ media: [camera, silent], mediaPaused: true }, async container => {
     const [recording, silentRow] = [...container.querySelectorAll(".media-row")];
-    expect(silentRow!.querySelector('[aria-label="Re-transcribe"]')).toBeNull();
-    const action = recording!.querySelector<HTMLButtonElement>('button[aria-label="Re-transcribe"]')!;
+    expect(silentRow!.querySelector('[aria-label="重新转写"]')).toBeNull();
+    const action = recording!.querySelector<HTMLButtonElement>('button[aria-label="重新转写"]')!;
     expect(action.getAttribute("aria-disabled")).toBe("true");
-    expect(recording!.textContent).toContain("Transcribed · caching paused");
+    expect(recording!.textContent).toContain("已转写 · 缓存已暂停");
     await act(() => action.click());
     expect(container.querySelector("dialog")).toBeNull();
     expect(submit).not.toHaveBeenCalled();
@@ -619,8 +619,8 @@ it("explains a paused or unavailable replacement and never offers it for a silen
   vi.spyOn(api, "settings").mockResolvedValue({ settings: buildDb().settings, transcriptionAvailable: false });
   await showMedia({ media: [camera] }, async container => {
     const job = container.querySelector(".media-row .media-status:last-child")!;
-    expect(job.textContent).toContain("Transcribed");
-    expect(job.querySelector("a")?.textContent).toBe("Set up transcription");
+    expect(job.textContent).toContain("已转写");
+    expect(job.querySelector("a")?.textContent).toBe("设置转写");
     expect(job.querySelector("button")).toBeNull();
   });
 });
@@ -633,12 +633,12 @@ it("reads a transcription the pause stopped as paused, in the gray of its paused
   const setup = { media: [fixtureVideo({ id: "cam", name: "cam.mov" })], tasks: [stopped], caches: [{ mediaId: "cam", state: "uncached" as const, queued: true }] };
   await showMedia({ ...setup, mediaPaused: true }, async container => {
     expect(jobs(container.querySelector(".media-row")!)).toEqual({
-      lines: [["Caching paused", "media-cache is-idle"], ["Transcription paused", "media-cache is-idle"]], actions: [],
+      lines: [["缓存已暂停", "media-cache is-idle"], ["转写已暂停", "media-cache is-idle"]], actions: [],
     });
     // Not paused, a run still cut off is a failure the editor can retry.
     await act(() => useProjectStore.setState(s => ({ current: { ...s.current!, project: { ...s.current!.project, mediaPaused: false } } })));
     expect(jobs(container.querySelector(".media-row")!)).toMatchObject({
-      lines: [["Waiting to cache", "media-cache is-busy"], ["Transcription was interrupted.", "media-cache is-bad"]], actions: ["Retry"],
+      lines: [["等待缓存", "media-cache is-busy"], ["Transcription was interrupted.", "media-cache is-bad"]], actions: ["重试"],
     });
   });
   // A transcription that failed by itself says so while the project is paused too.
@@ -649,7 +649,7 @@ it("reads a transcription the pause stopped as paused, in the gray of its paused
 
 it("says a file it couldn’t read, and why, in the word and apostrophe every error has", async () => {
   await showMedia({ media: [fixtureVideo({ id: "cam", name: "cam.mov", status: "failed", error: "No video stream." })] }, async container => {
-    expect(container.querySelector(".media-meta")?.textContent).toBe("Couldn’t read this file: No video stream.");
+    expect(container.querySelector(".media-meta")?.textContent).toBe("无法读取文件: No video stream.");
   });
 });
 
@@ -664,19 +664,19 @@ it("shows a file being read as the first job at its row's right, a step, a bar a
     // Reading is a job like the cache and the transcript: its step, then its bar, then its percent, in the same element.
     const line = (row: Element) => { const first = row.querySelector(".media-jobs .media-status")!; const bar = first.querySelector("progress");
       return [first.className, [...first.children].map(part => part.textContent), bar && [bar.className, bar.getAttribute("aria-label"), bar.value]]; };
-    expect(line(cam!)).toEqual(["media-status has-bar", ["Checking file", "", "42%"], ["activity-progress", "Preparation progress for cam.mov", 0.42]]);
-    expect(line(mic!)).toEqual(["media-status has-bar", ["Caching", "", "30%"], ["activity-progress", "Caching mic.mov", 0.3]]);
-    expect(cam!.querySelector('.media-jobs [role="status"]')!.getAttribute("aria-label")).toBe("cam.mov: Checking file · 42%");
-    expect(jobs(cam!)).toEqual({ lines: [["Checking file", "media-cache is-busy"]], actions: [] });
+    expect(line(cam!)).toEqual(["media-status has-bar", ["正在检查文件", "", "42%"], ["activity-progress", "准备进度：cam.mov", 0.42]]);
+    expect(line(mic!)).toEqual(["media-status has-bar", ["正在缓存", "", "30%"], ["activity-progress", "正在缓存 mic.mov", 0.3]]);
+    expect(cam!.querySelector('.media-jobs [role="status"]')!.getAttribute("aria-label")).toBe("cam.mov: 正在检查文件 · 42%");
+    expect(jobs(cam!)).toEqual({ lines: [["正在检查文件", "media-cache is-busy"]], actions: [] });
     // No bar sits under the name, and nothing guesses how long is left.
     expect(cam!.querySelectorAll("progress")).toHaveLength(1);
     expect(cam!.textContent).not.toMatch(/left|about|Estimating|Finishing/);
     // Until the engine reports a step the bar runs without a value, and once the file is read the job goes.
     await act(() => useProjectStore.setState(s => ({ current: { ...s.current!, media: [{ ...reading, preparation: undefined }, media[1]!] } })));
-    expect(line(rows()[0]!)).toEqual(["media-status has-bar", ["Preparing footage…", "", ""], ["activity-progress", "Preparation progress for cam.mov", 0]]);
+    expect(line(rows()[0]!)).toEqual(["media-status has-bar", ["正在准备素材…", "", ""], ["activity-progress", "准备进度：cam.mov", 0]]);
     expect(rows()[0]!.querySelector("progress")!.hasAttribute("value")).toBe(false);
     await act(() => useProjectStore.setState(s => ({ current: { ...s.current!, media: [{ ...reading, status: "ready" as const, preparation: undefined }, media[1]!] } })));
-    expect(jobs(rows()[0]!)).toEqual({ lines: [["No transcript", "media-cache is-idle"]], actions: ["Transcribe"] });
+    expect(jobs(rows()[0]!)).toEqual({ lines: [["暂无转写", "media-cache is-idle"]], actions: ["转写"] });
   });
 });
 
@@ -685,17 +685,17 @@ it("says a file's read is paused while the project is, in the gray of its paused
   await showMedia({ media: [reading], caches: [], mediaPaused: true }, async container => {
     const row = () => container.querySelector(".media-row")!;
     // The engine holds the read until resume: a step with a bar and a percent would only stand still.
-    expect(jobs(row())).toEqual({ lines: [["Reading paused", "media-cache is-idle"]], actions: [] });
+    expect(jobs(row())).toEqual({ lines: [["读取已暂停", "media-cache is-idle"]], actions: [] });
     expect(row().querySelector(".media-jobs .media-status")!.className).toBe("media-status");
     expect(row().querySelector("progress")).toBeNull();
     expect(row().querySelector(".media-jobs")!.textContent).not.toMatch(/%|Checking/);
     // A file added while paused has no step yet, and reads the same.
     await act(() => useProjectStore.setState(s => ({ current: { ...s.current!, media: [{ ...reading, preparation: undefined }] } })));
-    expect(jobs(row()).lines[0]).toEqual(["Reading paused", "media-cache is-idle"]);
+    expect(jobs(row()).lines[0]).toEqual(["读取已暂停", "media-cache is-idle"]);
     expect(row().querySelector("progress")).toBeNull();
     // Resumed, the read is under way again and says its step.
     await act(() => useProjectStore.setState(s => ({ current: { ...s.current!, media: [reading], project: { ...s.current!.project, mediaPaused: false } } })));
-    expect(jobs(row()).lines[0]).toEqual(["Checking file", "media-cache is-busy"]);
+    expect(jobs(row()).lines[0]).toEqual(["正在检查文件", "media-cache is-busy"]);
     expect(row().querySelector("progress")!.value).toBe(0.42);
   });
 });
@@ -704,8 +704,8 @@ it("offers no transcript for a video with no audio track", async () => {
   const media = [fixtureVideo({ id: "screen", name: "screen.mov", hasAudio: false }), fixtureVideo({ id: "cam", name: "cam.mov" })];
   await showMedia({ media, caches: media.map(m => ({ mediaId: m.id, state: "ready" as const })) }, async container => {
     const [screen, cam] = [...container.querySelectorAll(".media-row")].map(jobs);
-    expect(screen).toEqual({ lines: [["Cached", "media-cache is-done"]], actions: [] });
-    expect(cam).toEqual({ lines: [["Cached", "media-cache is-done"], ["No transcript", "media-cache is-idle"]], actions: ["Transcribe"] });
+    expect(screen).toEqual({ lines: [["已缓存", "media-cache is-done"]], actions: [] });
+    expect(cam).toEqual({ lines: [["已缓存", "media-cache is-done"], ["暂无转写", "media-cache is-idle"]], actions: ["转写"] });
   });
 });
 
@@ -722,35 +722,35 @@ it("asks before taking a file Scarlet couldn't read out of the project, from a s
     const dialog = () => container.querySelector("dialog");
     const press = (name: string) => act(async () => [...dialog()!.querySelectorAll("button")].find(b => b.textContent === name)!.click());
     const pageLine = () => [...container.querySelectorAll('[role="alert"]')].filter(line => !dialog()?.contains(line)).map(line => line.textContent);
-    await act(async () => [...container.querySelectorAll<HTMLButtonElement>(".media-jobs button")].find(b => b.textContent === "Cache now")!.click());
+    await act(async () => [...container.querySelectorAll<HTMLButtonElement>(".media-jobs button")].find(b => b.textContent === "立即缓存")!.click());
     expect(pageLine()).toEqual(["The disk is full."]);
     // Only the file that couldn't be read has it, after its jobs at the row's end. It has no text: hovering names it.
     expect(rows().map(row => row.lastElementChild!.className)).toEqual(["media-jobs", "edit-card-icon media-remove"]);
-    expect(rows()[1]!.querySelector(".media-meta")?.textContent).toBe("Couldn’t read this file: moov atom not found");
-    expect([x().textContent, x().getAttribute("aria-label"), x().title, x().previousElementSibling?.className]).toEqual(["", "Remove broken.mov", "Remove", "media-jobs"]);
+    expect(rows()[1]!.querySelector(".media-meta")?.textContent).toBe("无法读取文件: moov atom not found");
+    expect([x().textContent, x().getAttribute("aria-label"), x().title, x().previousElementSibling?.className]).toEqual(["", "移除 broken.mov", "移除", "media-jobs"]);
 
     // The project's copy is deleted with it, so the press asks first, as Move to Trash does. Cancel leaves everything.
     await act(async () => x().click());
     expect(remove).not.toHaveBeenCalled();
     expect([dialog()!.querySelector("h2")?.textContent, dialog()!.querySelector(".text-muted")?.textContent, [...dialog()!.querySelectorAll("button:not([data-close])")].map(b => [b.textContent, b.className])])
-      .toEqual(["Remove “broken.mov”?", "Scarlet deletes the project's copy of this file. This cannot be undone.", [["Cancel", "btn-ghost"], ["Remove", "btn-danger"]]]);
-    await press("Cancel");
+      .toEqual(["移除“broken.mov”？", "Scarlet 会删除该文件在项目中的副本。此操作无法撤销。", [["取消", "btn-ghost"], ["移除", "btn-danger"]]]);
+    await press("取消");
     expect([dialog(), remove.mock.calls.length, rows().length]).toEqual([null, 0, 2]);
 
     // The engine refuses a file the video or its history still uses. The dialog says why, and the row stays.
     await act(async () => x().click());
-    await press("Remove");
+    await press("移除");
     expect([...dialog()!.querySelectorAll<HTMLButtonElement>("button:not([data-close])")].map(b => b.disabled)).toEqual([true, true]);
     await act(async () => refuse());
     expect(dialog()!.querySelector('[role="alert"]')?.textContent).toBe(refusal);
     expect(pageLine()).toEqual(["The disk is full."]);
     expect(rows()).toHaveLength(2);
     // The refusal goes with its dialog: asked again, the dialog opens without it, and the page never shows it.
-    await press("Cancel");
+    await press("取消");
     await act(async () => x().click());
     expect(dialog()!.querySelector('[role="alert"]')).toBeNull();
     // Once it can go, the dialog closes and the row leaves.
-    await press("Remove");
+    await press("移除");
     expect(remove.mock.calls).toEqual([[PRJ, "broken"], [PRJ, "broken"]]);
     expect(dialog()).toBeNull();
     expect(rows().map(row => row.querySelector(".media-file .truncate")?.textContent)).toEqual(["cam.mov"]);
@@ -775,11 +775,11 @@ it("says nothing about where audio goes until the settings answer", async () => 
   vi.spyOn(api, "settings").mockReturnValue(new Promise(resolve => { answer = resolve; }));
   await showMedia({ media: [fixtureVideo({ id: "cam", name: "cam.mov" })] }, async container => {
     // The OpenAI notice would flash here each time Media opens, also for an editor who transcribes on this computer.
-    const notice = () => [...container.querySelectorAll("p")].find(p => /transcri/i.test(p.textContent ?? ""));
+    const notice = () => [...container.querySelectorAll("p")].find(p => /转写/.test(p.textContent ?? ""));
     expect(notice()).toBeUndefined();
     expect(container.querySelector("#media-file-types")?.textContent).toMatch(/MP4.*WAV.*JPEG/);
     await act(async () => answer({ settings: { ...db.settings, transcription: { ...db.settings.transcription, provider: "openai" } }, transcriptionAvailable: true }));
-    expect(notice()?.textContent).toBe("Audio from imported files is sent to OpenAI for transcription.");
+    expect(notice()?.textContent).toBe("导入文件的音频会发送到 OpenAI 进行转写。");
   });
 });
 
@@ -793,7 +793,7 @@ it("says why imports won't be transcribed and offers the one fix", async () => {
   });
   await showMedia({ media: [] }, async container => {
     const notice = () => container.querySelector(".import-transcription-notice");
-    expect(notice()!.textContent).toContain("OpenAI transcription needs an API key. Audio will be imported without a transcript.");
+    expect(notice()!.textContent).toContain("OpenAI 转写需要 API 密钥。 导入的音频不会生成转写。");
     await act(async () => notice()!.querySelector("button")!.click());
     expect(update).toHaveBeenCalledWith({ transcription: expect.objectContaining({ provider: "whispercpp" }) });
     // Local transcription now runs, and Media leaves out the note that says so.
@@ -805,8 +805,8 @@ it("says why imports won't be transcribed and offers the one fix", async () => {
     transcriptionIssue: "CrisperWhisper is not installed. The bundled Whisper runtime is unavailable." });
   await showMedia({ media: [] }, async container => {
     const notice = container.querySelector(".import-transcription-notice")!;
-    expect(notice.textContent).toContain("CrisperWhisper is not installed.");
-    expect(notice.querySelector("a")?.textContent).toBe("Set up transcription");
+    expect(notice.textContent).toContain("尚未安装 CrisperWhisper。");
+    expect(notice.querySelector("a")?.textContent).toBe("设置转写");
     expect(notice.querySelector("a")?.getAttribute("href")).toBe("/settings");
   });
 });

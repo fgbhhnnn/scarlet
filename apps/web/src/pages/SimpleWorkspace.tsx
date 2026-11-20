@@ -6,7 +6,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { ChatRail } from "../components/shell/ChatRail";
 import { ConnectionStatus } from "../components/shell/StatusIndicators";
 import { Dropdown, MenuItem } from "../components/shell/WorkspaceNavigation";
-import { appliedReviewChange, isPublishedCall, mapStagedCut, makeTimeMap, timelineDuration, type Change, type CutAssessment, type Project, type TimeRange, type Timeline } from "@scarlet/timeline";
+import { appliedReviewChange, isPublishedCall, makeMediaClip, mapStagedCut, makeTimeMap, timelineDuration, type Change, type CutAssessment, type Project, type TimeRange, type Timeline } from "@scarlet/timeline";
 import { closingCheckFailed, isAsideTask, fullRenderContext, isProjectEditTask, matchesEdit, queueOrder, queueWaits, requestTargetKey, requestText, REVISED_CHECK, threadEditList, type EditRef, type Learning, type Task, type ThreadEdit } from "@scarlet/shared";
 import { EditBadge, editGroups, EditVersion, RejectEdit, RejectedMark, ThreadAction, ThreadEdits, useRejecting, useReviewed, useRevising, useThreadEdits } from "../components/review/ThreadEdits";
 import { useKeptEdits } from "../lib/keptEdits";
@@ -31,6 +31,7 @@ import { callToPrepare, editToPrepare, usePrepareReviewCuts, type PreparedCut, t
 import { CutMark, EditPassage } from "../components/review/CutTranscript";
 import { useReviewTimeline } from "../components/review/useReviewTimeline";
 import { ReviewActions } from "../components/review/ReviewActions";
+import { AutoRoughCut } from "../components/review/AutoRoughCut";
 import { BeforeToggle } from "../components/review/BeforeToggle";
 import { ignorePageShortcut, isEditableTarget, useHotkeys } from "../lib/hotkeys";
 import { RequestMetrics, RunBundle, runEnded, Said } from "../components/review/RunBundle";
@@ -1330,6 +1331,7 @@ export function SimpleWorkspace() {
   const { head, timeline } = useShownCut();
   const fps = current.project.settings.fps;
   const approve = useProjectStore(s => s.approve);
+  const refreshHead = useProjectStore(s => s.refreshHead);
   const setupOpen = useUiStore(s => s.agentSetupOpen);
   const openDraft = useUiStore(s => s.openDraft);
   const uploads = useUploader(current.id);
@@ -3695,6 +3697,36 @@ export function SimpleWorkspace() {
   const previewVersion = appliedCut ? beforeCut!.version : callView ? callView.version : pinnedCallVersion ?? draftVersion;
   // The player is on the working cut's own clock: nothing open that plays another version or a clip.
   const onWorkingClock = !source && !draftVersion && !appliedCut && !listening;
+  const emptyWorkingTimeline = !timeline || !timeline.tracks.some(track => track.kind === "video" && track.clips.length > 0);
+  const addFirstVideo = useCallback(async () => {
+    const first = media.find(asset => asset.kind === "video" && asset.status !== "failed");
+    if (!first) throw new Error("请先导入可用的视频素材。");
+    let version = current.project.head;
+    if (!version) {
+      const initialized = await api.timeline(current.id, "head");
+      version = initialized.timeline.version;
+      await refreshHead(current.id);
+    }
+    const latest = useProjectStore.getState().current;
+    const head = latest?.project.head ?? version;
+    const base = latest?.timeline?.version === head ? latest.timeline : timeline;
+    if (!base || base.version !== head) throw new Error("时间线正在初始化，请稍后再试。");
+    const lane = base.tracks.find(track => track.id === "v1") ?? base.tracks.find(track => track.kind === "video");
+    if (!lane) throw new Error("当前项目没有 V1 画面轨道。");
+    if (lane.clips.some(clip => clip.kind === "media" && clip.mediaId === first.id)) return;
+    const length = first.duration ?? 0;
+    if (length <= 0) throw new Error("视频仍在准备中，请稍后再试。");
+    const saved = await api.proposeChange(current.id, {
+      fromVersion: head,
+      description: "将首个视频添加到 V1",
+      reason: "将导入的视频放入首条画面轨道，开始手动剪辑。",
+      ops: [{ op: "addClip", trackId: lane.id, clip: makeMediaClip(first.id, 0, length, 0) }],
+      autoApprove: true,
+      skipRender: true,
+    });
+    await refreshHead(current.id);
+    return saved;
+  }, [current.id, current.project.head, media, refreshHead, timeline]);
   useLayoutEffect(() => {
     showingWorkingCut(onWorkingClock);
     return () => showingWorkingCut(false);
@@ -3895,6 +3927,7 @@ export function SimpleWorkspace() {
                 same mark. While videos cache, the ring is on the Media button. */}
             <div className="simple-tools">
               <MediaButton importing={importing} importFailed={importFailed} onOpen={() => setPanel("media")} />
+              <AutoRoughCut key={current.id} importing={importing} onQueued={() => { follow.current = true; }} />
               <ExportButton onOpen={() => setPanel("export")} />
               <button type="button" className="btn-quiet" aria-haspopup="dialog" onClick={() => setPanel("history")}>History</button>
               <Dropdown label="More" align="right" width={240} description={menuSays || undefined}
@@ -3978,7 +4011,10 @@ export function SimpleWorkspace() {
             change={draftVersion && !appliedCut ? viewed : undefined} spot={shownPlace} approval={!!draftVersion && !appliedCut} playChange={reviewPlays}
             active={workspaceActive} onMedia={() => setPanel("media")} joined={joinedPlayer} />
           <ManualTimeline key={current.id} open={manualOpen} projectId={current.id} timeline={timeline ?? undefined} media={media} fps={fps}
-            canEdit={onWorkingClock && !previewVersion} onClose={() => setManualOpen(false)} onMedia={() => setPanel("media")} />
+            canEdit={onWorkingClock && !previewVersion || (emptyWorkingTimeline && !appliedCut && !previewVersion && !listening)}
+            allowFirstVideo={emptyWorkingTimeline && !appliedCut && !previewVersion && !listening}
+            onClose={() => setManualOpen(false)} onMedia={() => setPanel("media")}
+            onAddFirstVideo={async () => { await addFirstVideo(); }} />
           {chosenSource && hasCut && source === chosenSource && <div className="simple-decide" role="region" aria-label="Source preview">
             <span className="simple-decide-text"><small>Source clip</small>{chosenSource.name}</span>
             <button type="button" className="btn-ghost" onClick={backToVideo}>Back to the video</button>

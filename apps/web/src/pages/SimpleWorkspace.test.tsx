@@ -6131,7 +6131,7 @@ it("opens Media, Export and History from the header and keeps project tools in t
   const back = container.querySelector<HTMLAnchorElement>('a[href="/"]');
   expect(back?.getAttribute("aria-label")).toBe("All projects");
   const tools = container.querySelector(".simple-tools")!;
-  expect([...tools.querySelectorAll(":scope > button, :scope > .media-hover > button")].map(b => b.textContent?.trim())).toEqual(["Media", "Export", "History"]);
+  expect([...tools.querySelectorAll(":scope > button, :scope > .media-hover > button")].map(b => b.textContent?.trim())).toEqual(["Media", "自动粗剪", "Export", "History"]);
   for (const [name, field] of [["Media", "#media-file-types"], ["Export", "#export-range"]] as const) {
     await click(buttonIn(tools, name)!);
     await act(async () => { await vi.dynamicImportSettled(); });
@@ -6155,6 +6155,22 @@ it("opens Media, Export and History from the header and keeps project tools in t
   useUiStore.getState().setProjectSettingsOpen(false);
   await click(buttonIn(tools, "History")!);
   expect(document.querySelector("dialog[open]")?.textContent).toContain("History");
+});
+
+it("keeps the first-video V1 entry enabled in a fresh manual timeline", async () => {
+  const fresh = { ...data.project, head: null };
+  data = { ...data, project: fresh, timeline: null, changes: [], tasks: [], notes: [] };
+  useProjectStore.setState({ current: data });
+  useShownCutStore.setState({ projectId: PRJ, head: null, timeline: null });
+
+  await showFolded();
+  await openMenu();
+  await click(menuItem("手动剪辑"));
+
+  const timeline = container.querySelector('[aria-label="手动剪辑"]')!;
+  const addFirst = buttonIn(timeline, "将首个视频添加到 V1");
+  expect(addFirst).toBeDefined();
+  expect(addFirst!.disabled).toBe(false);
 });
 
 /** The Transcript from the menu, once its pane and the words have loaded. */

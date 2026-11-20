@@ -3,7 +3,7 @@ import os, { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { createProject, type Change, type Project } from "@scarlet/timeline";
-import { ATTEMPT_HEADER, TASK_HEADER, queueOrder, queueWait, taskPlan, type Task, type TaskEvent, type TaskPrompt, type WsEvent } from "@scarlet/shared";
+import { ATTEMPT_HEADER, TASK_HEADER, queueOrder, queueWait, taskPlan, taskRunKind, type Task, type TaskEvent, type TaskPrompt, type WsEvent } from "@scarlet/shared";
 import { createApp, type ScarletApp } from "../app.js";
 import { accessToken } from "../auth.js";
 import { PLAN_STEPS } from "@scarlet/mcp/prompt";
@@ -56,6 +56,17 @@ async function claimed(agent = "claude", instruction = "Tighten the intro", cont
   const { body: { task } } = await api<{ task: Task }>("POST", `/hosts/${host.id}/claim`, { taskId: body.task.id });
   return task;
 }
+
+it("recognizes the automatic first-cut request as a dialogue pass", async () => {
+  const result = await api<{ task: Task }>("POST", `/projects/${project.id}/tasks`, {
+    kind: "edit", agent: "codex",
+    instruction: "Make a first cut from this project’s footage and send it to me for review.",
+    context: { message: "Make first cut" },
+  });
+  expect(result.status).toBe(201);
+  expect(result.body.task.context.dialogueOperation).toBe("first-cut");
+  expect(taskRunKind(result.body.task)).toBe("pass");
+});
 
 it("builds the one prompt every host uses, with answers in the system prompt for a fresh run", async () => {
   const task = await claimed();

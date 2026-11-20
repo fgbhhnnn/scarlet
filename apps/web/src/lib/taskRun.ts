@@ -1,7 +1,7 @@
 import { DialogueScanPage, requestText, type Task, type TaskEvent } from "@scarlet/shared";
 import { cutSummary, mergeRanges, type Change, type TimeRange } from "@scarlet/timeline";
 import { appliedEditSummary } from "../components/review/cutReviewDetails";
-import { clock, lengthLabel, plural, tokenLabel } from "./format";
+import { clock, lengthLabel, tokenLabel } from "./format";
 import { editConfirmation, inputMediaIds, taskChatText, toolName, waitLabels, waitTools } from "./taskActivity";
 
 /**
@@ -50,29 +50,29 @@ function spans(event: TaskEvent): TimeRange[] {
   return (list ?? [input(event)]).map(span).filter((s): s is TimeRange => !!s);
 }
 
-/** "at 0:24, 1:33 and 3:05" for a few places, "from 0:00 to 57:44" for many. */
+/** Format the positions a step covered. */
 function where(found: readonly TimeRange[], count: number) {
   if (!found.length) return "";
   if (count <= 3 && found.every(s => s.end - s.start < 1)) {
     const starts = [...new Set(found.map(s => clock(s.start)))];
-    if (starts.length === count) return ` at ${starts.length > 1 ? starts.slice(0, -1).join(", ") + " and " + starts.at(-1) : starts[0]}`;
+    if (starts.length === count) return starts.length > 1 ? `，位于 ${starts.slice(0, -1).join("、")} 和 ${starts.at(-1)}` : `，位于 ${starts[0]}`;
   }
   let start = Infinity, end = -Infinity;
   for (const range of found) { start = Math.min(start, range.start); end = Math.max(end, range.end); }
-  return end - start >= 1 ? ` from ${clock(start)} to ${clock(end)}` : ` at ${clock(start)}`;
+  return end - start >= 1 ? `，范围 ${clock(start)}–${clock(end)}` : `，位于 ${clock(start)}`;
 }
 
 type StepSpec = { group: string; verb: string; doing: string; detail: (n: number, found: readonly TimeRange[], first: TaskEvent) => string; once?: boolean };
 
-const project: StepSpec = { group: "read", verb: "Read", doing: "Reading", detail: () => "the project", once: true };
-/** "the picture at 0:24 and 1:33" when the places are listed, "the picture in 12 places from 0:00 to 57:47" otherwise. */
+const project: StepSpec = { group: "read", verb: "读取", doing: "正在读取", detail: () => "项目", once: true };
+/** A picture or sound step with its number of places and range. */
 const placesDetail = (what: string) => (n: number, found: readonly TimeRange[]) => {
   const at = where(found, n);
-  return n > 1 && !at.includes(" and ") ? `${what} in ${n} places${at}` : `${what}${at}`;
+  return n > 1 && !at.includes(" 和 ") ? `${what}（${n} 处）${at}` : `${what}${at}`;
 };
-const sound: StepSpec = { group: "sound", verb: "Checked", doing: "Checking", detail: placesDetail("the sound"), once: true };
-const picture: StepSpec = { group: "picture", verb: "Looked at", doing: "Looking at", detail: placesDetail("the picture"), once: true };
-const transcript: StepSpec = { group: "transcript", verb: "Read", doing: "Reading", detail: (n, found) => "the transcript" + where(found, n), once: true };
+const sound: StepSpec = { group: "sound", verb: "检查", doing: "正在检查", detail: placesDetail("声音"), once: true };
+const picture: StepSpec = { group: "picture", verb: "查看", doing: "正在查看", detail: placesDetail("画面"), once: true };
+const transcript: StepSpec = { group: "transcript", verb: "读取", doing: "正在读取", detail: (n, found) => "转写稿" + where(found, n), once: true };
 
 /** Tools grouped into plain steps. Tools that make an edit show up as the edit itself. `once` skips a repeat of the same call. */
 const toolSteps: Record<string, StepSpec> = {

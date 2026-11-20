@@ -9,7 +9,7 @@ import { createApp, type ScarletApp } from "../app.js";
 import { accessToken } from "../auth.js";
 import { ffmpeg } from "../render/ffmpeg.js";
 import { OpenAIProvider } from "../transcribe/openai.js";
-import { transcribeForDialogue } from "../services/ingest.js";
+import { startImportTranscription, transcribeForDialogue } from "../services/ingest.js";
 import { previewIdentity } from "../services/previewPictures.js";
 import { emissionStorePaths } from "../services/recordingAudio.js";
 import { savedSpeakerTurns } from "../services/recordingSpeakers.js";
@@ -143,6 +143,47 @@ it("refuses to transcribe while the project's media processing is paused, and st
   const prepared = await api("POST", `/projects/${project.id}/media/voice/prepare`, { kind: "transcript" });
   expect(await prepared.json()).toEqual({ state: "ready" });
   expect(cloud).toHaveBeenCalledTimes(1);
+});
+
+async function importedAudioWithConsent() {
+  const { ctx } = workspace;
+  ctx.paths.ensureProject(project.id);
+  writeFileSync(join(ctx.paths.media(project.id), "import.wav"), "fixture");
+  ctx.env.openaiKey = "fixture";
+  ctx.repos.settings.update({ transcription: { provider: "openai" } });
+  const { revision } = ctx.repos.settings.transcriptionPolicy();
+  const media = ctx.repos.projects.putMedia(project.id, {
+    id: "imported", name: "koubo-raw.mp4", path: "import.wav", kind: "audio", duration: 1, hasAudio: true,
+    transcriptionOnImport: "openai", transcriptionRevisionOnImport: revision,
+  }, "ready");
+
+  return media;
+}
+
+it("records an explicit error task when an imported provider becomes unavailable", async () => {
+  const media = await importedAudioWithConsent();
+  const { ctx } = workspace;
+  ctx.env.openaiKey = "";
+  const failed = await startImportTranscription(ctx, project.id, media);
+  expect(failed?.task).toMatchObject({ state: "failed", error: "OpenAI transcription needs an API key." });
+  expect(ctx.repos.tasks.count("kind = 'transcribe' AND state = 'failed'")).toBe(1);
+});
+
+it("retries an import transcription through the existing Media API after setup", async () => {
+  const media = await importedAudioWithConsent();
+  const { ctx } = workspace;
+  ctx.env.openaiKey = "";
+  await startImportTranscription(ctx, project.id, media);
+  const transcribe = vi.spyOn(OpenAIProvider.prototype, "transcribe").mockResolvedValue({ segments: [] });
+  ctx.env.openaiKey = "fixture";
+  const retry = await api("POST", `/media/${media.id}/transcribe`, {});
+  expect(retry.status).toBe(202);
+  const retryTask = (await retry.json() as { task: { id: string; state: string; error?: string } }).task;
+  expect(retryTask.state).toBe("running");
+  await settle();
+  expect(ctx.repos.tasks.get(retryTask.id)?.state).toBe("done");
+  expect(transcribe).toHaveBeenCalledOnce();
+  transcribe.mockRestore();
 });
 
 it("refuses a manual transcription if another engine pauses caching before the task is claimed", async () => {

@@ -161,6 +161,7 @@ jobs:
 
       # Source and local-main builds keep their local updater. Only the public packages get a release feed.
       - name: Select the public app's update feed
+        if: github.repository == 'Forward-Future/scarlet' && (inputs.release || inputs.early_access)
         shell: bash
         run: |
           echo "SCARLET_RELEASE_CHANNEL=${{ inputs.early_access && 'early-access' || 'stable' }}" >> "$GITHUB_ENV"

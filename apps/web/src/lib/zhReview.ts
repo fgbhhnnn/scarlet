@@ -1,5 +1,19 @@
 /** Chinese copy used by the review, history and timeline panels. */
 export const zhReview = {
+  run: {
+    unavailable: "不可用", noPrice: (models: string) => `暂无 ${models} 的价格。`,
+    pricingUnavailable: "部分或全部用量暂无 API 价格。", standardRates: "按短上下文和默认缓存时长的标准 API 费率计算。",
+    input: "输入", output: "输出", cacheRead: "读取缓存", cacheWrite: "写入缓存", models: "模型", model: "模型",
+    thinking: "推理强度", providerDefault: "服务商默认", activeTime: "运行时间", estimatedCost: "预计费用", total: "总计",
+    showAll: "显示全部", preparingAudio: "正在准备音频", findingVoices: "正在查找音色", matchingVoices: "正在匹配音色",
+    finalCheck: "正在检查已完成的成片", working: "正在处理剪辑", pickingUp: "正在从上次中断处继续",
+    scarletWork: "Scarlet 的工作", stop: "停止", hideDetails: "隐藏详情", showDetails: "显示详情",
+    paused: "已暂停", queued: "排队中", needsAnswer: "需要你的回答", editingPaused: "剪辑已暂停。点击消息框上方的继续即可从中断处继续。",
+    stopped: "已停止", couldNotFinish: "未能完成", nothingSaved: "没有保存任何内容", finishEdit: "完成剪辑",
+    finishWhenReady: "准备好后完成", dontWait: "不再等待", retry: "重试", transcribe: "转写",
+    transcriptsReady: (n: string) => `${n}已就绪`, finishesWhenReady: "准备好后完成", inProgress: "进行中", stoppedTranscripts: "已停止",
+    noTranscripts: (n: string) => `没有${n}`,
+  },
   actions: { revise: "修改", apply: "应用" },
   before: { label: "剪辑前", backToAfter: "返回剪辑后", play: "播放剪辑前" },
   history: {

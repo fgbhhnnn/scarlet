@@ -159,11 +159,13 @@ jobs:
       - name: Test installer notices and engine smoke script
         run: node --test apps/desktop/scripts/collect-public-notices.test.mjs apps/desktop/scripts/smoke-engine.test.mjs
 
-      - name: Configure the desktop update channel
+      # Source and local-main builds keep their local updater. Only the public packages get a release feed.
+      - name: Select the public app's update feed
+        if: github.repository == 'Forward-Future/scarlet' && (inputs.release || inputs.early_access)
         shell: bash
         run: |
           echo "SCARLET_RELEASE_CHANNEL=${{ inputs.early_access && 'early-access' || 'stable' }}" >> "$GITHUB_ENV"
-          if [ "$EARLY_ACCESS" != true ] && [ "$GITHUB_REPOSITORY" = Forward-Future/scarlet ]; then
+          if [ "$EARLY_ACCESS" != true ]; then
             node --input-type=commonjs -e '
               const fs = require("node:fs");
               const file = "./apps/desktop/src-tauri/tauri.conf.json";

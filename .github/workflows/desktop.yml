@@ -2,7 +2,7 @@ name: Desktop
 
 on:
   push:
-    branches: [main, 'ci/**']
+    branches: [main, first-release, 'ci/**']
   workflow_dispatch:
     inputs:
       early_access_version:
@@ -20,7 +20,7 @@ concurrency:
 
 jobs:
   ci:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push'
     uses: ./.github/workflows/ci.yml
 
   version:
@@ -46,7 +46,7 @@ jobs:
         id: number
         env:
           EARLY_ACCESS_VERSION: ${{ inputs.early_access_version }}
-          SIGNING: ${{ github.repository == 'Forward-Future/scarlet' && vars.SCARLET_STABLE_RELEASES || 'false' }}
+          SIGNING: ${{ github.repository == 'Forward-Future/scarlet' && vars.SCARLET_STABLE_RELEASES || '' }}
         run: |
           node apps/desktop/scripts/release-version.mjs check
           if [ -n "$EARLY_ACCESS_VERSION" ]; then

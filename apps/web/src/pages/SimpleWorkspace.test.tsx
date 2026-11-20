@@ -6131,7 +6131,7 @@ it("opens Media, Export and History from the header and keeps project tools in t
   const back = container.querySelector<HTMLAnchorElement>('a[href="/"]');
   expect(back?.getAttribute("aria-label")).toBe("All projects");
   const tools = container.querySelector(".simple-tools")!;
-  expect([...tools.querySelectorAll(":scope > button, :scope > .media-hover > button")].map(b => b.textContent?.trim())).toEqual(["Media", "Export", "History"]);
+  expect([...tools.querySelectorAll(":scope > button, :scope > .media-hover > button")].map(b => b.textContent?.trim())).toEqual(["Media", "自动粗剪", "Export", "History"]);
   for (const [name, field] of [["Media", "#media-file-types"], ["Export", "#export-range"]] as const) {
     await click(buttonIn(tools, name)!);
     await act(async () => { await vi.dynamicImportSettled(); });

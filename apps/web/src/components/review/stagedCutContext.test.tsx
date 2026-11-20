@@ -45,7 +45,7 @@ it("reads an edit card's cut as the words either side of one mark, which opens a
   // “click” starts at 11.6 s and “test” ends at 15.9 s: eleven words, more than the mark shows.
   await act(async () => root.render(<EditPassage timeline={timeline()} media={[mic]} range={{ start: 11.55, end: 15.95 }} length="4.4 s" />));
   await settle();
-  const group = () => container.querySelector('[aria-label="Words this cut removes"]')!;
+  const group = () => container.querySelector('[aria-label="这处剪辑移除的文字"]')!;
   const mark = () => group().querySelector<HTMLButtonElement>("button.edit-passage-cut")!;
   expect(group().textContent).toBe("… It broke last week. 4.4 s the new model from Deepseek flew under the radar.");
   expect(group().querySelector(".review-voice")).toBeNull();
@@ -97,9 +97,9 @@ it("lists other takes with timeline times from the engine's retake route", async
   await act(async () => root.render(<OtherTakes projectId="prj" timeline={timeline()} media={[mic]} range={{ start: 5, end: 8 }} />));
   await settle();
   expect(retakes).toHaveBeenCalledWith("prj", "mic", 5, 8);
-  const list = container.querySelector('[aria-label="Other takes"]')!;
-  expect(list.querySelector(".other-takes-head")?.textContent).toBe("Other takes · 2");
-  expect([...list.querySelectorAll("li")].map(li => li.textContent)).toEqual(["CutSo today we are editing.", "0:50Today we are going to edit."]);
+  const list = container.querySelector('[aria-label="其他录制版本"]')!;
+  expect(list.querySelector(".other-takes-head")?.textContent).toBe("其他录制版本 · 2");
+  expect([...list.querySelectorAll("li")].map(li => li.textContent)).toEqual(["剪辑So today we are editing.", "0:50Today we are going to edit."]);
 });
 
 it("shows nothing when the line has no other takes", async () => {

@@ -54,7 +54,7 @@ it("turns the play button once a seek has taken longer than a blink, and stops w
   expect([said(), ...button()]).toEqual([undefined, "播放", "icon"]);
   await after(1);
   // The spinner is in the play button, in place of its icon: nothing is drawn over the picture, where the button would cover it.
-  expect([said(), ...button()]).toEqual(["正在加载当前画面…", "播放", "spinner"]);
+  expect([said(), ...button()]).toEqual(["正在加载当前片段…", "播放", "spinner"]);
   expect([...container.querySelectorAll('[role="status"]')].every(status => status.closest(".monitor-playback"))).toBe(true);
   await fire("seeked");
   expect([said(), ...button()]).toEqual([undefined, "播放", "icon"]);
@@ -75,10 +75,10 @@ it("follows the video that is on screen: not one that is hidden, and not another
   await show({ second: true });
   await fire("waiting");
   await after(180);
-  expect(said()).toBe("正在加载当前画面…");
+  expect(said()).toBe("正在加载当前片段…");
   // Another video finishing a seek of its own doesn't clear this one's wait.
   await fire("seeked", "other", true);
-  expect(said()).toBe("正在加载当前画面…");
+  expect(said()).toBe("正在加载当前片段…");
   // The waiting video goes out of sight: there is nothing on screen to wait for.
   await show({ second: true, hidden: true });
   await act(async () => {});
@@ -96,7 +96,7 @@ it("turns the play button while a player says it is preparing a section, once th
   await after(179);
   expect(button()).toEqual(["播放", "icon"]);
   await after(1);
-  expect([said(), ...button()]).toEqual(["正在加载当前画面…", "播放", "spinner"]);
+  expect([said(), ...button()]).toEqual(["正在加载当前片段…", "播放", "spinner"]);
   // Media events don't end it: the player says when its section is in.
   await fire("playing");
   expect(button()).toEqual(["播放", "spinner"]);

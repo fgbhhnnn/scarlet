@@ -25,7 +25,7 @@ const pointer = (target: Element, type: string, x: number) => act(async () => {
 
 it("opens a confirmation with the keyboard on Cancel, and rings whatever button, link or checkbox the keyboard is on", async () => {
   await act(async () => root.render(<ConfirmDialog open onClose={() => {}} onConfirm={() => {}} title="Move “Interview” to Trash?" confirmLabel="Move to Trash" danger />));
-  expect(document.activeElement?.textContent?.trim()).toBe("Cancel");
+  expect(document.activeElement?.textContent?.trim()).toBe("取消");
   // A test has no styles, so the ring is read from the stylesheet: one rule for all of them, drawn only while the
   // keyboard is there, and not on a menu's row, which lights up instead.
   const { readFileSync } = await import("node:fs");
@@ -61,14 +61,14 @@ it("opens a confirmation without the error its last attempt left", async () => {
   function Host() {
     const [open, setOpen] = useState(false);
     return <><button onClick={() => setOpen(true)}>Empty Trash</button>
-      <ConfirmDialog open={open} onClose={() => setOpen(false)} onConfirm={fail} title="Empty Trash?" confirmLabel="Delete permanently" /></>;
+      <ConfirmDialog open={open} onClose={() => setOpen(false)} onConfirm={fail} title="Empty Trash?" confirmLabel="永久删除" /></>;
   }
   await act(async () => root.render(<Host />));
   const button = (text: string) => [...el.querySelectorAll("button")].find(b => b.textContent?.trim() === text)!;
   await act(async () => button("Empty Trash").click());
-  await act(async () => button("Delete permanently").click());
+  await act(async () => button("永久删除").click());
   expect(el.textContent).toContain("Scarlet is working.");
-  await act(async () => button("Cancel").click());
+  await act(async () => button("取消").click());
   await act(async () => button("Empty Trash").click());
   expect(el.querySelector("dialog")).not.toBeNull();
   expect(el.textContent).not.toContain("Scarlet is working.");
@@ -76,14 +76,14 @@ it("opens a confirmation without the error its last attempt left", async () => {
 
 it("says Scarlet can't reach its engine, not \"Service Unavailable\", when a confirmation's action is turned away as the engine shuts down", async () => {
   const onConfirm = vi.fn().mockRejectedValue(new ScarletApiError(503, "http_error", "Service Unavailable"));
-  await act(async () => root.render(<ConfirmDialog open onClose={() => {}} onConfirm={onConfirm} title="Empty Trash?" confirmLabel="Delete permanently" danger />));
-  await act(async () => [...el.querySelectorAll("button")].find(b => b.textContent?.trim() === "Delete permanently")!.click());
+  await act(async () => root.render(<ConfirmDialog open onClose={() => {}} onConfirm={onConfirm} title="Empty Trash?" confirmLabel="永久删除" danger />));
+  await act(async () => [...el.querySelectorAll("button")].find(b => b.textContent?.trim() === "永久删除")!.click());
   expect(el.querySelector('[role="alert"]')?.textContent).toBe("Scarlet can’t reach its engine right now.");
 });
 
 it("names the × of a dialog and of a drawer on hover, with the key that closes it", async () => {
   await act(async () => root.render(<><Modal open onClose={() => {}} title="Export">Export</Modal><Drawer open onClose={() => {}} title="History">History</Drawer></>));
-  expect([...el.querySelectorAll('dialog [aria-label="Close"]')].map(x => x.getAttribute("title"))).toEqual(["Close (Esc)", "Close (Esc)"]);
+  expect([...el.querySelectorAll('dialog [aria-label="关闭"]')].map(x => x.getAttribute("title"))).toEqual(["关闭（Esc）", "关闭（Esc）"]);
 });
 
 it("names every × in the app on hover", () => {
@@ -99,14 +99,14 @@ it("keeps a confirmation open while its action runs, and says there why it faile
   let fail!: (reason: Error) => void;
   const onConfirm = vi.fn(() => new Promise<void>((_, reject) => { fail = reject; }));
   const onClose = vi.fn();
-  await act(async () => root.render(<ConfirmDialog open onClose={onClose} onConfirm={onConfirm} title="Empty Trash?" confirmLabel="Delete permanently" danger />));
+  await act(async () => root.render(<ConfirmDialog open onClose={onClose} onConfirm={onConfirm} title="Empty Trash?" confirmLabel="永久删除" danger />));
   const button = (text: string) => [...el.querySelectorAll("button")].find(b => b.textContent?.trim() === text)!;
   const dialog = el.querySelector("dialog")!;
   vi.spyOn(dialog, "getBoundingClientRect").mockReturnValue({ left: 100, right: 300, top: 100, bottom: 300 } as DOMRect);
   const esc = () => act(async () => { dialog.dispatchEvent(new Event("cancel", { cancelable: true })); });
-  await act(async () => button("Delete permanently").click());
+  await act(async () => button("永久删除").click());
   // While it deletes, neither Esc, the × nor a click on the backdrop closes it.
-  expect(button("Cancel").disabled).toBe(true);
+  expect(button("取消").disabled).toBe(true);
   await esc();
   await act(async () => el.querySelector<HTMLButtonElement>("[data-close]")!.click());
   await pointer(dialog, "pointerdown", 400);

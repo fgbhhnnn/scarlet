@@ -1146,7 +1146,7 @@ it("keeps a flagged edit's row to its amber number and its name: the reason is o
   const turn = turnFor("chg_approved_2");
   const row = () => [...turn.querySelectorAll<HTMLButtonElement>(".simple-edits .simple-edit")][2]!;
   // No line under the row says why it asks for a look. Hovering the row does, as on a pass's row.
-  expect([row().querySelector(".edit-badge")?.className, row().textContent, row().title]).toEqual(["edit-badge is-check", "3wrapEdit", CHECK]);
+  expect([row().querySelector(".edit-badge")?.className, row().textContent, row().title]).toEqual(["edit-badge is-check", "3wrap剪辑", CHECK]);
   expect(turn.querySelector(".simple-edits")!.textContent).not.toContain(CHECK);
   // Its card says it, inside Scarlet's sentence.
   await click(row());
@@ -1154,7 +1154,7 @@ it("keeps a flagged edit's row to its amber number and its name: the reason is o
   expect(editPanel()!.querySelector(".edit-card-title")?.textContent).toBe(SUMMARY);
   // Kept, the badge fills, and the row is still one line.
   await press("k");
-  expect([row().querySelector(".edit-badge")?.className, row().textContent, row().title]).toEqual(["edit-badge is-kept", "3wrapEdit", CHECK]);
+  expect([row().querySelector(".edit-badge")?.className, row().textContent, row().title]).toEqual(["edit-badge is-kept", "3wrap剪辑", CHECK]);
 });
 
 it("reviews only the edits Scarlet flagged, then leaves nothing to press", async () => {
@@ -5507,7 +5507,7 @@ it("draws a pass's rows and any other request's rows as one row, and a revised e
     expect(rows.map(row => [row.parentElement!.parentElement!.className, drawn(row, "font-size", "padding", "border-radius", "color")]))
       .toEqual([["simple-pass-list", "12.5px / 6px 8px / 6px / white"], ["simple-edits", "12.5px / 6px 8px / 6px / white"]]);
     expect([".simple-pass-value", ".simple-edit-value"].map((value, i) => [rows[i]!.querySelector(value)!.textContent, drawn(rows[i]!.querySelector(value)!, "font-size", "color")]))
-      .toEqual(Array(2).fill(["Audio", "12px / silver"]));
+      .toEqual(Array(2).fill(["音频", "12px / silver"]));
   } finally {
     sheet.remove();
   }
@@ -5642,8 +5642,8 @@ it("says on a pass's row when its cut is being revised, kept or not, and that it
   // did, as a row in any other request's list does, until the editor keeps it (2026-11-10: the pass's rows said neither).
   // Each keeps the figure at its end, and the word follows it, as in that list.
   const stands = (label: string) => [...row(label).children].slice(-2).map(el => [el.className, el.textContent]);
-  expect(stands("captions")).toEqual([["simple-pass-value", "Audio"], ["simple-pass-check is-kept working-text", "正在修改…"]]);
-  expect(stands("wrap")).toEqual([["simple-pass-value", "Audio"], ["simple-pass-check", "已修改"]]);
+  expect(stands("captions")).toEqual([["simple-pass-value", "音频"], ["simple-pass-check is-kept working-text", "正在修改…"]]);
+  expect(stands("wrap")).toEqual([["simple-pass-value", "音频"], ["simple-pass-check", "已修改"]]);
   expect(row("wrap").querySelector(".simple-pass-label small")?.textContent).toBe("v2");
   expect(row("music bed").querySelector(".simple-pass-check")).toBeNull();
 });
@@ -11179,7 +11179,7 @@ it("takes up an open cut as it was when its revision puts footage back, so it is
   await lands({ range: { start: 9.6, end: 10.8 }, kind: "restore" });
   // The card now has an edit's Before/After controls and the player includes the restored footage, with two seconds before it and up to three after.
   // It takes up the listen already in progress.
-  expect(editPanel()!.querySelector(".edit-card-length.is-added")?.textContent).toBe("Added");
+  expect(editPanel()!.querySelector(".edit-card-length.is-added")?.textContent).toBe("已添加");
   expect(editPanel()!.querySelector(".edit-card-words")).toBeNull();
   expect(beforeIcon(editPanel()!)).toEqual(["", "剪辑前", "false", "播放剪辑前 (\\)"]);
   expect(audition).toHaveBeenCalledTimes(listens);

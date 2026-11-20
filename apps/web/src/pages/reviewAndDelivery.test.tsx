@@ -114,7 +114,7 @@ it("shows the loading ripple until the audible clips in this window have their m
   ] };
   const draw = (ingesting: boolean, mediaPaused = false, duration = 10) => show(<TimelineWaveform
     timeline={timeline} media={[video, { ...mic, status: ingesting ? "ingesting" : "ready" }]} mediaPaused={mediaPaused} start={0} duration={duration} />);
-  const ripple = () => container.querySelector('[aria-label="Loading audio waveform"]');
+  const ripple = () => container.querySelector('[aria-label="正在加载音频波形"]');
   let finish!: () => void;
   const hold = new Promise<void>(resolve => { finish = resolve; });
   vi.mocked(api.waveform).mockImplementation(async (mediaId, from, to) => {
@@ -277,7 +277,7 @@ it("loads the picture and the sound as one wave, and lands them together when th
 it("skips 5 seconds with an arrow and 1 second with Shift, once per key repeat", async () => {
   const onSeek = vi.fn();
   await show(<TimelineScrubber duration={60} playhead={20} frameAt={() => undefined} onSeek={onSeek} />);
-  const slider = labeled("Position in the video");
+  const slider = labeled("视频位置");
   const down = (key: string, shiftKey: boolean, repeat = false) => act(() => {
     slider.dispatchEvent(new KeyboardEvent("keydown", { key, shiftKey, repeat, bubbles: true }));
   });
@@ -301,7 +301,7 @@ it("seeks on one full-video timeline with keyboard steps and endpoints", async (
   const onSeek = vi.fn();
   await show(<TimelineScrubber duration={244} frameAt={() => undefined} onSeek={onSeek} playhead={192} />);
   expect(container.querySelectorAll('[role="slider"]')).toHaveLength(1);
-  const slider = labeled("Position in the video");
+  const slider = labeled("视频位置");
   for (const [key, target] of [["Home", 0], ["ArrowRight", 197], ["End", 244]] as const) {
     await act(() => slider.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true })));
     expect(onSeek).toHaveBeenLastCalledWith(target);
@@ -336,10 +336,10 @@ it("keeps zoom controls in the row under the timeline and draws no edit points, 
   await render();
   expect(rail()).toBeNull();
   const controls = container.querySelector(".timeline-foot > [aria-label='Timeline zoom']");
-  const zoomIn = labeled("Zoom in");
+  const zoomIn = labeled("放大");
   expect(controls?.contains(zoomIn)).toBe(true);
   expect(labeled("Timeline controls")).toBeNull();
-  expect(labeled("Zoom out").disabled).toBe(true);
+  expect(labeled("缩小").disabled).toBe(true);
   expect(zoomLevel().textContent).toBe("100%");
   expect(zoomSlider().value).toBe("0");
   expect(button("Show edit points")).toBeUndefined();
@@ -364,7 +364,7 @@ it("keeps zoom controls in the row under the timeline and draws no edit points, 
   await act(() => zoomIn.dispatchEvent(escape));
   expect(escape.defaultPrevented).toBe(false);
   await act(() => document.body.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })));
-  expect(labeled("Zoom in")).toBe(zoomIn);
+  expect(labeled("放大")).toBe(zoomIn);
   expect(container.textContent).not.toContain("edit points");
 });
 
@@ -564,7 +564,7 @@ it("anchors wheel and pinch zoom to the pointer and defers new media samples unt
   await show(<TimelineScrubber start={10} duration={100} playhead={35} frameAt={frameAt} onSeek={seek} activeShortcuts />);
   const track = container.querySelector<HTMLElement>(".timeline-track")!;
   vi.spyOn(track, "getBoundingClientRect").mockReturnValue(new DOMRect(100, 0, 400, 120));
-  const slider = labeled("Position in the video");
+  const slider = labeled("视频位置");
   const playheadX = () => slider.querySelector<HTMLElement>(".timeline-playhead")?.style.left;
   vi.useFakeTimers();
   try {
@@ -620,7 +620,7 @@ it("samples the visible range once and seeks between its stills during a capture
   await show(scrubber(10));
   const images = [...container.querySelectorAll(".timeline-filmstrip img")];
   expect(images.map(el => el.getAttribute("src"))).toEqual(["/frame/12", "/frame/16"]);
-  const slider = labeled("Position in the video");
+  const slider = labeled("视频位置");
   vi.spyOn(slider, "getBoundingClientRect").mockReturnValue(new DOMRect(100, 0, 300, 48));
   Object.defineProperty(slider, "setPointerCapture", { value: vi.fn() });
   const point = (type: string, x: number) => slider.dispatchEvent(new PointerEvent(type, {
@@ -728,7 +728,7 @@ it("turns the play button only when a seek is slow, and gives its icon back when
     expect([spinner(), container.querySelector('[role="status"]')]).toEqual([null, null]);
     await act(() => { seek(); vi.advanceTimersByTime(200); });
     expect(spinner()).not.toBeNull();
-    expect(container.querySelector('.monitor-playback > [role="status"]')?.textContent).toContain("Loading this moment");
+    expect(container.querySelector('.monitor-playback > [role="status"]')?.textContent).toContain("正在加载当前片段");
     await act(() => { done(); });
     expect([spinner(), container.querySelector('[role="status"]')]).toEqual([null, null]);
   } finally { vi.useRealTimers(); }
@@ -986,7 +986,7 @@ it("uses the full monitor for landscape and fits the picture to the project or s
   const frame = () => new URL(container.querySelector<HTMLImageElement>('img[alt="Selected edit frame"]')!.src).searchParams;
   await drawPlayerFormat();
   expectMonitor(16 / 9, true);
-  await act(() => labeled("Position in the video").dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true })));
+  await act(() => labeled("视频位置").dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true })));
   expect(frame().get("format")).toBe("1920x1080@30");
   const selected = frame().get("frame");
   const settings = { ...data.project.settings, width: 1080, height: 1920, aspect: "9:16" as const };
@@ -1079,7 +1079,7 @@ it("shows an export again after a reload or restart, saves it to the destination
   await act(() => resumeExports());
   await show(<ExportSheet hasCut onClose={() => {}} />);
   expect(container.textContent).toContain("正在导出 · 42%");
-  expect(container.querySelector("progress")!.getAttribute("aria-label")).toBe("Export progress for Interview final.mp4");
+  expect(container.querySelector("progress")!.getAttribute("aria-label")).toBe("导出进度： Interview final.mp4");
   expect(container.querySelector("#export-resolution")!.textContent).toMatch(/ × 480$/);
   expect(button("取消导出")).toBeDefined();
   // The engine restarting mid-export is not a failure.
@@ -1356,11 +1356,11 @@ it("tells a new project with no cut to add captions when captions are chosen", a
   const timeline = { ...data.timeline!, tracks: data.timeline!.tracks.filter(t => t.kind !== "caption") };
   await act(async () => useProjectStore.setState({ current: { ...data, timeline } }));
   await show(<ExportSheet hasCut={false} onClose={() => {}} />);
-  expect(container.textContent).toContain("There’s no video to export yet.");
+  expect(container.textContent).toContain("还没有可导出的视频。");
   await selectOption(container.querySelector<HTMLButtonElement>("#export-format")!, /字幕 \(\.srt\)/);
   expect(exportButton()!.disabled).toBe(true);
   expect(container.textContent).toContain(NO_CAPTION_TRACK);
-  expect(container.textContent).not.toContain("There’s no video to export yet.");
+  expect(container.textContent).not.toContain("还没有可导出的视频。");
 });
 
 it("disables caption export when the range has no cues", async () => {
@@ -1482,7 +1482,7 @@ it("adds a second zoom step to the one under way, and turns a zoom back from whe
   usePlayerStore.setState({ time: 50, playing: true });
   await render(50);
   const slider = container.querySelector(".timeline-slider");
-  await click(labeled("Zoom in"));
+  await click(labeled("放大"));
   expect(zoomLevel().textContent).toBe("100%");
   await advance(130);
   const halfway = parseFloat(zoomLevel().textContent!);
@@ -1490,10 +1490,10 @@ it("adds a second zoom step to the one under way, and turns a zoom back from whe
   expect(halfway).toBeLessThan(200);
   await render(51); // An unrelated playback tick must not pull the view back.
   expect(container.querySelector(".timeline-slider")).toBe(slider);
-  await click(labeled("Zoom in")); // A second step compounds the pending destination.
+  await click(labeled("放大")); // A second step compounds the pending destination.
   await advance(500);
   expect(zoomLevel().textContent).toBe("400%");
-  await click(labeled("Zoom out"));
+  await click(labeled("缩小"));
   await advance(60);
   await fitBySlider(); // Reverse an in-flight zoom from its current pose.
   await advance(500);

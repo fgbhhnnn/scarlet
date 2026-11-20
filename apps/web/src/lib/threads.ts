@@ -1,4 +1,4 @@
-import { closingCheckFailed, taskDialogueOperation, matchesEdit, noteThread, DialogueScanPage, requestText, taskRecoveryAction, taskWasStopped, type Task, type TaskEvent, type Thread, type ThreadEdit } from "@scarlet/shared";
+import { AUTOMATIC_FIRST_CUT_INSTRUCTION, AUTOMATIC_FIRST_CUT_MESSAGE, isAutomaticFirstCut, closingCheckFailed, taskDialogueOperation, matchesEdit, noteThread, DialogueScanPage, requestText, taskRecoveryAction, taskWasStopped, type Task, type TaskEvent, type Thread, type ThreadEdit } from "@scarlet/shared";
 import { clock } from "./format";
 import { cutSummary, dialogueReceipt, mergeRanges, rangesOverlap, reviewReasons, type TimeRange, type Author, type Change, type Note } from "@scarlet/timeline";
 import { appliedEditSummary } from "../components/review/cutReviewDetails";
@@ -33,8 +33,6 @@ export type ThreadEntry = { taskId?: string } & (
   | { kind: "change"; at: string; change: Change; text: string }
   | { kind: "firstCut"; at: string; delivery: FirstCutDelivery }
   | { kind: "system"; at: string; text: string; tone?: "ok" | "warn" | "bad"; action?: RetryAction });
-
-const FIRST_CUT_INSTRUCTION = "Make a first cut from this project’s footage and send it to me for review.";
 
 /**
  * Scarlet's own redo of a suggestion. Applied after the video had moved on, the suggestion no longer fit, so the engine
@@ -182,12 +180,12 @@ export function threadConversation(thread: Thread, notes: Note[], events: Record
   for (const t of thread.tasks) {
     const start = out.length;
     const author = t.createdBy;
-    const requested = t.context.message === "Make first cut" && t.instruction.startsWith(FIRST_CUT_INSTRUCTION)
-      ? t.instruction.slice(FIRST_CUT_INSTRUCTION.length).trim() : requestText(t);
+    const requested = isAutomaticFirstCut(t)
+      ? t.instruction.slice(AUTOMATIC_FIRST_CUT_INSTRUCTION.length).trim() : requestText(t);
     if (t.resumeRootId) out.push({ kind: "system", at: t.createdAt ?? "", text: "Edit resumed." });
     // Scarlet's redo of a suggestion has no words of its own here: the suggestion says what is happening to it, below.
     else if (author.type === "scarlet") { if (!isRedo(t)) out.push({ kind: "system", at: t.createdAt ?? "", text: isRecheck(t) ? RECHECK_WORDS : requested, tone: "warn" }); }
-    else if (requested && requested !== "Make first cut") {
+    else if (requested && requested !== AUTOMATIC_FIRST_CUT_MESSAGE) {
       out.push({ kind: "request", at: t.createdAt ?? "", text: requested, author, revisionLabel: revisionTarget(t, thread.changes) });
     }
     const taskEvents = events[t.id] ?? [];

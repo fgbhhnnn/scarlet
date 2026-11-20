@@ -273,6 +273,14 @@ export function isDialogueGuide(skill: Skill) {
 
 type DialogueOperation = NonNullable<Task["context"]["dialogueOperation"]>;
 
+/** The toolbar's first-cut request uses a stable message and can append editorial instructions. */
+export const AUTOMATIC_FIRST_CUT_MESSAGE = "Make first cut";
+export const AUTOMATIC_FIRST_CUT_INSTRUCTION = "Make a first cut from this project’s footage and send it to me for review.";
+
+export function isAutomaticFirstCut(input: { instruction: string; context?: Task["context"] }): boolean {
+  return input.context?.message === AUTOMATIC_FIRST_CUT_MESSAGE && input.instruction.startsWith(AUTOMATIC_FIRST_CUT_INSTRUCTION);
+}
+
 /** A custom entry owns its command name even when disabled. The shipped guide is optional advice for the product shortcut. */
 export function dialogueShortcut(name: string, library: readonly Skill[]): DialogueOperation | undefined {
   const entry = library.find(skill => skill.name === name);

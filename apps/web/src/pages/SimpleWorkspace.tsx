@@ -6,7 +6,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { ChatRail } from "../components/shell/ChatRail";
 import { ConnectionStatus } from "../components/shell/StatusIndicators";
 import { Dropdown, MenuItem } from "../components/shell/WorkspaceNavigation";
-import { appliedReviewChange, isPublishedCall, makeMediaClip, mapStagedCut, makeTimeMap, timelineDuration, type Change, type CutAssessment, type Project, type TimeRange, type Timeline } from "@scarlet/timeline";
+import { appliedReviewChange, isPublishedCall, makeMediaClip, mapStagedCut, makeTimeMap, timelineDuration, type Change, type CutAssessment, type MediaAsset, type Project, type TimeRange, type Timeline } from "@scarlet/timeline";
 import { closingCheckFailed, isAsideTask, fullRenderContext, isProjectEditTask, matchesEdit, queueOrder, queueWaits, requestTargetKey, requestText, REVISED_CHECK, threadEditList, type EditRef, type Learning, type Task, type ThreadEdit } from "@scarlet/shared";
 import { EditBadge, editGroups, EditVersion, RejectEdit, RejectedMark, ThreadAction, ThreadEdits, useRejecting, useReviewed, useRevising, useThreadEdits } from "../components/review/ThreadEdits";
 import { useKeptEdits } from "../lib/keptEdits";
@@ -3701,35 +3701,40 @@ export function SimpleWorkspace() {
   // The player is on the working cut's own clock: nothing open that plays another version or a clip.
   const onWorkingClock = !source && !draftVersion && !appliedCut && !listening;
   const emptyWorkingTimeline = !timeline || !timeline.tracks.some(track => track.kind === "video" && track.clips.length > 0);
-  const addFirstVideo = useCallback(async () => {
-    const first = media.find(asset => asset.kind === "video" && asset.status !== "failed");
-    if (!first) throw new Error("请先导入可用的视频素材。");
-    let version = current.project.head;
-    if (!version) {
-      const initialized = await api.timeline(current.id, "head");
-      version = initialized.timeline.version;
-      await refreshHead(current.id);
-    }
+  const reviewingTimeline = !!(appliedCut || previewVersion || listening);
+  const addFirstVideo = useCallback(async (selected: MediaAsset) => {
     const latest = useProjectStore.getState().current;
-    const head = latest?.project.head ?? version;
-    const base = latest?.timeline?.version === head ? latest.timeline : timeline;
-    if (!base || base.version !== head) throw new Error("时间线正在初始化，请稍后再试。");
-    const lane = base.tracks.find(track => track.id === "v1") ?? base.tracks.find(track => track.kind === "video");
+    if (latest?.id !== current.id) return;
+    const base = latest.timeline && latest.timeline.version === latest.project.head
+      ? latest.timeline : (await api.timeline(current.id, "head")).timeline;
+    const openProject = useProjectStore.getState().current;
+    if (openProject?.id !== current.id || openProject.project.branch !== latest.project.branch) return;
+    const lane = base.tracks.find(track => track.id === "v1" && track.kind === "video");
     if (!lane) throw new Error("当前项目没有 V1 画面轨道。");
-    if (lane.clips.some(clip => clip.kind === "media" && clip.mediaId === first.id)) return;
-    const length = first.duration ?? 0;
-    if (length <= 0) throw new Error("视频仍在准备中，请稍后再试。");
-    const saved = await api.proposeChange(current.id, {
-      fromVersion: head,
+    if (lane.clips.length) {
+      await refreshHead(current.id);
+      return;
+    }
+    const first = openProject.media.find(asset => asset.id === selected.id);
+    if (first?.kind !== "video" || (first.status && first.status !== "ready") ||
+        first.duration === undefined || first.duration < 1 / openProject.project.settings.fps) {
+      throw new Error("请先导入至少一帧且已就绪的视频素材。");
+    }
+    const { change } = await api.proposeChange(current.id, {
+      fromVersion: base.version,
       description: "将首个视频添加到 V1",
       reason: "将导入的视频放入首条画面轨道，开始手动剪辑。",
-      ops: [{ op: "addClip", trackId: lane.id, clip: makeMediaClip(first.id, 0, length, 0) }],
+      ops: [{ op: "addClip", trackId: lane.id, clip: makeMediaClip(first.id, 0, first.duration, 0, { label: first.name }) }],
       autoApprove: true,
       skipRender: true,
     });
-    await refreshHead(current.id);
-    return saved;
-  }, [current.id, current.project.head, media, refreshHead, timeline]);
+    if (change.state !== "approved") throw new Error("时间线已更新，请在最新版本上重试。");
+    try {
+      await refreshHead(current.id);
+    } catch (cause) {
+      throw new Error(`视频已添加，刷新时间线失败。${errorMessage(cause)}`);
+    }
+  }, [current.id, refreshHead]);
   useLayoutEffect(() => {
     showingWorkingCut(onWorkingClock);
     return () => showingWorkingCut(false);
@@ -4014,10 +4019,10 @@ export function SimpleWorkspace() {
             change={draftVersion && !appliedCut ? viewed : undefined} spot={shownPlace} approval={!!draftVersion && !appliedCut} playChange={reviewPlays}
             active={workspaceActive} onMedia={() => setPanel("media")} joined={joinedPlayer} />
           <ManualTimeline key={current.id} open={manualOpen} projectId={current.id} timeline={timeline ?? undefined} media={media} fps={fps}
-            canEdit={onWorkingClock && !previewVersion || (emptyWorkingTimeline && !appliedCut && !previewVersion && !listening)}
-            allowFirstVideo={emptyWorkingTimeline && !appliedCut && !previewVersion && !listening}
+            canEdit={!reviewingTimeline && (onWorkingClock || emptyWorkingTimeline)}
+            allowFirstVideo={!reviewingTimeline}
             onClose={() => setManualOpen(false)} onMedia={() => setPanel("media")}
-            onAddFirstVideo={async () => { await addFirstVideo(); }} />
+            onAddFirstVideo={addFirstVideo} />
           {chosenSource && hasCut && source === chosenSource && <div className="simple-decide" role="region" aria-label={zh.workspace.sourcePreview}>
             <span className="simple-decide-text"><small>{zh.workspace.sourceClip}</small>{chosenSource.name}</span>
             <button type="button" className="btn-ghost" onClick={backToVideo}>{zh.workspace.backToVideo}</button>

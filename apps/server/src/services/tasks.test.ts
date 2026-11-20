@@ -60,6 +60,7 @@ async function claimed(agent = "claude", instruction = "Tighten the intro", cont
 it.each([
   { instruction: "/dialogue-pass 请给这段中文口播做一版粗剪。" },
   { instruction: "Make a first cut from this project’s footage and send it to me for review.", context: { message: "Make first cut" } },
+  { instruction: "Make a first cut from this project’s footage and send it to me for review.\n\n请给这段中文口播做一版粗剪。", context: { message: "Make first cut" } },
 ])("creates the first-cut task without skill IDs ($instruction)", async request => {
   const path = `/projects/${project.id}/tasks`;
   const result = await api<{ task: Task }>("POST", path, { kind: "edit", agent: "codex", ...request });

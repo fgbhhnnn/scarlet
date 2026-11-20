@@ -4,7 +4,7 @@
  * event emitter that plays the role of the WebSocket: renders progress,
  * tasks stream log lines, a change becomes ready, uploads finish ingesting.
  */
-import { dialogueCommand, AGENT_LABEL, beginRevision, buildThreads, restoredReviewState, threadRevision, threadTimeline, countReviewDecisions, fullRenderContext, taskNeedsTranscripts, taskRecoveryAction, splitAgentTarget, ScarletApiError, SkillSlug, isAsideTask, isProjectEditTask, isSkillEdit, ReviseLearningRequest, queueAdmission, sameRun } from "@scarlet/shared";
+import { dialogueCommand, isAutomaticFirstCut, AGENT_LABEL, beginRevision, buildThreads, restoredReviewState, threadRevision, threadTimeline, countReviewDecisions, fullRenderContext, taskNeedsTranscripts, taskRecoveryAction, splitAgentTarget, ScarletApiError, SkillSlug, isAsideTask, isProjectEditTask, isSkillEdit, ReviseLearningRequest, queueAdmission, sameRun } from "@scarlet/shared";
 import { appliedCutReview, appliedReviewChange, applyReviewRemovals, buildJianyingDraft, makeStagedCutMapper, contentHash, planCutReview, reviewedTimeline } from "@scarlet/timeline";
 import type { ApproveLearningRequest, EditSkillRequest, Learning, MakeShortsRequest, RunChoice, UsageGroupBy, UsageResponse, UsageTotals } from "@scarlet/shared";
 import type {
@@ -1084,7 +1084,7 @@ export class MockClient implements ScarletApi {
     const host = this.db.hosts.find((h) => h.online && h.agents.some((a) => a.id === body.agent && a.installed && a.loggedIn !== false));
     const model = body.model ?? host?.agents.find((a) => a.id === body.agent)?.model;
     const id = newId("task");
-    const task: Task = { id, projectId, kind: body.kind, agent: body.agent, model, effort: body.effort, serviceTier: body.serviceTier, instruction: body.instruction, context: { ...(body.kind === "edit" || body.kind === "revise" || body.kind === "note" ? { dialogueOperation: dialogueCommand(body.context?.message ?? body.instruction, this.db.skills) ?? "none" } : {}), ...body.context, threadId: body.context?.threadId ?? id }, state: "queued", createdBy: this.human(), hostId: host?.id ?? null, changeIds: [], question: null, summary: null, createdAt: now() };
+    const task: Task = { id, projectId, kind: body.kind, agent: body.agent, model, effort: body.effort, serviceTier: body.serviceTier, instruction: body.instruction, context: { ...(body.kind === "edit" || body.kind === "revise" || body.kind === "note" ? { dialogueOperation: isAutomaticFirstCut(body) ? "first-cut" : dialogueCommand(body.context?.message ?? body.instruction, this.db.skills) ?? "none" } : {}), ...body.context, threadId: body.context?.threadId ?? id }, state: "queued", createdBy: this.human(), hostId: host?.id ?? null, changeIds: [], question: null, summary: null, createdAt: now() };
     this.db.tasks.unshift(task);
     this.db.taskEvents[task.id] = [];
     return task;

@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { AUTOMATIC_FIRST_CUT_INSTRUCTION, AUTOMATIC_FIRST_CUT_MESSAGE, isAutomaticFirstCut } from "@scarlet/shared";
 import { api, errorMessage } from "../../lib/client";
 import { runIsActive } from "../../lib/taskRun";
 import { isPreparingMedia } from "../../lib/upload";
@@ -7,7 +8,7 @@ import { useUiStore } from "../../stores/ui";
 import { useAgentAvailability } from "../agent/AgentChip";
 import { Icon, InlineError, Modal } from "../ui/primitives";
 
-const instruction = "/dialogue-pass 请给这段中文口播做一版粗剪。先通读上下文，再移除不影响意思的语气词、无效长停顿、说到一半的重启和重复口播。重复表述保留完整且自然的一次。保留原意、否定词、数字、单位、人名和必要停顿。把剪辑建议留在工作区供预览和确认。";
+const editorialInstruction = "请给这段中文口播做一版粗剪。先通读上下文，再移除不影响意思的语气词、无效长停顿、说到一半的重启和重复口播。重复表述保留完整且自然的一次。保留原意、否定词、数字、单位、人名和必要停顿。把剪辑建议留在工作区供预览和确认。";
 
 export function AutoRoughCut({ importing, onQueued }: { importing: number; onQueued(): void }) {
   const [open, setOpen] = useState(false);
@@ -33,7 +34,7 @@ function AutoRoughCutSheet({ importing, onClose, onQueued }: {
   if (!current) return null;
 
   const recordings = current.media.filter(media => media.kind !== "image" && media.hasAudio !== false && media.status !== "failed");
-  const active = current.tasks.some(task => task.kind === "edit" && task.instruction === instruction && runIsActive(task));
+  const active = current.tasks.some(task => task.kind === "edit" && (isAutomaticFirstCut(task) || task.instruction === `/dialogue-pass ${editorialInstruction}`) && runIsActive(task));
   const blocked = active ? "已有粗剪任务，进度可在工作区查看。"
     : importing > 0 || recordings.some(isPreparingMedia) ? "正在导入和准备素材，可以在准备完成后开始粗剪。"
     : !recordings.length ? "请先导入带人声的素材。"
@@ -52,14 +53,15 @@ function AutoRoughCutSheet({ importing, onClose, onQueued }: {
       if (!version) {
         const result = await api.timeline(current.id, "head");
         version = result.timeline.version;
-        await useProjectStore.getState().refreshHead(current.id);
       }
-      await useProjectStore.getState().createTask(current.id, {
+      const store = useProjectStore.getState();
+      await store.createTask(current.id, {
         kind: "edit",
         ...effective,
-        instruction,
-        context: { version },
+        instruction: `${AUTOMATIC_FIRST_CUT_INSTRUCTION}\n\n${editorialInstruction}`,
+        context: { version, message: AUTOMATIC_FIRST_CUT_MESSAGE },
       });
+      if (!current.project.head) void store.refreshHead(current.id).catch(() => undefined);
       onQueued();
       onClose();
     } catch (e) {

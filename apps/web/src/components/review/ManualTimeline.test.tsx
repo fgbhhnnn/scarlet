@@ -88,8 +88,38 @@ describe("ManualTimeline first video", () => {
     expect(button).toBeTruthy();
     expect(button!.disabled).toBe(false);
     await act(async () => button!.click());
-    expect(onAddFirstVideo).toHaveBeenCalledOnce();
+    expect(onAddFirstVideo).toHaveBeenCalledExactlyOnceWith(media[0]);
     expect(manual.apply).not.toHaveBeenCalled();
+  });
+
+  it("skips preparing and sub-frame videos and allows a one-frame video", async () => {
+    const first = { ...media[0]!, duration: 1 / 30 };
+    const onAddFirstVideo = vi.fn().mockResolvedValue(undefined);
+    await show({ timeline: undefined, media: [
+      { ...media[0]!, id: "preparing", status: "ingesting" },
+      { ...media[0]!, id: "too-short", duration: 0.03 }, first,
+    ], onAddFirstVideo });
+    await act(async () => firstVideoButton()!.click());
+    expect(onAddFirstVideo).toHaveBeenCalledExactlyOnceWith(first);
+  });
+
+  it("blocks the first-video action while reviewing another timeline", async () => {
+    const onAddFirstVideo = vi.fn();
+    await show({ canEdit: false, allowFirstVideo: false, onAddFirstVideo });
+    expect(firstVideoButton()?.disabled).toBe(true);
+    await act(async () => firstVideoButton()!.click());
+    expect(onAddFirstVideo).not.toHaveBeenCalled();
+  });
+
+  it("re-enables the action after a save failure", async () => {
+    const onAddFirstVideo = vi.fn().mockRejectedValueOnce(new Error("保存失败")).mockResolvedValueOnce(undefined);
+    await show({ onAddFirstVideo });
+    await act(async () => firstVideoButton()!.click());
+    expect(container.querySelector('[role="alert"]')?.textContent).toBe("保存失败");
+    expect(firstVideoButton()?.disabled).toBe(false);
+    await act(async () => firstVideoButton()!.click());
+    expect(container.querySelector('[role="alert"]')).toBeNull();
+    expect(onAddFirstVideo).toHaveBeenCalledTimes(2);
   });
 });
 

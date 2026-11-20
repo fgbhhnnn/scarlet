@@ -30,7 +30,7 @@ export function ManualTimeline({ open, projectId, timeline, media, fps, canEdit,
   allowFirstVideo?: boolean;
   onClose(): void;
   onMedia(): void;
-  onAddFirstVideo?(): Promise<void>;
+  onAddFirstVideo?(media: MediaAsset): Promise<void>;
 }) {
   const cursorSeconds = usePlayerStore(state => open ? state.time : 0);
   const { apply, undo, redo, canUndo, canRedo, busy, error } = useManualEdits(projectId, timeline);
@@ -40,6 +40,7 @@ export function ManualTimeline({ open, projectId, timeline, media, fps, canEdit,
   const dragOffset = useRef(0);
   const [moveError, setMoveError] = useState("");
   const [addingFirstVideo, setAddingFirstVideo] = useState(false);
+  const firstVideoPending = useRef(false);
   const seconds = useMemo(() => timeline ? timelineDuration(timeline) : 0, [timeline]);
   const mediaById = useMemo(() => new Map(media.map(asset => [asset.id, asset])), [media]);
   const visualAssets = useMemo(() => media.filter(asset =>
@@ -55,9 +56,8 @@ export function ManualTimeline({ open, projectId, timeline, media, fps, canEdit,
   const visual = visualAssets.find(asset => asset.id === visualId);
   const v1 = timeline?.tracks.find(row => row.id === "v1" && row.kind === "video");
   const firstVideo = visualAssets.find(asset => asset.kind === "video");
-  const canAddFirstVideo = !!v1 && v1.clips.length === 0 && !!firstVideo &&
-    (firstVideo.duration ?? 0) >= 1 / fps;
-  const canUseFirstVideoAction = allowFirstVideo && (canEdit || !!onAddFirstVideo);
+  const canAddFirstVideo = !timeline || v1?.clips.length === 0;
+  const canUseFirstVideoAction = allowFirstVideo && !!firstVideo && (onAddFirstVideo || (v1 && canEdit));
   const disabled = !timeline || !canEdit || busy;
   const start = selected?.timelineIn ?? 0;
   const end = selected ? clipEnd(selected) : 0;
@@ -70,14 +70,22 @@ export function ManualTimeline({ open, projectId, timeline, media, fps, canEdit,
   }
 
   async function addFirstVideo() {
-    if (!onAddFirstVideo || addingFirstVideo) return;
+    if (!firstVideo || !canAddFirstVideo || !canUseFirstVideoAction || busy || firstVideoPending.current) return;
+    if (!onAddFirstVideo) {
+      if (!v1 || firstVideo.duration === undefined) return;
+      const clip = makeMediaClip(firstVideo.id, 0, firstVideo.duration, 0, { label: firstVideo.name });
+      void submit([{ op: "addClip", trackId: v1.id, clip }], "将首个视频添加到 V1");
+      return;
+    }
     setMoveError("");
+    firstVideoPending.current = true;
     setAddingFirstVideo(true);
     try {
-      await onAddFirstVideo();
+      await onAddFirstVideo(firstVideo);
     } catch (cause) {
       setMoveError(cause instanceof Error ? cause.message : String(cause));
     } finally {
+      firstVideoPending.current = false;
       setAddingFirstVideo(false);
     }
   }
@@ -165,28 +173,15 @@ export function ManualTimeline({ open, projectId, timeline, media, fps, canEdit,
       <button type="button" className={toolClass} onClick={onClose}>关闭</button>
     </div>
     {!canEdit && timeline && <p role="status">回到当前成片的预览后即可编辑。</p>}
-    {!timeline && <>
-      <p role="status">导入素材后即可编辑时间线。</p>
-      <button type="button" className={toolClass} disabled={!onAddFirstVideo || !allowFirstVideo || addingFirstVideo}
+    {!timeline && !firstVideo && <p role="status">导入素材后即可编辑时间线。</p>}
+    {canAddFirstVideo && (!timeline || firstVideo) &&
+      <button type="button" className={toolClass} disabled={busy || addingFirstVideo || !canUseFirstVideoAction}
         onClick={() => void addFirstVideo()}>
         {addingFirstVideo ? "正在添加…" : "将首个视频添加到 V1"}
-      </button>
-    </>}
+      </button>}
     {busy && <p role="status">正在保存剪辑…</p>}
     {(error || moveError) && <p className="simple-error" role="alert">{error || moveError}</p>}
     {timeline && <>
-      {canAddFirstVideo && <button type="button" className={toolClass} disabled={busy || addingFirstVideo || !canUseFirstVideoAction}
-        onClick={() => {
-          if (!v1 || !firstVideo || !(firstVideo.duration && firstVideo.duration >= 1 / fps)) return;
-          if (onAddFirstVideo) {
-            void addFirstVideo();
-            return;
-          }
-          const clip = makeMediaClip(firstVideo.id, 0, firstVideo.duration, 0, { label: firstVideo.name });
-          void submit([{ op: "addClip", trackId: v1.id, clip }], "将首个视频添加到 V1");
-        }}>
-        将首个视频添加到 V1
-      </button>}
       <div className="flex flex-wrap items-center gap-2">
         <button type="button" className={toolClass} disabled={!canEdit || at <= 0}
           onClick={() => seek(at - 1 / fps)} aria-label="上一帧">−1 帧</button>

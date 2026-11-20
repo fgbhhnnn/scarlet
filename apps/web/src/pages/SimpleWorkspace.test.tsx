@@ -5,7 +5,7 @@ import { MemoryRouter, useLocation } from "react-router-dom";
 import { afterEach, beforeEach, expect, it as vitestIt, vi } from "vitest";
 import { partedIt } from "../../../../test/parts";
 import { fullRenderContext, REVISED_CHECK, ScarletApiError, Task, threadEditList, type Learning, type Skill, type SourceCacheStatus } from "@scarlet/shared";
-import { applyOps, makeMediaClip, makeTimeMap, makeTrack, planCutReview, timelineDuration, timelineFromKeepRanges, type MediaClip, type TimeMap } from "@scarlet/timeline";
+import { applyOps, emptyTimeline, makeMediaClip, makeTimeMap, makeTrack, planCutReview, timelineDuration, timelineFromKeepRanges, type MediaClip, type TimeMap } from "@scarlet/timeline";
 import { api } from "../lib/client";
 import { desktop } from "../lib/desktop";
 import { startAppLog, stopAppLog } from "../lib/appLog";
@@ -6171,6 +6171,46 @@ it("keeps the first-video V1 entry enabled in a fresh manual timeline", async ()
   const addFirst = buttonIn(timeline, "将首个视频添加到 V1");
   expect(addFirst).toBeDefined();
   expect(addFirst!.disabled).toBe(false);
+});
+
+/** The Transcript from the menu, once its pane and the words have loaded. */
+it.each([true, false])("adds the first ready video to an initialized V1 with audio and captions (timeline loaded: %s)", async loaded => {
+  const video = { ...data.media[0]!, status: "ready" as const, previewMode: "on-demand" as const };
+  const preparing = { ...video, id: "med_preparing", status: "ingesting" as const };
+  const audio = data.media.find(asset => asset.kind === "audio")!;
+  const base = { ...emptyTimeline(PRJ), version: data.project.head! };
+  base.tracks[1]!.clips.push(makeMediaClip(audio.id, 0, 2, 0));
+  base.tracks.push({ ...makeTrack("caption", "字幕"), clips: [
+    { kind: "caption", id: "caption", enabled: true, timelineIn: 0, timelineOut: 2, text: "第一句话" },
+  ] });
+  const read = vi.spyOn(api, "timeline").mockResolvedValue({ timeline: base });
+  const save = vi.spyOn(api, "proposeChange").mockImplementation(async (_, body) => ({
+    timeline: applyOps(base, body.ops!),
+    change: { ...buildDb().changes[0]!, state: "approved" },
+  }));
+  const media = [preparing, video, audio];
+  data = { ...data, media, project: { ...data.project, media }, timeline: loaded ? base : null, changes: [], tasks: [], notes: [] };
+  useProjectStore.setState({ current: data });
+  useShownCutStore.setState({ projectId: PRJ, head: base.version, timeline: data.timeline });
+
+  await showFolded();
+  await openMenu();
+  await click(menuItem("手动剪辑"));
+  const addFirst = buttonIn(container.querySelector('[aria-label="手动剪辑"]')!, "将首个视频添加到 V1")!;
+  expect(addFirst.disabled).toBe(false);
+  await click(addFirst);
+
+  expect(read.mock.calls.filter(([, version]) => version === "head")).toHaveLength(loaded ? 0 : 1);
+  expect(save).toHaveBeenCalledExactlyOnceWith(PRJ, expect.objectContaining({
+    fromVersion: base.version, autoApprove: true, skipRender: true,
+    ops: [expect.objectContaining({
+      op: "addClip", trackId: "v1",
+      clip: expect.objectContaining({ mediaId: video.id, sourceIn: 0, sourceOut: video.duration, timelineIn: 0, label: video.name }),
+    })],
+  }));
+  const saved = await save.mock.results[0]!.value;
+  expect(saved.timeline.tracks.slice(1)).toEqual(base.tracks.slice(1));
+  expect(useProjectStore.getState().refreshHead).toHaveBeenCalledWith(PRJ);
 });
 
 /** The Transcript from the menu, once its pane and the words have loaded. */

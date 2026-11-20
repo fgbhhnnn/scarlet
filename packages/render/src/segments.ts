@@ -17,6 +17,7 @@ import { motionsIn, planTransitions, type TransitionMotion } from "./transitions
 import { copyOriginalPicture, wholeOriginalPicture } from "./pictureCopy.js";
 import { effectKind } from "./effects.js";
 import { fileInDirectory } from "./assetPath.js";
+import { hasCjkCaptionText } from "./fontCoverage.js";
 import { FfmpegError, failureReason, fnum, runFfmpeg, LOCAL_MEDIA_INPUT } from "./exec.js";
 import { outputSize, renderRange, type RenderOptions, type RenderQuality } from "./render.js";
 
@@ -170,6 +171,7 @@ function plannedSegmentKey(project: Project, timeline: Timeline, range: TimeRang
     .filter((t) => t.clips.length > 0);
   return createHash("sha256").update(stableStringify({
     v: RENDER_REVISION,
+    cjkCaptionFonts: tracks.some(track => track.clips.some(clip => clip.kind === "caption" && hasCjkCaptionText(clip.text))) ? 1 : undefined,
     transitions: !legacyTransitions && tracks.some(track => track.clips.some(clip => clip.motion)) ? TRANSITION_RENDER_REVISION : undefined,
     proxyClock: o.allowProxy && o.quality === "preview" && !o.pictureOnly && usesRevisedProxyClock(project, timeline, range, o.height, media) ? PROXY_CLOCK_REVISION : undefined,
     pictureOnly: o.pictureOnly || undefined,

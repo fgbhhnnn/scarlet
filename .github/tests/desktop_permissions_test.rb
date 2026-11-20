@@ -12,10 +12,10 @@ class DesktopPermissionsTest < Minitest::Test
     @build = YAML.safe_load(File.read(File.join(workflows, "desktop-build.yml"))).fetch("jobs").fetch("build")
   end
 
-  def test_main_builds_all_installers
+  def test_main_and_ci_branches_build_all_installers
     # Psych versions using YAML 1.1 read the key 'on' as true.
     trigger = @entry["on"] || @entry.fetch(true)
-    assert_equal({"branches" => ["main"]}, trigger.fetch("push"))
+    assert_equal({"branches" => ["main", "ci/**"]}, trigger.fetch("push"))
     assert_equal %w[aarch64-apple-darwin x86_64-apple-darwin x86_64-pc-windows-msvc],
       @build.dig("strategy", "matrix", "include").map { |target| target.fetch("triple") }.sort
     assert_equal false, @build.dig("strategy", "fail-fast")
@@ -133,5 +133,15 @@ class DesktopPermissionsTest < Minitest::Test
     upload = @build.fetch("steps").find { |step| step["uses"].to_s.start_with?("actions/upload-artifact@") }
     refute upload.key?("if"), "Failed native jobs must not upload a release candidate"
     assert_equal "error", upload.fetch("with").fetch("if-no-files-found")
+    assert_includes upload.dig("with", "name"), "inputs.version"
+    assert_includes upload.dig("with", "name"), "github.sha"
+  end
+
+  def test_fork_builds_do_not_use_upstream_signing_or_updates
+    resolve = @jobs.fetch("version").fetch("steps").last
+    assert_equal "${{ github.repository == 'Forward-Future/scarlet' && vars.SCARLET_STABLE_RELEASES || 'false' }}",
+      resolve.dig("env", "SIGNING")
+    updates = @build.fetch("steps").find { |step| step["name"] == "Configure the desktop update channel" }
+    assert_includes updates.fetch("run"), '[ "$GITHUB_REPOSITORY" = Forward-Future/scarlet ]'
   end
 end

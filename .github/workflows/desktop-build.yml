@@ -159,12 +159,11 @@ jobs:
       - name: Test installer notices and engine smoke script
         run: node --test apps/desktop/scripts/collect-public-notices.test.mjs apps/desktop/scripts/smoke-engine.test.mjs
 
-      # Source and local-main builds keep their local updater. Only the public packages get a release feed.
-      - name: Select the public app's update feed
+      - name: Configure the desktop update channel
         shell: bash
         run: |
           echo "SCARLET_RELEASE_CHANNEL=${{ inputs.early_access && 'early-access' || 'stable' }}" >> "$GITHUB_ENV"
-          if [ "$EARLY_ACCESS" != true ]; then
+          if [ "$EARLY_ACCESS" != true ] && [ "$GITHUB_REPOSITORY" = Forward-Future/scarlet ]; then
             node --input-type=commonjs -e '
               const fs = require("node:fs");
               const file = "./apps/desktop/src-tauri/tauri.conf.json";
@@ -309,10 +308,16 @@ jobs:
         shell: pwsh
         run: ./.github/scripts/early-access-upgrade-windows.ps1 -Previous "$env:RUNNER_TEMP\$env:PREVIOUS_EA_INSTALLER" -Candidate "$env:RUNNER_TEMP\scarlet-installers\$env:CANDIDATE_EA_INSTALLER" -Version $env:RELEASE_VERSION
 
+      - name: Record the build version and commit
+        if: github.repository != 'Forward-Future/scarlet'
+        shell: bash
+        run: |
+          printf 'version=%s\ncommit=%s\ntarget=%s\n' "$RELEASE_VERSION" "$GITHUB_SHA" '${{ matrix.triple }}' > "$RUNNER_TEMP/scarlet-installers/build-info.txt"
+
       - name: Upload verified installers
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: ${{ inputs.early_access && format('scarlet-early-access-{0}', inputs.version) || 'scarlet-desktop' }}-${{ matrix.triple }}
+          name: ${{ inputs.early_access && 'scarlet-early-access' || 'scarlet-desktop' }}-${{ inputs.version }}-${{ matrix.triple }}-${{ github.sha }}
           path: ${{ runner.temp }}/scarlet-installers/
           if-no-files-found: error
           overwrite: true

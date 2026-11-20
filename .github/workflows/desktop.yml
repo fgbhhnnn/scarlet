@@ -2,7 +2,7 @@ name: Desktop
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'ci/**']
   workflow_dispatch:
     inputs:
       early_access_version:
@@ -46,7 +46,7 @@ jobs:
         id: number
         env:
           EARLY_ACCESS_VERSION: ${{ inputs.early_access_version }}
-          SIGNING: ${{ vars.SCARLET_STABLE_RELEASES }}
+          SIGNING: ${{ github.repository == 'Forward-Future/scarlet' && vars.SCARLET_STABLE_RELEASES || 'false' }}
         run: |
           node apps/desktop/scripts/release-version.mjs check
           if [ -n "$EARLY_ACCESS_VERSION" ]; then

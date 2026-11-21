@@ -65,7 +65,7 @@ it("uses a list it is handed instead of asking the engine, and shares one measur
 it("fails when a project changed under the measurement, keeping the last good result", async () => {
   const good = await scanStorage();
   measure.mockResolvedValue({ a: size(1024) });
-  await expect(scanStorage()).rejects.toThrow("Project storage changed. Rescan to refresh.");
+  await expect(scanStorage()).rejects.toThrow("项目存储已变化，请重新扫描。");
   expect(lastStorageScan()).toBe(good);
   // The failure doesn't block the next try.
   measure.mockResolvedValue({ a: size(1), b: size(2) });

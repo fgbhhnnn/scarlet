@@ -64,7 +64,7 @@ it("waits while the engine starts, says why it is away once, and connects when i
   fixture.engineStatus.mockResolvedValue({ state: "starting", url: null, error: null });
   await open();
   await open();
-  expect(useAuthStore.getState()).toMatchObject({ status: "offline", error: "Error: Waiting for the local engine…" });
+  expect(useAuthStore.getState()).toMatchObject({ status: "offline", error: "Error: 正在等待本地引擎…" });
   expect(fixture.me).not.toHaveBeenCalled();
   fixture.engineStatus.mockResolvedValue({ state: "error", url: null, error: "The engine stopped: port in use" });
   await open();
@@ -76,7 +76,7 @@ it("waits while the engine starts, says why it is away once, and connects when i
   stopAppLog();
   // A wait is not a failure. Each reason is written once, however often the window asks.
   expect(log.lines).toEqual([
-    '[app] waiting error="Error: Waiting for the local engine…"',
+    '[app] waiting error="Error: 正在等待本地引擎…"',
     '[app] offline error="Error: The engine stopped: port in use"',
   ]);
   expect(log.levels).toEqual(["info", "warn"]);

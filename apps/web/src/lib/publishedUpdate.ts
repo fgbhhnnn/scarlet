@@ -16,7 +16,7 @@ const versions = {
 };
 
 function parts(version: string) {
-  if (!/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(version)) throw new Error("Invalid Scarlet version.");
+  if (!/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(version)) throw new Error("Scarlet 版本无效。");
   return version.split(".").map(BigInt);
 }
 
@@ -47,7 +47,7 @@ export async function publishedUpdate(channel: ReleaseChannel, installed: string
     const response = await fetch(stable ? api + "/latest" : api + "?per_page=100&page=" + page, {
       headers: { Accept: "application/vnd.github+json" }, credentials: "omit", signal: AbortSignal.timeout(15_000),
     });
-    if (!response.ok) throw new Error("Couldn’t check Scarlet releases. Try again later.");
+    if (!response.ok) throw new Error("无法检查 Scarlet 更新，请稍后重试。");
     const data = await response.json();
     const releases: Release[] = stable ? [data] : data;
     for (const release of releases) {

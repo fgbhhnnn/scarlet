@@ -145,7 +145,7 @@ it("gives way at once to what went wrong when the engine can't start, and goes o
   const { useAuthStore } = await import("../../stores/auth");
   await shell("/");
   // Away while it starts is a wait: the startup screen stays.
-  await act(async () => useAuthStore.setState({ status: "offline", error: "Error: Waiting for the local engine…", failed: false }));
+  await act(async () => useAuthStore.setState({ status: "offline", error: "Error: 正在等待本地引擎…", failed: false }));
   expect(startupLine()).toMatch(starting);
   // The engine has given up. The window says why straight away, not after the slow-start wait.
   await act(async () => useAuthStore.setState({ status: "offline", error: "Error: scarlet-engine sidecar not found", failed: true }));

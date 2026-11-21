@@ -81,7 +81,7 @@ it("checks the published edition from About and offers the same release as the n
   await act(async () => root.render(<UpdateSettings />));
   const check = element.querySelector("button")!;
   await act(async () => check.click());
-  expect(element.textContent).toContain("Couldn’t check Scarlet releases");
+  expect(element.textContent).toContain("无法检查 Scarlet 更新，请稍后重试");
   await act(async () => check.click());
   expect(element.textContent).toContain("Scarlet 9.0.1 已发布。");
   await act(async () => element.querySelectorAll("button")[1]!.click());

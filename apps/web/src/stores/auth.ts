@@ -37,7 +37,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           // A crashed engine is started again and reads "starting" meanwhile. Only "error" means it stopped trying,
           // or keeps failing to start.
           failed = engine.state === "error";
-          throw new Error(engine.error ?? "Waiting for the local engine…");
+          throw new Error(engine.error ?? "正在等待本地引擎…");
         }
         if (get().status === "ready") {
           if (engine.url === serverUrl && engine.token === api.token) return;

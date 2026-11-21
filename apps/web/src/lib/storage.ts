@@ -35,7 +35,7 @@ export function scanStorage(catalog?: StorageProject[]): Promise<StorageScan> {
     const sizes = await desktop.measureProjectStorage(projects);
     const rows = projects.map(({ id, name, deletedAt, purgeAt, busy, missingSource }) => {
       const size = sizes[id];
-      if (!size) throw new Error("Project storage changed. Rescan to refresh.");
+      if (!size) throw new Error("项目存储已变化，请重新扫描。");
       return { id, name, deletedAt, purgeAt, busy, missingSource, ...size };
     });
     return { at: Date.now(), projects: rows };

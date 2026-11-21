@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/fgbhhnnn/scarlet/blob/fix/windows-whisper-x64/windows-whisper-qa/report.schema.json",
+  "title": "Scarlet Windows Whisper hardware report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "schema", "generatedAt", "commit", "target", "recipeSha256", "cacheKey", "cpuBaseline", "cpuPreflight", "os", "cpu", "cpuFeatures", "gpu", "model", "modelSha256", "wav", "wavSha256", "variants"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "schema": { "const": "windows-whisper-qa/report.schema.json" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "target": { "const": "x86_64-pc-windows-msvc" },
+    "recipeSha256": { "$ref": "#/$defs/sha256" },
+    "cacheKey": { "type": "string", "pattern": "^native-runtimes-x86_64-pc-windows-msvc-vulkan-1\\.4\\.363\\.1-[0-9a-f]{64}$" },
+    "cpuBaseline": { "const": "x64 SSE2, AVX2 not required" },
+    "cpuPreflight": { "type": "object", "additionalProperties": false, "required": ["passed", "SSE2"], "properties": { "passed": { "const": true }, "SSE2": { "const": true } } },
+    "os": { "type": "array", "items": { "type": "object" } },
+    "cpu": { "type": "array", "items": { "type": "object" } },
+    "cpuFeatures": {
+      "type": "object", "additionalProperties": false,
+      "required": ["SSE2", "SSE42", "AVX", "OSXSAVE", "AVXUsable", "AVX2", "FMA", "F16C", "BMI2"],
+      "properties": {
+        "SSE2": { "type": "boolean" }, "SSE42": { "type": "boolean" }, "AVX": { "type": "boolean" }, "OSXSAVE": { "type": "boolean" }, "AVXUsable": { "type": "boolean" }, "AVX2": { "type": "boolean" }, "FMA": { "type": "boolean" }, "F16C": { "type": "boolean" }, "BMI2": { "type": "boolean" }
+      }
+    },
+    "gpu": { "type": "array", "items": { "type": "object" } }, "model": { "type": "string", "minLength": 1 }, "modelSha256": { "$ref": "#/$defs/sha256" }, "wav": { "type": "string", "minLength": 1 }, "wavSha256": { "$ref": "#/$defs/sha256" },
+    "variants": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "$ref": "#/$defs/variant" } }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "run": { "type": "object", "additionalProperties": false, "required": ["ok"], "properties": { "ok": { "type": "boolean" }, "exitCode": { "type": "integer" }, "exitHex": { "type": "string", "pattern": "^0x[0-9A-F]{8}$" }, "timedOut": { "type": "boolean" }, "error": { "type": "string" } } },
+    "variant": {
+      "type": "object", "additionalProperties": false, "required": ["variant", "pass"],
+      "properties": {
+        "variant": { "enum": ["cpu", "vulkan"] }, "pass": { "type": "boolean" }, "file": { "type": "string" }, "sha256": { "$ref": "#/$defs/sha256" }, "buildReceipt": { "type": "string" }, "startup": { "$ref": "#/$defs/run" }, "transcription": { "$ref": "#/$defs/run" }, "backendLines": { "type": "array", "items": { "type": "string" } }, "backend": { "enum": ["CPU", "Vulkan", "unconfirmed"] }, "expectedBackend": { "enum": ["CPU", "Vulkan"] }, "transcriptSha256": { "$ref": "#/$defs/sha256" }, "language": { "type": "string" }, "text": { "type": "string" }, "fixtureMatched": { "type": "boolean" }, "error": { "type": "string" }
+      }
+    }
+  }
+}

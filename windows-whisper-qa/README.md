@@ -62,7 +62,9 @@ $Model = 'C:\QA\ggml-large-v3-turbo-q5_0.bin'
 pwsh -NoProfile -File (Join-Path $Qa 'Test-WhisperWindows.ps1') -Repository $Tree -Model $Model -OutputDirectory $Evidence
 ~~~
 
-脚本分别对 CPU 与 Vulkan 候选运行 --help 和中文转写，并保留两次操作的十进制退出码、十六进制状态、原始 stdout/stderr。证据目录中每次运行的子目录包含 report.json、Whisper JSON 和日志。报告会记录 Windows 版本、CPU 型号和 CPUID 指令集、GPU 与驱动版本、提交 SHA、构建脚本与两套二进制及模型、样片、转写 JSON 的 SHA-256。
+脚本分别对 CPU 与 Vulkan 候选运行 --help 和中文转写，并保留两次操作的十进制退出码、十六进制状态、原始 stdout/stderr。证据目录中每次运行的子目录包含 report.json、Whisper JSON 和日志。报告会记录 Windows 版本、CPU 型号和 CPUID 指令集、GPU 与驱动版本、提交 SHA、构建脚本与两套二进制及模型、样片、转写 JSON 的 SHA-256。report.json 的机器校验契约在 report.schema.json，当前 schemaVersion 为 1。
+
+报告顶层的 commit、target、cacheKey 和 recipeSha256 固定候选构建，cpuPreflight 必须通过 SSE2 检查。cpuFeatures 是 CPUID 原始特性和 OS 可用性，不能据此推断程序实际执行路径。每个 variants 项分别保存 startup、transcription 的退出状态、实际 backend、后端日志、识别语言、文本和哈希。pass 只有在启动、转写、预期后端和中文样片匹配都满足时才为 true。
 
 两套程序都须成功启动和转写，CPU 用 -ng，Vulkan 须在转写日志中出现 whisper_backend_init_gpu: using Vulkan… backend 且初始化成功。两路都应产出对应的中文句子，允许标点和繁简差异。保留异常时的报告，0xC000001D 对应非法指令。
 

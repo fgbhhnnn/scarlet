@@ -22,7 +22,7 @@ const copy = {
   noDescription: "暂无说明",
 } as const;
 
-const otherCategory = "Other skills";
+const otherCategory = "__other__";
 const categoryLabels = new Map(Object.entries({
   "Getting started": "入门",
   "Story and pacing": "叙事与节奏",

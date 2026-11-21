@@ -186,7 +186,7 @@ export function ScrubPreview({ start = 0, duration, pictureAspect = 16 / 9, fram
         const response = await fetch(url, { signal: request.signal });
         status = response.status;
         phase = "http";
-        if (!response.ok) throw Error("Unavailable preview frame");
+        if (!response.ok) throw Error("无法获取预览画面");
         phase = "body";
         const bytes = await response.blob();
         if (request.signal.aborted) return;

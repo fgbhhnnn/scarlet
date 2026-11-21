@@ -4,6 +4,7 @@ import { cutSummary, dialogueReceipt, mergeRanges, rangesOverlap, reviewReasons,
 import { appliedEditSummary } from "../components/review/cutReviewDetails";
 import { editConfirmation, taskChatText } from "./taskActivity";
 import { runIsActive } from "./taskRun";
+import { workspace } from "./zhWorkspace";
 
 export { buildThreads, type Thread } from "@scarlet/shared";
 
@@ -98,18 +99,18 @@ export function firstCutDeliveries(thread: Thread): Map<string, FirstCutDelivery
 export function revisionTarget(task: Task, changes: readonly Change[], edits?: readonly (Omit<ThreadEdit, "at"> & { at?: number })[]) {
   const { changeId, cutIndex, editIndex, time } = task.context;
   if (!changeId) return undefined;
-  const at = time !== undefined ? ` at ${clock(time)}` : "";
-  if (cutIndex !== undefined) return `the cut${at}`;
+  if (cutIndex !== undefined) return time !== undefined ? workspace.cutAt(clock(time)) : workspace.kind.cut;
   if (editIndex !== undefined) {
     const edit = edits?.find(e => matchesEdit(e, { changeId, spot: editIndex }));
     // A moment of the list is named as its row reads: how many edits, at the moment's time.
     const moment = task.context.momentEdits?.length;
-    if (moment) return `${moment + 1} edits at ${clock(edit ? edit.at ?? edit.range.start : time ?? 0)}`;
-    return edit ? `the ${edit.beforeCut ? "cut" : "edit"} at ${clock(edit.at ?? edit.range.start)}` : `the edit${at}`;
+    if (moment) return `${moment + 1} 项${workspace.edits} · ${clock(edit ? edit.at ?? edit.range.start : time ?? 0)}`;
+    if (edit) return (edit.beforeCut ? workspace.cutAt : workspace.editAt)(clock(edit.at ?? edit.range.start));
+    return time !== undefined ? workspace.editAt(clock(time)) : workspace.kind.edit;
   }
   const change = changes.find(c => c.id === changeId);
-  if (change?.intent === "suggestion") return change.cutReasons?.length ? "the whole dialogue pass" : "the suggestion";
-  return "the whole edit";
+  if (change?.intent === "suggestion") return change.cutReasons?.length ? workspace.wholePass : workspace.thisSuggestion;
+  return workspace.wholeEdit;
 }
 
 type ListedEdit = Omit<ThreadEdit, "at">;

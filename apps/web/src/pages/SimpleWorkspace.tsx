@@ -702,7 +702,9 @@ function PassSummary({ projectId, thread, edits, rejected = noRejected, actions,
     const main = byKey.get(moment.key) ?? row;
     const others = moment.edits.filter(e => e !== moment.main);
     const sent = members.find(member => member.transitioning);
-    const more = others.length === 1 ? `+ ${(others[0]!.beforeCut ? "cut" : editKindWord(others[0] as ThreadEdit)?.toLowerCase()) ?? "1 edit"}` : `+ ${others.length} edits`;
+    const more = others.length === 1
+      ? `+ ${others[0]!.beforeCut ? zh.workspace.kind.cut : editKindWord(others[0] as ThreadEdit) ?? `1 项${zh.workspace.edits}`}`
+      : `+ ${others.length} 项${zh.workspace.edits}`;
     drawn.push({ row: { ...main, displayAt: Math.min(...members.map(m => m.displayAt)), on: main.on && !actions.showingSingle,
       decided: members.every(m => m.decided), word: sent?.word ?? main.word, busy: members.some(m => m.busy), revised: members.some(m => m.revised),
       title: members.map(m => m.label).join("\n") } as Row, members, more, moment: moment.key,
@@ -716,7 +718,7 @@ function PassSummary({ projectId, thread, edits, rejected = noRejected, actions,
     aria-label={filter === "calls" ? zh.workspace.callsNeedingReview : filter === "need" ? zh.workspace.editsNeedingReview : zh.workspace.allEdits}>
     {drawn.map(({ row, members, more, moment, unfolded: open }) => <li key={row.key}><button type="button" className={[row.on && "is-on", row.rejected && "is-rejected", !row.on && !row.rejected && row.decided && "is-decided"].filter(Boolean).join(" ") || undefined} aria-current={row.on || undefined}
       data-log-control="open-pass-item" data-log-label={moment ? "Moment" : "Pass item"} disabled={!row.open} title={row.title || row.label} onClick={letGo(() => row.open?.())}
-      aria-label={more ? `${clockLabel(row.displayAt)} ${row.label}, ${more.replace("+ ", "and ")}` : row.rejected ? `${clockLabel(row.displayAt)} ${row.label}, rejected` : undefined}
+      aria-label={more ? `${clockLabel(row.displayAt)} ${row.label}，${more.replace("+ ", "另有")}` : row.rejected ? `${clockLabel(row.displayAt)} ${row.label}，已拒绝` : undefined}
       onPointerEnter={() => actions.lightMark(row.mark, row.hover)} onPointerLeave={() => actions.lightMark()}>
       {/* The calls are the short list: a call is its number, Scarlet's note and, once it's settled, sent back or
           revised, a word for where it stands. An edit that asks for a look is listed with them by its number too,
@@ -2037,8 +2039,8 @@ export function SimpleWorkspace() {
     const override = change.cutEdits?.find(c => c.index === index);
     if (override) cut = override.range;
     const target: AgentContext = { changeId: change.id, version: override?.version ?? change.fromVersion, time: cut.start, end: cut.end, clipIds: [], cutIndex: index,
-      label: `Cut at ${clockLabel(cut.start)}` };
-    return { target, label: `the cut at ${clockLabel((override ? cut : placeCut(cut) ?? cut).start)}` };
+      label: zh.workspace.cutAt(clockLabel(cut.start)) };
+    return { target, label: zh.workspace.cutAt(clockLabel((override ? cut : placeCut(cut) ?? cut).start)) };
   };
   /** Revise is about what's in the player: the suggestion on its card, else the call that's open. */
   function reviseReview() {
@@ -2053,7 +2055,7 @@ export function SimpleWorkspace() {
       const { target, label } = cutTarget(pass, listening.index, listening.cut);
       return startRevision(passThread, target, label);
     }
-    startRevision(passThread, { changeId: pass.id, version: pass.fromVersion, time: 0, clipIds: [], label: "Whole pass" }, "the whole dialogue pass");
+    startRevision(passThread, { changeId: pass.id, version: pass.fromVersion, time: 0, clipIds: [], label: zh.workspace.wholePass }, zh.workspace.wholePass);
   }
   // When the pass comes back as a new proposal, a revision the message box is aimed at stays on its cut too, so Revise
   // still means that cut. The listen's own state catches up with where the card already is, or ends.
@@ -2174,7 +2176,7 @@ export function SimpleWorkspace() {
       if (calls && result?.outcome === "sent_back") return;
       // A suggestion the video had moved on from is sent back: it is with Scarlet again, and its request says so in
       // the chat, so nothing is said here.
-      if (result?.outcome === "conflict") throw new Error("The video changed while this was waiting. Scarlet is redoing it on the video as it is now.");
+      if (result?.outcome === "conflict") throw new Error(zh.workspace.redoOnCurrent);
       // By the time it lands the editor may be on something else. A call, an edit, another suggestion or a clip from
       // Media they opened meanwhile isn't the change that was applied: the landing neither closes nor pauses it. A pass
       // applied with none of its calls open has nothing on screen that names it, and closes as the change applied.
@@ -2331,7 +2333,7 @@ export function SimpleWorkspace() {
       if (edit && target) return startRevision(thread, target, `“${edit.label}” at ${clockLabel(edit.at ?? edit.range.start)}`);
       const range = change.ranges[0];
       startRevision(thread, { changeId: change.id, version: change.appliedVersion ?? change.toVersion, time: range?.start ?? 0, end: range?.end,
-        clipIds: [], label: "Revision" }, "this whole edit");
+        clipIds: [], label: zh.workspace.wholeEdit }, zh.workspace.wholeEdit);
     },
     reply(thread) {
       // As Revise does, Answer waits for a message being spoken to go out: aiming the box now would drop it.
@@ -2641,14 +2643,14 @@ export function SimpleWorkspace() {
   // The grey and its name already say After skips it, so the hover note only says how much it took and Scarlet's words for it.
   // On Before they play, so they're only outlined.
   const gaps: TimelineGap[] = otherEdits.map(({ at, label, removed }) => ({ start: removed.start, end: removed.end,
-    title: `Cut at ${at} · ${lengthLabel(removed.end - removed.start)}`, summary: label, label: `Cut at ${at}`, shortLabel: at,
+    title: `${zh.workspace.cutAt(at)} · ${lengthLabel(removed.end - removed.start)}`, summary: label, label: zh.workspace.cutAt(at), shortLabel: at,
     skipped: appliedSide === "after" }));
   // A call shown where the cuts around it still have their footage marks them the same way, by their time on the
   // working cut and with Scarlet's words for the one that made each.
   const callGaps: TimelineGap[] | undefined = callView?.shown.map(({ at, removed }) => {
     const made = [...locatedPassEdits ?? [], ...threadEdits].find(e => e.beforeCut && e.at !== undefined && Math.abs(e.at - at) < 1.5 / fps);
-    return { start: removed.start, end: removed.end, title: `Cut at ${clockLabel(at)} · ${lengthLabel(removed.end - removed.start)}`, summary: made?.label,
-      label: `Cut at ${clockLabel(at)}`, shortLabel: clockLabel(at), skipped: listening?.side === "after" };
+    return { start: removed.start, end: removed.end, title: `${zh.workspace.cutAt(clockLabel(at))} · ${lengthLabel(removed.end - removed.start)}`, summary: made?.label,
+      label: zh.workspace.cutAt(clockLabel(at)), shortLabel: clockLabel(at), skipped: listening?.side === "after" };
   });
   const hearInBefore = (gap: TimelineGap, time: number) => {
     if (callGaps) return hearGapInCall(gap, time);
@@ -3328,7 +3330,7 @@ export function SimpleWorkspace() {
       <EditNote key={editKey(reviewingEdit)} text={editNote(reviewingEdit, !!reviewRange)} />
       {/* A moment of a pass's list is its edits together: the pill says how many, and names them on hover. */}
       {threadTimeline.selectedMoment ? <span className="edit-card-length is-kind" title={threadTimeline.selectedMoment.members.map(e => e.label).join("\n")}>
-        {threadTimeline.selectedMoment.edits.length} edits</span>
+        {threadTimeline.selectedMoment.edits.length} {zh.workspace.edits}</span>
         : !beforeCut && shownKind && <span className={reviewingEdit.kind === "restore" ? "edit-card-length is-added" : "edit-card-length is-kind"}>{shownKind}</span>}
       {/* Scarlet asks the editor to look or listen at a part of the video, which the timeline marks. It is a pill like the
           edit's kind, in amber: a press plays just that part, and its times are on hover. */}

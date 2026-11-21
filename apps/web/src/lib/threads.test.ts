@@ -329,20 +329,20 @@ it("names what a sent message revised, in the words the box showed", () => {
   const pass = change("pass", "revising", { intent: "suggestion", cutReasons: [{ start: 149.49, end: 151.67, reason: "Keep the finished sentence." }] });
   const edit = change("edit", "approved");
   const sent = (context: Task["context"]) => ({ context } as Task);
-  expect(revisionTarget(sent({ changeId: "pass", cutIndex: 3, time: 149.49, end: 151.67 }), [pass])).toBe("the cut at 2:29");
-  expect(revisionTarget(sent({ changeId: "pass", time: 0 }), [pass])).toBe("the whole dialogue pass");
-  expect(revisionTarget(sent({ changeId: "edit", editIndex: 1, time: 65 }), [edit])).toBe("the edit at 1:05");
+  expect(revisionTarget(sent({ changeId: "pass", cutIndex: 3, time: 149.49, end: 151.67 }), [pass])).toBe("2:29 处的剪点");
+  expect(revisionTarget(sent({ changeId: "pass", time: 0 }), [pass])).toBe("整段口播粗剪");
+  expect(revisionTarget(sent({ changeId: "edit", editIndex: 1, time: 65 }), [edit])).toBe("1:05 处的剪辑");
   // With the request's list at hand, an applied edit reads as its row does: at the time the row shows, not where the
   // passage around it starts, and as a cut when it took footage out.
   const row = { changeId: "edit", spot: 1, label: "A stumble", range: { start: 65, end: 68 }, previous: [] };
-  expect(revisionTarget(sent({ changeId: "edit", editIndex: 1, time: 65 }), [edit], [{ ...row, at: 66.5, beforeCut: { version: "v0", removed: { start: 300, end: 306 } } }])).toBe("the cut at 1:06");
-  expect(revisionTarget(sent({ changeId: "edit", editIndex: 1, time: 65 }), [edit], [row])).toBe("the edit at 1:05");
-  expect(revisionTarget(sent({ changeId: "edit", editIndex: 1, time: 65 }), [edit], [{ ...row, spot: 0 }])).toBe("the edit at 1:05");
-  expect(revisionTarget(sent({ changeId: "edit", time: 0 }), [edit])).toBe("the whole edit");
+  expect(revisionTarget(sent({ changeId: "edit", editIndex: 1, time: 65 }), [edit], [{ ...row, at: 66.5, beforeCut: { version: "v0", removed: { start: 300, end: 306 } } }])).toBe("1:06 处的剪点");
+  expect(revisionTarget(sent({ changeId: "edit", editIndex: 1, time: 65 }), [edit], [row])).toBe("1:05 处的剪辑");
+  expect(revisionTarget(sent({ changeId: "edit", editIndex: 1, time: 65 }), [edit], [{ ...row, spot: 0 }])).toBe("1:05 处的剪辑");
+  expect(revisionTarget(sent({ changeId: "edit", time: 0 }), [edit])).toBe("整个剪辑");
   expect(revisionTarget(sent({ time: 12 }), [edit])).toBeUndefined();
   // A moment of a pass's list is named as its row reads: how many edits, at its time.
   const moment = { changeId: "edit", editIndex: 1, time: 64, end: 70, momentEdits: [{ changeId: "edit", spot: 2 }, { changeId: "edit", spot: 3 }] };
-  expect(revisionTarget(sent(moment), [edit], [{ ...row, at: 66.5, beforeCut: { version: "v0", removed: { start: 300, end: 306 } } }])).toBe("3 edits at 1:06");
+  expect(revisionTarget(sent(moment), [edit], [{ ...row, at: 66.5, beforeCut: { version: "v0", removed: { start: 300, end: 306 } } }])).toBe("3 项剪辑 · 1:06");
 });
 
 describe("requestTarget", () => {

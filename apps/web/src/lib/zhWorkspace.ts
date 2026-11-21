@@ -129,6 +129,7 @@ export const workspace = {
   sourceNoteStart: "此项目来自 ",
   sourceNoteEnd: "，原视频保持原样。",
   cutAt: (time: string) => `${time} 处的剪点`,
+  wholePass: "整段口播粗剪",
   editAt: (time: string) => `${time} 处的剪辑`,
   cutNumber: (number: number) => `剪点 ${number}`,
   editNumber: (number: number) => `剪辑 ${number}`,
